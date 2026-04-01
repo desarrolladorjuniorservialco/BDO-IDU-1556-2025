@@ -14,7 +14,7 @@ SUPABASE_URL    = os.environ['SUPABASE_URL']
 SUPABASE_KEY    = os.environ['SUPABASE_KEY']
 QFIELD_USER     = os.environ['QFIELD_USER']
 QFIELD_PASSWORD = os.environ['QFIELD_PASSWORD']
-PROJECT_ID      = 'BDO_IDU-1556-2025'
+PROJECT_ID      = 'SERVIALCO/BDO_IDU-1556-2025'
 GPKG_FILE       = 'Formulario_Cantidades.gpkg'
 LAYER_NAME      = 'Formulario_Cantidades'
 
