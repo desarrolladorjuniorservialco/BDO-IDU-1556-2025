@@ -76,10 +76,8 @@ def read_formulario():
         print(f"  ⚠ Error leyendo capa {LAYER_NAME}: {e}")
         gdf = gpd.read_file('/tmp/formulario.gpkg')
 
-    # Normaliza nombres de columnas — elimina espacios invisibles
     gdf.columns = [c.strip() for c in gdf.columns]
 
-    # Reproyecta a WGS84 para lat/lon correctos
     if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
         print(f"  Reproyectando EPSG:{gdf.crs.to_epsg()} → WGS84...")
         gdf = gdf.to_crs(epsg=4326)
@@ -89,31 +87,65 @@ def read_formulario():
     return gdf
 
 
+def build_photo_urls(token, project_id, path_raw):
+    """
+    Construye las URLs candidatas para descargar una foto.
+    QField guarda rutas relativas al project_folder, p.ej.:
+      - 'files/RP_1556_00001_foto.jpg'   → ya tiene el prefijo files/
+      - 'RP_1556_00001_foto.jpg'          → hay que agregar files/
+    """
+    if not path_raw:
+        return []
+
+    path = str(path_raw).strip().replace('\\', '/')
+
+    # Normaliza: quita prefijos absolutos si quedaron
+    for prefix in ['../../../../', '../../../', '../../', '../']:
+        if path.startswith(prefix):
+            path = path[len(prefix):]
+
+    # Quita drives de Windows si quedaron (C:/, etc.)
+    if len(path) > 2 and path[1] == ':':
+        path = path[2:].lstrip('/')
+
+    # Codifica para URL conservando /
+    encoded = requests.utils.quote(path, safe='/')
+
+    # Si ya empieza con files/ construye una URL; si no, prueba ambas
+    if path.startswith('files/'):
+        return [
+            f'{BASE_URL}/files/{project_id}/{encoded}/',
+        ]
+    else:
+        return [
+            f'{BASE_URL}/files/{project_id}/files/{encoded}/',
+            f'{BASE_URL}/files/{project_id}/{encoded}/',
+        ]
+
+
 def upload_photo(supabase, token, project_id, file_path, folio):
     if not file_path or str(file_path).strip() in ('', 'nan', 'None'):
         return None
 
-    path_clean = str(file_path).strip()
-    encoded    = requests.utils.quote(path_clean, safe='/')
+    print(f"    Ruta original: {repr(file_path)}")
 
-    urls = [
-        f'{BASE_URL}/files/{project_id}/{encoded}/',
-        f'{BASE_URL}/files/{project_id}/files/{encoded}/',
-    ]
+    candidate_urls = build_photo_urls(token, project_id, file_path)
 
     content = content_type = None
-    for url in urls:
+    for url in candidate_urls:
+        print(f"    GET {url}")
         r = requests.get(url, headers=qfield_headers(token), timeout=60)
+        print(f"    → {r.status_code}")
         if r.status_code == 200:
             content      = r.content
             content_type = r.headers.get('Content-Type', 'image/jpeg')
             break
 
     if not content:
-        print(f"  ⚠ No se pudo descargar foto: {path_clean}")
+        print(f"  ⚠ No se pudo descargar foto: {file_path}")
         return None
 
-    filename     = path_clean.split('/')[-1]
+    filename     = str(file_path).strip().replace('\\', '/').split('/')[-1]
     storage_path = f"{folio}/{filename}"
 
     try:
@@ -158,7 +190,6 @@ def safe_num(val):
 
 
 def insertar_registro(supabase, row, foto_urls):
-    # Coordenadas desde geometría
     lat = lon = None
     geom = row.get('geometry')
     if geom is not None:
@@ -168,7 +199,7 @@ def insertar_registro(supabase, row, foto_urls):
                 lat = geom.y
                 print(f"  ✓ Coordenadas: lat={lat:.6f}, lon={lon:.6f}")
         except Exception as e:
-            print(f"  ⚠ Error extrayendo coordenadas: {e}")
+            print(f"  ⚠ Error coordenadas: {e}")
 
     folio = safe(row.get('folio'))
 
@@ -224,7 +255,7 @@ def main():
     project_id = get_project_id(token)
 
     if not download_gpkg(token, project_id):
-        print("ℹ Sin GeoPackage disponible — abortando")
+        print("ℹ Sin GeoPackage — abortando")
         return
 
     gdf = read_formulario()
@@ -252,6 +283,7 @@ def main():
         foto_urls = {}
         for campo in ['foto_1','foto_2','foto_3','foto_4','foto_5','documento_adj']:
             path = safe(row.get(campo))
+            print(f"  [{campo}] ruta: {repr(row.get(campo))}")
             if path:
                 foto_urls[campo] = upload_photo(supabase, token, project_id, path, folio)
 
