@@ -2,10 +2,8 @@ name: Sync QFieldCloud → Supabase
 
 on:
   schedule:
-    # Cada 20 minutos de lunes a sábado entre 6am y 7pm hora Colombia (UTC-5)
-    # En UTC: 11am a 12am = cron 11-24
+
     - cron: '*/20 11-23 * * 1-6'
-    - cron: '*/20 0-0 * * 2-7'
   
   # Permite correr manualmente desde GitHub
   workflow_dispatch:
