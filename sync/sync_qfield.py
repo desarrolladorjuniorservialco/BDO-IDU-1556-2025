@@ -1,10 +1,13 @@
 """
 sync_qfield.py
 BDO IDU-1556-2025 · Sincronización QFieldCloud → Supabase
+Lee el GeoPackage directamente desde QFieldCloud files API
 """
 
 import os
+import io
 import requests
+import geopandas as gpd
 from supabase import create_client
 from datetime import datetime
 
@@ -13,6 +16,8 @@ SUPABASE_KEY    = os.environ['SUPABASE_KEY']
 QFIELD_USER     = os.environ['QFIELD_USER']
 QFIELD_PASSWORD = os.environ['QFIELD_PASSWORD']
 PROJECT_ID      = 'BDO_IDU-1556-2025'
+GPKG_FILE       = 'Formulario_Cantidades.gpkg'
+LAYER_NAME      = 'Formulario_Cantidades'
 
 
 def get_supabase():
@@ -37,41 +42,54 @@ def qfield_headers(token):
     return {'Authorization': f'Token {token}'}
 
 
-def get_qfield_features(token):
-    r = requests.get(
-        f'https://app.qfield.cloud/api/v1/projects/{PROJECT_ID}/packages/latest/',
-        headers=qfield_headers(token),
-        timeout=60
-    )
+def download_gpkg(token):
+    """Descarga el GeoPackage del formulario desde QFieldCloud"""
+    url = f'https://app.qfield.cloud/api/v1/files/{PROJECT_ID}/{GPKG_FILE}/'
+    r = requests.get(url, headers=qfield_headers(token), timeout=120)
+
     if r.status_code == 404:
-        print("⚠ No hay paquete disponible aún")
-        return []
+        print(f"⚠ Archivo no encontrado: {GPKG_FILE}")
+        return None
+
     r.raise_for_status()
-    package  = r.json()
-    features = []
-    for layer in package.get('layers', []):
-        if 'Formulario_Cantidades' in layer.get('name', ''):
-            lr       = requests.get(layer['url'], headers=qfield_headers(token), timeout=60)
-            features = lr.json().get('features', [])
-            print(f"✓ {len(features)} registros en QFieldCloud")
-            break
-    return features
+    print(f"✓ GeoPackage descargado ({len(r.content)/1024:.1f} KB)")
+    return r.content
+
+
+def read_features(gpkg_bytes):
+    """Lee las features del GeoPackage en memoria"""
+    with open('/tmp/formulario.gpkg', 'wb') as f:
+        f.write(gpkg_bytes)
+
+    try:
+        gdf = gpd.read_file('/tmp/formulario.gpkg', layer=LAYER_NAME)
+    except Exception:
+        # Intenta sin especificar capa si falla
+        gdf = gpd.read_file('/tmp/formulario.gpkg')
+
+    print(f"✓ {len(gdf)} registros leídos del GeoPackage")
+    print(f"  Columnas: {list(gdf.columns)}")
+    return gdf
 
 
 def upload_photo(supabase, token, file_path, folio):
-    if not file_path:
+    """Descarga foto de QFieldCloud y la sube a Supabase Storage"""
+    if not file_path or str(file_path) == 'nan':
         return None
-    encoded = requests.utils.quote(file_path, safe='')
+
+    encoded = requests.utils.quote(str(file_path), safe='')
     r = requests.get(
-        f'https://app.qfield.cloud/api/v1/projects/{PROJECT_ID}/files/{encoded}/',
+        f'https://app.qfield.cloud/api/v1/files/{PROJECT_ID}/{encoded}/',
         headers=qfield_headers(token),
         timeout=60
     )
     if r.status_code != 200:
         print(f"  ⚠ No se pudo descargar: {file_path}")
         return None
-    filename     = file_path.split('/')[-1]
+
+    filename     = str(file_path).split('/')[-1]
     storage_path = f"{folio}/{filename}"
+
     try:
         supabase.storage.from_('fotos-obra').upload(
             path=storage_path,
@@ -94,44 +112,58 @@ def folio_existe(supabase, folio):
     return len(result.data) > 0
 
 
-def insertar_registro(supabase, props, foto_urls):
+def safe(val):
+    """Convierte NaN y None a None para Supabase"""
+    if val is None:
+        return None
+    try:
+        import math
+        if math.isnan(float(val)):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return val
+
+
+def insertar_registro(supabase, row, foto_urls):
+    folio = safe(row.get('folio'))
     data = {
-        'folio':              props.get('folio'),
+        'folio':              folio,
         'contrato_id':        'IDU-1556-2025',
-        'usuario_qfield':     props.get('usuario'),
-        'tipo_infra':         props.get('tipo_infra'),
-        'id_tramo':           props.get('id_tramo'),
-        'tramo_descripcion':  props.get('tramo_descripcion', ''),
-        'civ':                props.get('civ'),
-        'codigo_elemento':    props.get('codigo_elemento'),
-        'fecha_inicio':       props.get('fecha_inicio'),
-        'tipo_actividad':     props.get('tipo_actividad'),
-        'capitulo_num':       props.get('capitulo_num'),
-        'capitulo':           props.get('capitulo'),
-        'item_pago':          props.get('item_pago'),
-        'item_descripcion':   props.get('item_descripcion'),
-        'unidad':             props.get('unidad'),
-        'cantidad':           props.get('cantidad'),
-        'descripcion':        props.get('descripcion'),
-        'foto_1_path':        props.get('foto_1'),
+        'usuario_qfield':     safe(row.get('usuario')),
+        'tipo_infra':         safe(row.get('tipo_infra')),
+        'id_tramo':           safe(row.get('id_tramo')),
+        'tramo_descripcion':  safe(row.get('tramo_descripcion', '')),
+        'civ':                safe(row.get('civ')),
+        'codigo_elemento':    safe(row.get('codigo_elemento')),
+        'fecha_inicio':       str(safe(row.get('fecha_inicio'))) if safe(row.get('fecha_inicio')) else None,
+        'tipo_actividad':     safe(row.get('tipo_actividad')),
+        'capitulo_num':       safe(row.get('capitulo_num')),
+        'capitulo':           safe(row.get('capitulo')),
+        'item_pago':          safe(row.get('item_pago')),
+        'item_descripcion':   safe(row.get('item_descripcion')),
+        'unidad':             safe(row.get('unidad')),
+        'cantidad':           safe(row.get('cantidad')),
+        'descripcion':        safe(row.get('descripcion')),
+        'foto_1_path':        safe(row.get('foto_1')),
         'foto_1_url':         foto_urls.get('foto_1'),
-        'foto_2_path':        props.get('foto_2'),
+        'foto_2_path':        safe(row.get('foto_2')),
         'foto_2_url':         foto_urls.get('foto_2'),
-        'foto_3_path':        props.get('foto_3'),
+        'foto_3_path':        safe(row.get('foto_3')),
         'foto_3_url':         foto_urls.get('foto_3'),
-        'foto_4_path':        props.get('foto_4'),
+        'foto_4_path':        safe(row.get('foto_4')),
         'foto_4_url':         foto_urls.get('foto_4'),
-        'foto_5_path':        props.get('foto_5'),
+        'foto_5_path':        safe(row.get('foto_5')),
         'foto_5_url':         foto_urls.get('foto_5'),
-        'documento_adj_path': props.get('documento_adj'),
+        'documento_adj_path': safe(row.get('documento_adj')),
         'documento_adj_url':  foto_urls.get('documento_adj'),
-        'observaciones':      props.get('observaciones'),
+        'observaciones':      safe(row.get('observaciones')),
         'estado':             'BORRADOR',
-        'qfield_sync_id':     str(props.get('fid', '')),
+        'qfield_sync_id':     str(safe(row.get('fid', ''))),
     }
     data = {k: v for k, v in data.items() if v is not None}
     supabase.table('registros').upsert(data, on_conflict='folio').execute()
-    print(f"  ✓ Registro insertado: {props.get('folio')}")
+    print(f"  ✓ Registro insertado: {folio}")
 
 
 def main():
@@ -141,23 +173,29 @@ def main():
 
     token    = qfield_login()
     supabase = get_supabase()
-    features = get_qfield_features(token)
 
-    if not features:
-        print("ℹ Sin registros para sincronizar")
+    gpkg_bytes = download_gpkg(token)
+    if not gpkg_bytes:
+        print("ℹ Sin GeoPackage disponible — abortando")
+        return
+
+    gdf = read_features(gpkg_bytes)
+
+    if gdf.empty:
+        print("ℹ GeoPackage vacío — sin registros")
         return
 
     nuevos = omitidos = 0
 
-    for feature in features:
-        props = feature.get('properties', {})
-        folio = props.get('folio')
+    for _, row in gdf.iterrows():
+        folio = safe(row.get('folio'))
 
         if not folio:
+            print("  ⚠ Registro sin folio — omitido")
             omitidos += 1
             continue
 
-        if folio_existe(supabase, folio):
+        if folio_existe(supabase, str(folio)):
             omitidos += 1
             continue
 
@@ -165,10 +203,11 @@ def main():
 
         foto_urls = {}
         for campo in ['foto_1', 'foto_2', 'foto_3', 'foto_4', 'foto_5', 'documento_adj']:
-            if props.get(campo):
-                foto_urls[campo] = upload_photo(supabase, token, props[campo], folio)
+            path = safe(row.get(campo))
+            if path:
+                foto_urls[campo] = upload_photo(supabase, token, path, folio)
 
-        insertar_registro(supabase, props, foto_urls)
+        insertar_registro(supabase, row, foto_urls)
         nuevos += 1
 
     print(f"\n✓ Completado: {nuevos} nuevos · {omitidos} omitidos\n")
