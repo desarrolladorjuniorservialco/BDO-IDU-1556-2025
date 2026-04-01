@@ -6,7 +6,7 @@ Usa supabase-py (API REST) — compatible con plan Free de Supabase
 
 import os
 import requests
-from supabase import create_client, Client
+from supabase import create_client
 from datetime import datetime, timezone
 
 SUPABASE_URL    = os.environ['SUPABASE_URL']
