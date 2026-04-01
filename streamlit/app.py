@@ -20,21 +20,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── CSS personalizado ──────────────────────────────────────────
 st.markdown("""
 <style>
-  .stApp { background-color: #0f1117; }
+  section[data-testid="stSidebar"] { background:#161b2e; }
   .metric-card {
-    background: #1e2130;
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    border: 1px solid #2d3250;
+    background:#1e2130; border-radius:10px;
+    padding:1rem 1.25rem; border:1px solid #2d3250;
   }
-  .badge-borrador  { background:#2d3250; color:#a0aec0; padding:2px 10px; border-radius:10px; font-size:12px; }
-  .badge-revisado  { background:#1a3a2a; color:#68d391; padding:2px 10px; border-radius:10px; font-size:12px; }
-  .badge-aprobado  { background:#1a2a3a; color:#63b3ed; padding:2px 10px; border-radius:10px; font-size:12px; }
-  .badge-devuelto  { background:#3a1a1a; color:#fc8181; padding:2px 10px; border-radius:10px; font-size:12px; }
-  div[data-testid="stSidebarContent"] { background:#161b2e; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -44,8 +36,12 @@ st.markdown("""
 
 @st.cache_resource
 def get_supabase():
-    url = os.environ.get('SUPABASE_URL', st.secrets.get('SUPABASE_URL', ''))
-    key = os.environ.get('SUPABASE_KEY', st.secrets.get('SUPABASE_KEY', ''))
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+    except Exception:
+        url = os.environ.get("SUPABASE_URL", "")
+        key = os.environ.get("SUPABASE_KEY", "")
     return create_client(url, key)
 
 
@@ -54,46 +50,40 @@ def get_supabase():
 # ══════════════════════════════════════════════════════════════
 
 def login():
-    """Pantalla de login"""
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("## 🏗️ BDO IDU-1556-2025")
-        st.markdown("##### Bitácora Digital de Obra")
+        st.markdown("##### Sistema de Bitácora Digital de Obra")
+        st.markdown("*Contrato IDU-1556-2025 · Grupo 4*")
         st.divider()
 
         with st.form("login_form"):
-            email    = st.text_input("Correo electrónico")
-            password = st.text_input("Contraseña", type="password")
-            submit   = st.form_submit_button("Ingresar", use_container_width=True)
+            email    = st.text_input("📧 Correo electrónico")
+            password = st.text_input("🔒 Contraseña", type="password")
+            submit   = st.form_submit_button("Ingresar", use_container_width=True, type="primary")
 
         if submit:
             if not email or not password:
                 st.error("Ingresa correo y contraseña")
                 return
-
             try:
                 sb   = get_supabase()
                 resp = sb.auth.sign_in_with_password({"email": email, "password": password})
-
                 if resp.user:
-                    # Obtiene perfil del usuario
                     perfil = sb.table('perfiles').select('*').eq('id', resp.user.id).execute()
-
                     if not perfil.data:
-                        st.error("Usuario sin perfil configurado. Contacta al administrador.")
+                        st.error("Usuario sin perfil. Contacta al administrador.")
                         return
-
                     st.session_state['user']   = resp.user
                     st.session_state['perfil'] = perfil.data[0]
-                    st.session_state['token']  = resp.session.access_token
                     st.rerun()
-
             except Exception as e:
                 st.error(f"Error de autenticación: {e}")
 
 
 def logout():
-    for key in ['user', 'perfil', 'token']:
+    for key in ['user', 'perfil']:
         st.session_state.pop(key, None)
     st.rerun()
 
@@ -102,38 +92,18 @@ def logout():
 # HELPERS
 # ══════════════════════════════════════════════════════════════
 
-def get_registros(filtros=None):
-    """Carga registros desde Supabase con filtros opcionales"""
-    sb     = get_supabase()
-    query  = sb.table('registros').select('*')
-
-    if filtros:
-        if filtros.get('estado'):
-            query = query.eq('estado', filtros['estado'])
-        if filtros.get('estados'):
-            query = query.in_('estado', filtros['estados'])
-        if filtros.get('fecha_ini'):
-            query = query.gte('fecha_creacion', filtros['fecha_ini'].isoformat())
-        if filtros.get('fecha_fin'):
-            query = query.lte('fecha_creacion', filtros['fecha_fin'].isoformat())
-        if filtros.get('id_tramo'):
-            query = query.eq('id_tramo', filtros['id_tramo'])
-        if filtros.get('tipo_actividad'):
-            query = query.eq('tipo_actividad', filtros['tipo_actividad'])
-
+@st.cache_data(ttl=60)
+def get_registros_cached(estados=None, fecha_ini=None, fecha_fin=None):
+    sb    = get_supabase()
+    query = sb.table('registros').select('*')
+    if estados:
+        query = query.in_('estado', estados)
+    if fecha_ini:
+        query = query.gte('fecha_creacion', fecha_ini)
+    if fecha_fin:
+        query = query.lte('fecha_creacion', fecha_fin)
     result = query.order('fecha_creacion', desc=True).execute()
     return pd.DataFrame(result.data) if result.data else pd.DataFrame()
-
-
-def badge_estado(estado):
-    colores = {
-        'BORRADOR':  ('🔵', '#2d3250', '#a0aec0'),
-        'REVISADO':  ('🟢', '#1a3a2a', '#68d391'),
-        'APROBADO':  ('✅', '#1a2a3a', '#63b3ed'),
-        'DEVUELTO':  ('🔴', '#3a1a1a', '#fc8181'),
-    }
-    e, bg, fg = colores.get(estado, ('⚪', '#2d3250', '#a0aec0'))
-    return f'<span style="background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px">{e} {estado}</span>'
 
 
 def safe_float(val):
@@ -144,123 +114,128 @@ def safe_float(val):
         return None
 
 
+def color_estado(estado):
+    colores = {
+        'BORRADOR': '🔵',
+        'REVISADO': '🟢',
+        'APROBADO': '✅',
+        'DEVUELTO': '🔴',
+    }
+    return colores.get(estado, '⚪')
+
+
 # ══════════════════════════════════════════════════════════════
 # PANEL 1 — DASHBOARD GEOGRÁFICO
 # ══════════════════════════════════════════════════════════════
 
-def panel_dashboard(perfil):
-    st.markdown("### 📊 Dashboard de seguimiento")
+def panel_dashboard():
+    st.markdown("### 📊 Dashboard de seguimiento en tiempo real")
 
-    # Filtros superiores
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
         fecha_ini = st.date_input("Desde", value=date.today() - timedelta(days=30))
-    with col2:
+    with c2:
         fecha_fin = st.date_input("Hasta", value=date.today())
-    with col3:
-        estado_f = st.selectbox("Estado", ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"])
-    with col4:
+    with c3:
+        estado_f = st.selectbox("Estado", ["Todos","BORRADOR","REVISADO","APROBADO","DEVUELTO"])
+    with c4:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🔄 Actualizar", use_container_width=True):
+        if st.button("🔄 Actualizar datos", use_container_width=True):
             st.cache_data.clear()
+            st.rerun()
 
-    # Carga datos
-    filtros = {'fecha_ini': fecha_ini, 'fecha_fin': fecha_fin}
-    if estado_f != "Todos":
-        filtros['estado'] = estado_f
-
-    df = get_registros(filtros)
+    estados = None if estado_f == "Todos" else [estado_f]
+    df = get_registros_cached(
+        estados=estados,
+        fecha_ini=fecha_ini.isoformat(),
+        fecha_fin=fecha_fin.isoformat()
+    )
 
     if df.empty:
         st.info("No hay registros para el período seleccionado")
         return
 
     # Métricas
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("Total registros", len(df))
-    with c2:
-        st.metric("Aprobados", len(df[df['estado'] == 'APROBADO']))
-    with c3:
-        st.metric("En revisión", len(df[df['estado'].isin(['BORRADOR', 'REVISADO'])]))
-    with c4:
-        st.metric("Devueltos", len(df[df['estado'] == 'DEVUELTO']))
+    m1, m2, m3, m4, m5 = st.columns(5)
+    with m1: st.metric("Total", len(df))
+    with m2: st.metric("Borradores", len(df[df['estado']=='BORRADOR']))
+    with m3: st.metric("Revisados", len(df[df['estado']=='REVISADO']))
+    with m4: st.metric("Aprobados", len(df[df['estado']=='APROBADO']))
+    with m5: st.metric("Devueltos", len(df[df['estado']=='DEVUELTO']))
 
     st.divider()
 
-    col_mapa, col_graf = st.columns([3, 2])
+    col_mapa, col_der = st.columns([3, 2])
 
     with col_mapa:
-        st.markdown("#### 🗺️ Mapa de registros")
-        df_geo = df.dropna(subset=['latitud', 'longitud'])
+        st.markdown("#### 🗺️ Mapa de frentes")
+        df_geo = df.dropna(subset=['latitud','longitud']).copy()
 
         if not df_geo.empty:
-            # Color por estado
+            df_geo['lat'] = pd.to_numeric(df_geo['latitud'],  errors='coerce')
+            df_geo['lon'] = pd.to_numeric(df_geo['longitud'], errors='coerce')
+            df_geo = df_geo.dropna(subset=['lat','lon'])
+
             color_map = {
                 'BORRADOR': '#a0aec0',
                 'REVISADO': '#68d391',
                 'APROBADO': '#63b3ed',
                 'DEVUELTO': '#fc8181'
             }
-            df_geo = df_geo.copy()
-            df_geo['color'] = df_geo['estado'].map(color_map).fillna('#a0aec0')
-            df_geo['lat']   = pd.to_numeric(df_geo['latitud'],  errors='coerce')
-            df_geo['lon']   = pd.to_numeric(df_geo['longitud'], errors='coerce')
-            df_geo          = df_geo.dropna(subset=['lat', 'lon'])
-
             fig = px.scatter_mapbox(
                 df_geo,
                 lat='lat', lon='lon',
                 color='estado',
                 color_discrete_map=color_map,
-                hover_data=['folio', 'usuario_qfield', 'tipo_actividad', 'cantidad', 'unidad'],
                 hover_name='tramo_descripcion',
+                hover_data={
+                    'folio': True,
+                    'usuario_qfield': True,
+                    'tipo_actividad': True,
+                    'cantidad': True,
+                    'unidad': True,
+                    'lat': False,
+                    'lon': False
+                },
                 zoom=12,
-                height=420,
-                mapbox_style='carto-darkmatter'
+                height=440,
+                mapbox_style='open-street-map'
             )
-            fig.update_layout(
-                margin=dict(l=0, r=0, t=0, b=0),
-                legend=dict(bgcolor='rgba(0,0,0,0)', font_color='white')
-            )
+            fig.update_layout(margin=dict(l=0,r=0,t=0,b=0))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sin coordenadas GPS en los registros del período")
 
-    with col_graf:
-        st.markdown("#### 📈 Avance por actividad")
-        if 'tipo_actividad' in df.columns:
-            df_act = df.groupby(['tipo_actividad', 'estado']).size().reset_index(name='count')
-            if not df_act.empty:
-                fig2 = px.bar(
-                    df_act,
-                    x='count', y='tipo_actividad',
-                    color='estado',
-                    orientation='h',
-                    color_discrete_map={
-                        'BORRADOR': '#a0aec0',
-                        'REVISADO': '#68d391',
-                        'APROBADO': '#63b3ed',
-                        'DEVUELTO': '#fc8181'
-                    },
-                    height=200
-                )
-                fig2.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='white',
-                    margin=dict(l=0, r=0, t=0, b=0),
-                    legend=dict(bgcolor='rgba(0,0,0,0)')
-                )
-                st.plotly_chart(fig2, use_container_width=True)
+    with col_der:
+        st.markdown("#### 📈 Por actividad")
+        if 'tipo_actividad' in df.columns and not df['tipo_actividad'].isna().all():
+            df_act = df.groupby(['tipo_actividad','estado']).size().reset_index(name='n')
+            fig2 = px.bar(
+                df_act, x='n', y='tipo_actividad', color='estado',
+                orientation='h', height=220,
+                color_discrete_map={
+                    'BORRADOR':'#a0aec0','REVISADO':'#68d391',
+                    'APROBADO':'#63b3ed','DEVUELTO':'#fc8181'
+                }
+            )
+            fig2.update_layout(
+                margin=dict(l=0,r=0,t=0,b=0),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)'
+            )
+            st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown("#### 📋 Últimos registros")
-        cols_show = ['folio', 'usuario_qfield', 'tipo_actividad', 'cantidad', 'unidad', 'estado']
-        cols_show = [c for c in cols_show if c in df.columns]
+        cols = ['folio','usuario_qfield','tipo_actividad','cantidad','unidad','estado']
+        cols = [c for c in cols if c in df.columns]
         st.dataframe(
-            df[cols_show].head(8),
+            df[cols].head(10),
             hide_index=True,
-            use_container_width=True
+            use_container_width=True,
+            column_config={
+                'estado': st.column_config.TextColumn('Estado'),
+                'cantidad': st.column_config.NumberColumn('Cantidad', format="%.2f"),
+            }
         )
 
 
@@ -271,124 +246,155 @@ def panel_dashboard(perfil):
 def panel_revision(perfil):
     rol = perfil['rol']
 
-    if rol == 'residente':
-        st.markdown("### ✏️ Revisión de cantidades · Residente")
-        estados_visibles = ['BORRADOR', 'DEVUELTO']
-        label_accion     = "Aprobar como revisado"
-        estado_aprueba   = "REVISADO"
-        campo_cant       = "cant_residente"
-        campo_estado     = "estado_residente"
-        campo_aprobado   = "aprobado_residente"
-        campo_fecha      = "fecha_residente"
-        campo_obs        = "obs_residente"
+    if rol in ('supervisor',):
+        st.markdown("### 👁️ Vista de registros · Solo lectura")
+        df = get_registros_cached()
+        if df.empty:
+            st.info("Sin registros")
+            return
+        cols = ['folio','usuario_qfield','id_tramo','tipo_actividad',
+                'cantidad','unidad','estado','fecha_creacion']
+        cols = [c for c in cols if c in df.columns]
+        st.dataframe(df[cols], hide_index=True, use_container_width=True)
+        return
 
-    elif rol == 'interventor':
-        st.markdown("### ✅ Aprobación de cantidades · Interventor")
-        estados_visibles = ['REVISADO']
-        label_accion     = "Aprobar definitivamente"
-        estado_aprueba   = "APROBADO"
-        campo_cant       = "cant_interventor"
-        campo_estado     = "estado_interventor"
-        campo_aprobado   = "aprobado_interventor"
-        campo_fecha      = "fecha_interventor"
-        campo_obs        = "obs_interventor"
+    if rol == 'residente':
+        st.markdown("### ✏️ Revisión de cantidades")
+        estados_vis  = ['BORRADOR','DEVUELTO']
+        estado_apr   = 'REVISADO'
+        campo_cant   = 'cant_residente'
+        campo_estado = 'estado_residente'
+        campo_apr    = 'aprobado_residente'
+        campo_fecha  = 'fecha_residente'
+        campo_obs    = 'obs_residente'
+
+    elif rol in ('interventor','admin'):
+        st.markdown("### ✅ Aprobación de cantidades")
+        estados_vis  = ['REVISADO']
+        estado_apr   = 'APROBADO'
+        campo_cant   = 'cant_interventor'
+        campo_estado = 'estado_interventor'
+        campo_apr    = 'aprobado_interventor'
+        campo_fecha  = 'fecha_interventor'
+        campo_obs    = 'obs_interventor'
     else:
-        st.info("Solo residentes e interventores pueden validar cantidades")
+        st.warning("Sin permisos para esta sección")
         return
 
     # Filtros
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        fecha_ini = st.date_input("Desde", value=date.today() - timedelta(days=15))
-    with col2:
-        fecha_fin = st.date_input("Hasta", value=date.today())
-    with col3:
-        buscar = st.text_input("Buscar folio o actividad")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        fi = st.date_input("Desde", value=date.today()-timedelta(days=15))
+    with c2:
+        ff = st.date_input("Hasta", value=date.today())
+    with c3:
+        buscar = st.text_input("🔍 Buscar folio o actividad")
 
-    df = get_registros({'estados': estados_visibles, 'fecha_ini': fecha_ini, 'fecha_fin': fecha_fin})
+    df = get_registros_cached(
+        estados=estados_vis,
+        fecha_ini=fi.isoformat(),
+        fecha_fin=ff.isoformat()
+    )
 
-    if buscar:
+    if buscar and not df.empty:
         mask = (
-            df['folio'].str.contains(buscar, case=False, na=False) |
-            df['tipo_actividad'].str.contains(buscar, case=False, na=False)
+            df.get('folio','').astype(str).str.contains(buscar, case=False, na=False) |
+            df.get('tipo_actividad','').astype(str).str.contains(buscar, case=False, na=False)
         )
         df = df[mask]
 
     if df.empty:
-        st.success(f"✅ No hay registros pendientes de {'revisión' if rol == 'residente' else 'aprobación'}")
+        st.success("✅ No hay registros pendientes")
         return
 
     st.markdown(f"**{len(df)} registro(s) pendiente(s)**")
     st.divider()
 
     for _, reg in df.iterrows():
-        with st.expander(
-            f"📋 {reg.get('folio','—')}  ·  {reg.get('tipo_actividad','—')}  ·  "
-            f"{reg.get('tramo_descripcion', reg.get('id_tramo','—'))}",
-            expanded=False
-        ):
-            col_info, col_accion = st.columns([2, 1])
+        titulo = (
+            f"{color_estado(reg.get('estado',''))} "
+            f"**{reg.get('folio','—')}** · "
+            f"{reg.get('tipo_actividad','—')} · "
+            f"{reg.get('tramo_descripcion', reg.get('id_tramo','—'))}"
+        )
+        with st.expander(titulo, expanded=False):
+            ci, ca = st.columns([2,1])
 
-            with col_info:
-                c1, c2, c3 = st.columns(3)
-                with c1:
+            with ci:
+                a, b, c = st.columns(3)
+                with a:
                     st.markdown(f"**Inspector:** {reg.get('usuario_qfield','—')}")
                     st.markdown(f"**Tramo:** {reg.get('id_tramo','—')}")
                     st.markdown(f"**CIV:** {reg.get('civ','—')}")
-                with c2:
+                with b:
                     st.markdown(f"**Ítem:** {reg.get('item_pago','—')}")
-                    st.markdown(f"**Descripción:** {reg.get('item_descripcion','—')}")
+                    st.markdown(f"**Unidad:** {reg.get('unidad','—')}")
                     st.markdown(f"**Fecha:** {str(reg.get('fecha_inicio','—'))[:10]}")
-                with c3:
-                    cant_orig = safe_float(reg.get('cantidad')) or 0
-                    st.metric("Cantidad reportada", f"{cant_orig} {reg.get('unidad','')}")
-                    st.markdown(f"**Observación inspector:** {reg.get('descripcion','—')}")
+                with c:
+                    cant = safe_float(reg.get('cantidad')) or 0
+                    st.metric("Cantidad inspector", f"{cant:.2f} {reg.get('unidad','')}")
+                    if reg.get('cant_residente'):
+                        st.metric("Cant. residente", f"{safe_float(reg.get('cant_residente')):.2f}")
+
+                # Observación del inspector
+                if reg.get('descripcion'):
+                    st.info(f"📝 {reg.get('descripcion')}")
+
+                # Devolución previa
+                if reg.get('obs_residente') and rol == 'interventor':
+                    st.warning(f"Obs. residente: {reg.get('obs_residente')}")
 
                 # Fotos
-                fotos = [reg.get(f'foto_{i}_url') for i in range(1, 6) if reg.get(f'foto_{i}_url')]
+                fotos = [reg.get(f'foto_{i}_url') for i in range(1,6)
+                         if reg.get(f'foto_{i}_url')]
                 if fotos:
-                    st.markdown("**Registro fotográfico:**")
-                    cols_foto = st.columns(min(len(fotos), 3))
+                    st.markdown("**📷 Registro fotográfico:**")
+                    fcols = st.columns(min(len(fotos), 3))
                     for i, url in enumerate(fotos[:3]):
-                        with cols_foto[i]:
+                        with fcols[i]:
                             st.image(url, use_column_width=True)
 
-            with col_accion:
+            with ca:
                 st.markdown("**Validación:**")
-                key_cant = f"cant_{reg['id']}"
-                key_obs  = f"obs_{reg['id']}"
-                key_dev  = f"dev_{reg['id']}"
-                key_apr  = f"apr_{reg['id']}"
+                cant_def = safe_float(reg.get(campo_cant)) or safe_float(reg.get('cantidad')) or 0.0
 
                 cant_val = st.number_input(
                     "Cantidad validada",
-                    value=float(safe_float(reg.get(campo_cant)) or safe_float(reg.get('cantidad')) or 0),
+                    value=float(cant_def),
                     step=0.01,
-                    key=key_cant
+                    key=f"cant_{reg['id']}"
                 )
-                obs_val = st.text_area("Observación", key=key_obs, height=80)
+                obs_val = st.text_area(
+                    "Observación",
+                    key=f"obs_{reg['id']}",
+                    height=80,
+                    placeholder="Opcional para aprobar, obligatoria para devolver"
+                )
 
-                col_btn1, col_btn2 = st.columns(2)
-
-                with col_btn1:
-                    if st.button("✅ Aprobar", key=key_apr, use_container_width=True, type="primary"):
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✅ Aprobar", key=f"apr_{reg['id']}",
+                                 use_container_width=True, type="primary"):
                         sb = get_supabase()
-                        sb.table('registros').update({
-                            'estado':        estado_aprueba,
-                            campo_cant:      cant_val,
-                            campo_estado:    'aprobado',
-                            campo_aprobado:  perfil['id'],
-                            campo_fecha:     datetime.now().isoformat(),
-                            campo_obs:       obs_val or None,
-                        }).eq('id', reg['id']).execute()
+                        update = {
+                            'estado':      estado_apr,
+                            campo_cant:    cant_val,
+                            campo_estado:  'aprobado',
+                            campo_apr:     perfil['id'],
+                            campo_fecha:   datetime.now().isoformat(),
+                        }
+                        if obs_val:
+                            update[campo_obs] = obs_val
+                        sb.table('registros').update(update).eq('id', reg['id']).execute()
                         st.success("✅ Aprobado")
                         st.cache_data.clear()
                         st.rerun()
 
-                with col_btn2:
-                    if st.button("↩️ Devolver", key=key_dev, use_container_width=True):
+                with b2:
+                    if st.button("↩️ Devolver", key=f"dev_{reg['id']}",
+                                 use_container_width=True):
                         if not obs_val:
-                            st.error("Escribe una observación antes de devolver")
+                            st.error("Escribe una observación")
                         else:
                             sb = get_supabase()
                             sb.table('registros').update({
@@ -397,110 +403,97 @@ def panel_revision(perfil):
                                 campo_obs:    obs_val,
                                 campo_fecha:  datetime.now().isoformat(),
                             }).eq('id', reg['id']).execute()
-                            st.warning("↩️ Devuelto al inspector")
+                            st.warning("↩️ Devuelto")
                             st.cache_data.clear()
                             st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════
-# PANEL 3 — CIERRE SEMANAL Y EXPORTACIÓN
+# PANEL 3 — CIERRE SEMANAL
 # ══════════════════════════════════════════════════════════════
 
 def panel_cierre(perfil):
     rol = perfil['rol']
     st.markdown("### 📄 Cierre semanal y exportación")
 
-    # Selector de semana
-    col1, col2 = st.columns(2)
-    with col1:
-        hoy      = date.today()
-        lunes    = hoy - timedelta(days=hoy.weekday())
-        semana_i = st.date_input("Inicio de semana", value=lunes)
-    with col2:
-        semana_f = st.date_input("Fin de semana", value=lunes + timedelta(days=6))
+    c1, c2 = st.columns(2)
+    with c1:
+        hoy   = date.today()
+        lunes = hoy - timedelta(days=hoy.weekday())
+        fi    = st.date_input("Inicio de semana", value=lunes)
+    with c2:
+        ff    = st.date_input("Fin de semana", value=lunes+timedelta(days=6))
 
-    df = get_registros({'fecha_ini': semana_i, 'fecha_fin': semana_f})
+    df = get_registros_cached(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
     if df.empty:
         st.info("No hay registros para esta semana")
         return
 
-    # Resumen de cantidades
-    st.markdown(f"#### Semana {semana_i.strftime('%d/%m')} – {semana_f.strftime('%d/%m/%Y')}")
+    st.markdown(f"#### Semana {fi.strftime('%d/%m')} – {ff.strftime('%d/%m/%Y')}")
 
-    col_res, col_est = st.columns([3, 1])
+    # Resumen de estados
+    col_tbl, col_stats = st.columns([3,1])
 
-    with col_res:
-        # Tabla resumen por ítem
-        cols_tabla = ['folio', 'id_tramo', 'tipo_actividad', 'item_pago',
-                      'item_descripcion', 'unidad', 'cantidad',
-                      'cant_residente', 'cant_interventor', 'estado']
-        cols_tabla = [c for c in cols_tabla if c in df.columns]
-
+    with col_tbl:
+        cols = ['folio','id_tramo','tipo_actividad','item_pago','item_descripcion',
+                'unidad','cantidad','cant_residente','cant_interventor','estado']
+        cols = [c for c in cols if c in df.columns]
         st.dataframe(
-            df[cols_tabla],
+            df[cols],
             hide_index=True,
             use_container_width=True,
             column_config={
-                'estado': st.column_config.TextColumn('Estado'),
-                'cantidad': st.column_config.NumberColumn('Cant. inspector', format="%.2f"),
-                'cant_residente': st.column_config.NumberColumn('Cant. residente', format="%.2f"),
-                'cant_interventor': st.column_config.NumberColumn('Cant. interventor', format="%.2f"),
+                'cantidad':         st.column_config.NumberColumn('Cant. inspector',  format="%.2f"),
+                'cant_residente':   st.column_config.NumberColumn('Cant. residente',  format="%.2f"),
+                'cant_interventor': st.column_config.NumberColumn('Cant. interventor',format="%.2f"),
             }
         )
 
-    with col_est:
-        total       = len(df)
-        aprobados   = len(df[df['estado'] == 'APROBADO'])
-        revisados   = len(df[df['estado'] == 'REVISADO'])
-        pendientes  = len(df[df['estado'].isin(['BORRADOR', 'DEVUELTO'])])
+    with col_stats:
+        total      = len(df)
+        aprobados  = len(df[df['estado']=='APROBADO'])
+        revisados  = len(df[df['estado']=='REVISADO'])
+        pendientes = len(df[df['estado'].isin(['BORRADOR','DEVUELTO'])])
+        pct        = round(aprobados/total*100) if total > 0 else 0
 
-        st.metric("Total", total)
-        st.metric("Aprobados", aprobados)
-        st.metric("Revisados", revisados)
-        st.metric("Pendientes", pendientes)
-
-        pct = round(aprobados / total * 100) if total > 0 else 0
-        st.progress(pct / 100, text=f"{pct}% aprobado")
+        st.metric("Total registros",  total)
+        st.metric("Aprobados",        aprobados)
+        st.metric("Revisados",        revisados)
+        st.metric("Pendientes",       pendientes)
+        st.progress(pct/100, text=f"{pct}% aprobado")
 
     st.divider()
 
-    # Exportar a Excel
-    col_xl, col_pdf, col_cierre = st.columns(3)
+    col_xl, col_cierre = st.columns(2)
 
     with col_xl:
-        if st.button("📊 Exportar Excel", use_container_width=True):
-            excel_buf = df[cols_tabla].to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="⬇️ Descargar CSV",
-                data=excel_buf,
-                file_name=f"BDO_IDU1556_{semana_i.strftime('%Y%m%d')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-
-    with col_pdf:
-        if st.button("📄 Generar bitácora PDF", use_container_width=True):
-            st.info("PDF en desarrollo — próxima versión")
+        csv = df[cols].to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📊 Descargar CSV",
+            data=csv,
+            file_name=f"BDO_IDU1556_{fi.strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
 
     with col_cierre:
-        if rol == 'interventor':
-            aprobados_semana = df[df['estado'] == 'APROBADO']
-            if len(aprobados_semana) == 0:
+        if rol in ('interventor','admin'):
+            df_apr = df[df['estado']=='APROBADO']
+            if df_apr.empty:
                 st.warning("No hay registros aprobados para cerrar")
             else:
                 if st.button(
-                    f"✅ Cerrar semana ({len(aprobados_semana)} reg.)",
+                    f"✅ Cerrar semana ({len(df_apr)} registros aprobados)",
                     use_container_width=True,
                     type="primary"
                 ):
-                    sb = get_supabase()
-                    # Crea el cierre semanal
+                    sb     = get_supabase()
                     cierre = sb.table('cierres_semanales').insert({
                         'contrato_id':         'IDU-1556-2025',
-                        'semana_inicio':        semana_i.isoformat(),
-                        'semana_fin':           semana_f.isoformat(),
-                        'total_registros':      len(aprobados_semana),
+                        'semana_inicio':        fi.isoformat(),
+                        'semana_fin':           ff.isoformat(),
+                        'total_registros':      len(df_apr),
                         'estado':              'APROBADO',
                         'aprobado_interventor': perfil['id'],
                         'fecha_int':           datetime.now().isoformat(),
@@ -508,48 +501,58 @@ def panel_cierre(perfil):
 
                     if cierre.data:
                         cierre_id = cierre.data[0]['id']
-                        # Vincula registros al cierre
-                        links = [{'cierre_id': cierre_id, 'registro_id': r} 
-                                 for r in aprobados_semana['id'].tolist()]
+                        links = [{'cierre_id': cierre_id, 'registro_id': r}
+                                 for r in df_apr['id'].tolist()]
                         sb.table('cierre_registros').insert(links).execute()
-                        st.success(f"✅ Semana cerrada — {len(aprobados_semana)} registros")
+                        st.success(f"✅ Semana cerrada — {len(df_apr)} registros")
                         st.cache_data.clear()
         else:
             st.info("Solo el interventor puede cerrar la semana")
 
 
 # ══════════════════════════════════════════════════════════════
-# SIDEBAR Y NAVEGACIÓN
+# SIDEBAR
 # ══════════════════════════════════════════════════════════════
 
 def sidebar(perfil):
     with st.sidebar:
-        st.markdown(f"### 🏗️ BDO IDU-1556-2025")
+        st.markdown("### 🏗️ BDO IDU-1556-2025")
         st.markdown(f"**{perfil['nombre']}**")
         st.markdown(f"*{perfil['empresa']}*")
-        st.markdown(f"`{perfil['rol'].upper()}`")
+
+        rol_labels = {
+            'admin':      '⚙️ Administrador',
+            'residente':  '✏️ Residente de obra',
+            'interventor':'✅ Interventor',
+            'supervisor': '👁️ Supervisor IDU',
+            'inspector':  '📋 Inspector',
+        }
+        st.markdown(f"`{rol_labels.get(perfil['rol'], perfil['rol'])}`")
         st.divider()
 
         rol = perfil['rol']
-
         opciones = ["📊 Dashboard"]
-        if rol in ('residente', 'interventor'):
+
+        if rol in ('residente','interventor','admin','supervisor'):
             opciones.append("✏️ Revisión de cantidades")
-        if rol in ('interventor', 'residente'):
+        if rol in ('interventor','admin'):
             opciones.append("📄 Cierre semanal")
 
-        panel = st.radio("Navegación", opciones, label_visibility="collapsed")
+        panel = st.radio("", opciones, label_visibility="collapsed")
 
         st.divider()
 
-        # Métricas rápidas en sidebar
-        df_quick = get_registros()
-        if not df_quick.empty:
+        # Resumen rápido
+        df_q = get_registros_cached()
+        if not df_q.empty:
             st.markdown("**Resumen general**")
-            for estado, color in [('BORRADOR','🔵'),('REVISADO','🟢'),('APROBADO','✅'),('DEVUELTO','🔴')]:
-                n = len(df_quick[df_quick['estado'] == estado])
+            for estado, icon in [
+                ('BORRADOR','🔵'),('REVISADO','🟢'),
+                ('APROBADO','✅'),('DEVUELTO','🔴')
+            ]:
+                n = len(df_q[df_q['estado']==estado])
                 if n > 0:
-                    st.markdown(f"{color} {estado}: **{n}**")
+                    st.markdown(f"{icon} {estado}: **{n}**")
 
         st.divider()
         if st.button("🚪 Cerrar sesión", use_container_width=True):
@@ -570,11 +573,11 @@ def main():
     perfil = st.session_state['perfil']
     panel  = sidebar(perfil)
 
-    if "Dashboard" in panel:
-        panel_dashboard(perfil)
+    if "Dashboard"  in panel:
+        panel_dashboard()
     elif "Revisión" in panel:
         panel_revision(perfil)
-    elif "Cierre" in panel:
+    elif "Cierre"   in panel:
         panel_cierre(perfil)
 
 
