@@ -1,4 +1,4 @@
-""" cambio
+""" 
 sync_qfield.py
 BDO IDU-1556-2025 · Sincronización QFieldCloud → Supabase
 Alimenta todas las tablas definidas en 001_TABLAS.sql
