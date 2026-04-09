@@ -1,4 +1,4 @@
-"""
+""" cambio
 sync_qfield.py
 BDO IDU-1556-2025 · Sincronización QFieldCloud → Supabase
 Alimenta todas las tablas definidas en 001_TABLAS.sql
@@ -143,7 +143,7 @@ def read_layer(tmp_path, layer_name=None):
         else:
             return None
 
-    gdf.columns = [c.strip() for c in gdf.columns]
+    gdf.columns = [c.strip().lower() for c in gdf.columns]
 
     if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
         print(f"  Reproyectando EPSG:{gdf.crs.to_epsg()} → WGS84...")
