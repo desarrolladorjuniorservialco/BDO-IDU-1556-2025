@@ -1,4 +1,4 @@
-"""
+""" cambio
 sync_qfield.py
 BDO IDU-1556-2025 · Sincronización QFieldCloud → Supabase
 Alimenta todas las tablas definidas en 001_TABLAS.sql
@@ -129,10 +129,14 @@ def download_gpkg(token, project_id, gpkg_file, tmp_path):
 
 
 def read_layer(tmp_path, layer_name=None):
+<<<<<<< HEAD
     """Lee una capa de un GeoPackage, con fallback a la primera capa, y normaliza a WGS84.
     Los nombres de columna se convierten a minúsculas y se eliminan espacios extremos
     para garantizar compatibilidad independientemente del caso usado en el GeoPackage.
     """
+=======
+    """Lee una capa de un GeoPackage, con fallback a la primera capa, y normaliza a WGS84."""
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
     try:
         gdf = gpd.read_file(tmp_path, layer=layer_name) if layer_name else gpd.read_file(tmp_path)
     except Exception as e:
@@ -225,6 +229,7 @@ def sync_localidades(supabase, token, project_id):
         return
     count = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         # Columnas normalizadas: loccodigo, locnombre, locaadmini, locarea, loccódigo…
         # Se intenta con los nombres más probables tras la normalización a minúsculas
         data = {
@@ -232,6 +237,13 @@ def sync_localidades(supabase, token, project_id):
             'loc_nombre': safe(row.get('loc_nombre') or row.get('locnombre') or row.get('field2')),
             'loc_admin':  safe(row.get('loc_admin')  or row.get('locaadmini')),
             'loc_area':   safe_num(row.get('loc_area') or row.get('locarea')),
+=======
+        data = {
+            'loc_codigo': safe(row.get('loc_codigo') or row.get('Field1')),
+            'loc_nombre': safe(row.get('loc_nombre') or row.get('Field2')),
+            'loc_admin':  safe(row.get('loc_admin')),
+            'loc_area':   safe_num(row.get('loc_area')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('loc_codigo') and data.get('loc_nombre'):
@@ -249,10 +261,16 @@ def sync_tramos_bd(supabase, token, project_id):
         return
     count = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         # Columnas normalizadas a minúsculas: id_tramo, tramo_descripcion, via_principal…
         data = {
             'id_tramo':          safe(row.get('id_tramo')          or row.get('field1')),
             'tramo_descripcion': safe(row.get('tramo_descripcion') or row.get('field2')),
+=======
+        data = {
+            'id_tramo':          safe(row.get('id_tramo') or row.get('Field1')),
+            'tramo_descripcion': safe(row.get('tramo_descripcion') or row.get('Field2')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'via_principal':     safe(row.get('via_principal')),
             'via_desde':         safe(row.get('via_desde')),
             'via_hasta':         safe(row.get('via_hasta')),
@@ -286,7 +304,11 @@ def sync_presupuesto_bd(supabase, token, project_id):
             'tipo_actividad': safe(row.get('tipo_actividad')),
             'capitulo_num':   safe(row.get('capitulo_num')),
             'capitulo':       safe(row.get('capitulo')),
+<<<<<<< HEAD
             'codigo_idu':     safe(row.get('codigo_idu') or row.get('field1')),
+=======
+            'codigo_idu':     safe(row.get('codigo_idu') or row.get('Field1')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'item_pago':      safe(row.get('item_pago')),
             'descripcion':    safe(row.get('descripcion')),
             'unidad':         safe(row.get('unidad')),
@@ -308,6 +330,7 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
         return
     count = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         # 'Precio Unitario' → normalizado como 'precio unitario' (con espacio)
         data = {
             'capitulo_num':    safe(row.get('capitulo_num')   or row.get('capitulo')),
@@ -319,6 +342,18 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
             'unidad':          safe(row.get('unidad')),
             'cantidad_ppto':   safe_num(row.get('cantidad_ppto')),
             'precio_unitario': safe_num(row.get('precio_unitario') or row.get('precio unitario')),
+=======
+        data = {
+            'capitulo_num':    safe(row.get('capitulo_num') or row.get('Capitulo')),
+            'capitulo':        safe(row.get('capitulo')),
+            'componente':      safe(row.get('componente') or row.get('Field2')),
+            'tipo_actividad':  safe(row.get('tipo_actividad') or row.get('Field3')),
+            'codigo_idu':      safe(row.get('codigo_idu') or row.get('Field1')),
+            'descripcion':     safe(row.get('descripcion')),
+            'unidad':          safe(row.get('unidad')),
+            'cantidad_ppto':   safe_num(row.get('cantidad_ppto')),
+            'precio_unitario': safe_num(row.get('precio_unitario')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'item_pago':       safe(row.get('item_pago')),
         }
         data = {k: v for k, v in data.items() if v is not None}
@@ -362,7 +397,11 @@ def sync_registros_cantidades(supabase, token, project_id):
 
         data = {
             'folio':              str(folio),
+<<<<<<< HEAD
             'ID_Unico':           safe(row.get('id_unico')),
+=======
+            'ID_Unico':           safe(row.get('ID_Unico')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'contrato_id':        CONTRATO_ID,
             'usuario_qfield':     safe(row.get('usuario')),
             'tipo_infra':         safe(row.get('tipo_infra')),
@@ -395,9 +434,14 @@ def sync_registros_cantidades(supabase, token, project_id):
             'documento_adj_path': safe(row.get('documento_adj')),
             'documento_adj_url':  foto_urls.get('documento_adj'),
             'observaciones':      safe(row.get('observaciones')),
+<<<<<<< HEAD
             'CodigoInterventor':  safe(row.get('codigointerventor')),
             # 'Acompañamiento Interventor' → normalizado: 'acompañamiento interventor'
             'AcompañamientoInterventor': safe(row.get('acompañamiento interventor')),
+=======
+            'CodigoInterventor':  safe(row.get('CodigoInterventor')),
+            'AcompañamientoInterventor': safe(row.get('AcompañamientoInterventor')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'estado':             'BORRADOR',
             'qfield_sync_id':     safe(row.get('fid')),
         }
@@ -423,7 +467,11 @@ def sync_registros_componentes(supabase, token, project_id):
 
     count = omitidos = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         folio = safe(row.get('folio'))
+=======
+        folio = safe(row.get('Folio') or row.get('folio'))
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         if not folio:
             omitidos += 1
             continue
@@ -432,6 +480,7 @@ def sync_registros_componentes(supabase, token, project_id):
 
         data = {
             'Folio':              str(folio),
+<<<<<<< HEAD
             'ID_Unico':           safe(row.get('id_unico')),
             'contrato_id':        CONTRATO_ID,
             'usuario_qfield':     safe(row.get('usuario')),
@@ -445,6 +494,21 @@ def sync_registros_componentes(supabase, token, project_id):
             'longitud':           lon,
             'Fecha':              safe(row.get('fecha')),
             'Fecha_Reporte':      safe(row.get('fecha_reporte')),
+=======
+            'ID_Unico':           safe(row.get('ID_Unico')),
+            'contrato_id':        CONTRATO_ID,
+            'usuario_qfield':     safe(row.get('usuario')),
+            'id_tramo':           safe(row.get('id_tramo')),
+            'Tramo':              safe(row.get('Tramo')),
+            'CIV':                safe(row.get('CIV') or row.get('civ')),
+            'codigo_elemento':    safe(row.get('codigo_elemento')),
+            'tipo_infra':         safe(row.get('tipo_infra')),
+            'Componente':         safe(row.get('Componente')),
+            'latitud':            lat,
+            'longitud':           lon,
+            'Fecha':              safe(row.get('Fecha')),
+            'Fecha_Reporte':      safe(row.get('Fecha_Reporte')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'tipo_actividad':     safe(row.get('tipo_actividad')),
             'capitulo_num':       safe(row.get('capitulo_num')),
             'capitulo':           safe(row.get('capitulo')),
@@ -453,10 +517,17 @@ def sync_registros_componentes(supabase, token, project_id):
             'cantidad':           safe_num(row.get('cantidad')),
             'unidad':             safe(row.get('unidad')),
             'precio_unitario':    safe_num(row.get('precio_unitario')),
+<<<<<<< HEAD
             'Observaciones':      safe(row.get('observaciones')),
             'Profesional':        safe(row.get('profesional')),
             'CodigoInterventor':  safe(row.get('codigointerventor')),
             'AcompañamientoInterventor': safe(row.get('acompañamiento interventor')),
+=======
+            'Observaciones':      safe(row.get('Observaciones') or row.get('observaciones')),
+            'Profesional':        safe(row.get('Profesional')),
+            'CodigoInterventor':  safe(row.get('CodigoInterventor')),
+            'AcompañamientoInterventor': safe(row.get('AcompañamientoInterventor')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'estado':             'BORRADOR',
             'qfield_sync_id':     safe(row.get('fid')),
         }
@@ -481,7 +552,11 @@ def sync_registros_reporte_diario(supabase, token, project_id):
 
     count = omitidos = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         folio = safe(row.get('folio'))
+=======
+        folio = safe(row.get('Folio') or row.get('folio'))
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         if not folio:
             omitidos += 1
             continue
@@ -490,14 +565,24 @@ def sync_registros_reporte_diario(supabase, token, project_id):
 
         data = {
             'Folio':          str(folio),
+<<<<<<< HEAD
             'ID_Unico':       safe(row.get('id_unico')),
+=======
+            'ID_Unico':       safe(row.get('ID_Unico')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'contrato_id':    CONTRATO_ID,
             'usuario_qfield': safe(row.get('usuario')),
             'latitud':        lat,
             'longitud':       lon,
+<<<<<<< HEAD
             'Fecha':          safe(row.get('fecha')),
             'Fecha_Reporte':  safe(row.get('fecha_reporte')),
             'Observaciones':  safe(row.get('observaciones')),
+=======
+            'Fecha':          safe(row.get('Fecha')),
+            'Fecha_Reporte':  safe(row.get('Fecha_Reporte')),
+            'Observaciones':  safe(row.get('Observaciones') or row.get('observaciones')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'estado':         'BORRADOR',
             'qfield_sync_id': safe(row.get('fid')),
         }
@@ -522,7 +607,11 @@ def sync_formulario_pmt(supabase, token, project_id):
 
     count = omitidos = 0
     for _, row in gdf.iterrows():
+<<<<<<< HEAD
         folio = safe(row.get('folio'))
+=======
+        folio = safe(row.get('Folio') or row.get('folio'))
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         if not folio:
             omitidos += 1
             continue
@@ -533,7 +622,11 @@ def sync_formulario_pmt(supabase, token, project_id):
             'Folio':           str(folio),
             'contrato_id':     CONTRATO_ID,
             'descripcion':     safe(row.get('descripcion')),
+<<<<<<< HEAD
             'CIV':             safe(row.get('civ')),
+=======
+            'CIV':             safe(row.get('CIV') or row.get('civ')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'inicio_vigencia': safe(row.get('inicio_vigencia')),
             'fin_vigencia':    safe(row.get('fin_vigencia')),
             'usuario':         safe(row.get('usuario')),
@@ -567,11 +660,19 @@ def sync_bd_personal(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+<<<<<<< HEAD
             'Folio':             safe(row.get('folio')),
             'Inspectores':       safe_num(row.get('inspectores')),
             'PersonalOperativo': safe_num(row.get('personaloperativo')),
             'PersonalBOAL':      safe_num(row.get('personalboal')),
             'PersonalTransito':  safe_num(row.get('personaltransito')),
+=======
+            'Folio':             safe(row.get('Folio')),
+            'Inspectores':       safe_num(row.get('Inspectores')),
+            'PersonalOperativo': safe_num(row.get('PersonalOperativo')),
+            'PersonalBOAL':      safe_num(row.get('PersonalBOAL')),
+            'PersonalTransito':  safe_num(row.get('PersonalTransito')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'Longitud':          lon,
             'Latitud':           lat,
         }
@@ -598,10 +699,17 @@ def sync_bd_climatica(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+<<<<<<< HEAD
             'Folio':         safe(row.get('folio')),
             'EstadoClima':   safe(row.get('estadoclima')),
             'Hora':          safe(row.get('hora')),
             'Observaciones': safe(row.get('observaciones')),
+=======
+            'Folio':         safe(row.get('Folio')),
+            'EstadoClima':   safe(row.get('EstadoClima')),
+            'Hora':          safe(row.get('Hora')),
+            'Observaciones': safe(row.get('Observaciones')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'Longitud':      lon,
             'Latitud':       lat,
         }
@@ -628,6 +736,7 @@ def sync_bd_maquinaria(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+<<<<<<< HEAD
             'Folio':                safe(row.get('folio')),
             'Operarios':            safe_num(row.get('operarios')),
             'Volquetas':            safe_num(row.get('volquetas')),
@@ -640,6 +749,20 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'ExtendedoraAsfalto':   safe_num(row.get('extendedoraasfalto')),
             'CompactadorNeumatico': safe_num(row.get('compactadorneumatico')),
             'Observaciones':        safe(row.get('observaciones')),
+=======
+            'Folio':                safe(row.get('Folio')),
+            'Operarios':            safe_num(row.get('Operarios')),
+            'Volquetas':            safe_num(row.get('Volquetas')),
+            'Vibrocompactador':     safe_num(row.get('Vibrocompactador')),
+            'EquiposEspeciales':    safe_num(row.get('EquiposEspeciales')),
+            'Minicargador':         safe_num(row.get('Minicargador')),
+            'Ruteadora':            safe_num(row.get('Ruteadora')),
+            'Compresor':            safe_num(row.get('Compresor')),
+            'Retrocargador':        safe_num(row.get('Retrocargador')),
+            'ExtendedoraAsfalto':   safe_num(row.get('ExtendedoraAsfalto')),
+            'CompactadorNeumatico': safe_num(row.get('CompactadorNeumatico')),
+            'Observaciones':        safe(row.get('Observaciones')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
             'Longitud':             lon,
             'Latitud':              lat,
         }
@@ -666,6 +789,7 @@ def sync_bd_sst(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+<<<<<<< HEAD
             'Folio':            safe(row.get('folio')),
             'Observaciones':    safe(row.get('observaciones')),
             'Longitud':         lon,
@@ -675,6 +799,17 @@ def sync_bd_sst(supabase, token, project_id):
             'PuntoHidratacion': safe_num(row.get('puntohidratacion')),
             'PuntoEcologico':   safe_num(row.get('puntoecologico')),
             'Extintor':         safe_num(row.get('extintor')),
+=======
+            'Folio':            safe(row.get('Folio')),
+            'Observaciones':    safe(row.get('Observaciones')),
+            'Longitud':         lon,
+            'Latitud':          lat,
+            'Botiquin':         safe_num(row.get('Botiquin')),
+            'KitAntiderrames':  safe_num(row.get('KitAntiderrames')),
+            'PuntoHidratacion': safe_num(row.get('PuntoHidratacion')),
+            'PuntoEcologico':   safe_num(row.get('PuntoEcologico')),
+            'Extintor':         safe_num(row.get('Extintor')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('Folio'):
@@ -704,11 +839,19 @@ def sync_rf_cantidades(supabase, token, project_id):
     rows = []
     for _, row in gdf.iterrows():
         data = {
+<<<<<<< HEAD
             'Folio':             safe(row.get('folio')),
             'ID_Unico':          safe(row.get('id_unico')),
             'Observacion':       safe(row.get('observacion')),
             'Nombre_Foto':       safe(row.get('nombre_foto')),
             'Ruta_Destino_Foto': safe(row.get('ruta_destino_foto')),
+=======
+            'Folio':             safe(row.get('Folio')),
+            'ID_Unico':          safe(row.get('ID_Unico')),
+            'Observacion':       safe(row.get('Observacion')),
+            'Nombre_Foto':       safe(row.get('Nombre_Foto')),
+            'Ruta_Destino_Foto': safe(row.get('Ruta_Destino_Foto')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('ID_Unico'):
@@ -732,10 +875,17 @@ def sync_rf_componentes(supabase, token, project_id):
     rows = []
     for _, row in gdf.iterrows():
         data = {
+<<<<<<< HEAD
             'Folio':         safe(row.get('folio')),
             'ID_Unico':      safe(row.get('id_unico')),
             'Observaciones': safe(row.get('observaciones')),
             'Foto':          safe(row.get('foto')),
+=======
+            'Folio':        safe(row.get('Folio')),
+            'ID_Unico':     safe(row.get('ID_Unico')),
+            'Observaciones': safe(row.get('Observaciones')),
+            'Foto':         safe(row.get('Foto')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('ID_Unico'):
@@ -759,10 +909,17 @@ def sync_rf_reporte_diario(supabase, token, project_id):
     rows = []
     for _, row in gdf.iterrows():
         data = {
+<<<<<<< HEAD
             'Folio':         safe(row.get('folio')),
             'ID_Unico':      safe(row.get('id_unico')),
             'Observaciones': safe(row.get('observaciones')),
             'Foto':          safe(row.get('foto')),
+=======
+            'Folio':        safe(row.get('Folio')),
+            'ID_Unico':     safe(row.get('ID_Unico')),
+            'Observaciones': safe(row.get('Observaciones')),
+            'Foto':         safe(row.get('Foto')),
+>>>>>>> cf8fecb4077731ea3e40d769ebb85809ead2b22e
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('ID_Unico'):
