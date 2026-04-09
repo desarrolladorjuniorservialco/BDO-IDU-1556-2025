@@ -240,16 +240,48 @@ def sync_localidades(supabase, token, project_id):
     print(f"  → {count} upserted")
 
 
+def sync_tramos_aux_infra(supabase, token, project_id):
+    """
+    Pre-pobla tramos_aux_infra con los valores únicos de 'infraestructura'
+    presentes en el GeoPackage de tramos, para satisfacer la FK antes de
+    insertar tramos_bd.
+    El GPKG ya fue descargado a /tmp/tramos_bd.gpkg por sync_tramos_bd,
+    pero como este helper se llama primero, descarga de nuevo si es necesario.
+    """
+    print("\n── tramos_aux_infra (valores únicos desde TramosIDU15562025BDTRAMOS.gpkg) ──")
+    tmp = '/tmp/tramos_bd.gpkg'
+    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    valores = set()
+    for _, row in gdf.iterrows():
+        v = safe(row.get('infraestructura'))
+        if v:
+            valores.add(v)
+
+    count = 0
+    for v in sorted(valores):
+        supabase.table('tramos_aux_infra').upsert(
+            {'infraestructura': v}, on_conflict='infraestructura'
+        ).execute()
+        count += 1
+    print(f"  → {count} valores upserted: {sorted(valores)}")
+
+
 def sync_tramos_bd(supabase, token, project_id):
     print("\n── tramos_bd (TramosIDU15562025BDTRAMOS.gpkg) ──")
-    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', '/tmp/tramos_bd.gpkg'):
+    # El archivo ya fue descargado por sync_tramos_aux_infra; se reutiliza.
+    tmp = '/tmp/tramos_bd.gpkg'
+    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
         return
-    gdf = read_layer('/tmp/tramos_bd.gpkg')
+    gdf = read_layer(tmp)
     if gdf is None or gdf.empty:
         return
     count = 0
     for _, row in gdf.iterrows():
-        # Columnas normalizadas a minúsculas: id_tramo, tramo_descripcion, via_principal…
         data = {
             'id_tramo':          safe(row.get('id_tramo')          or row.get('field1')),
             'tramo_descripcion': safe(row.get('tramo_descripcion') or row.get('field2')),
@@ -788,6 +820,7 @@ def main():
 
     # 1. Referencia geográfica (sin FKs a otras tablas del proyecto)
     sync_localidades(supabase, token, project_id)
+    sync_tramos_aux_infra(supabase, token, project_id)   # pobla FK antes de tramos_bd
     sync_tramos_bd(supabase, token, project_id)
 
     # 2. Presupuesto
