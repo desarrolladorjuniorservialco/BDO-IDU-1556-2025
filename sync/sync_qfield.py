@@ -5,13 +5,14 @@ Alimenta todas las tablas definidas en 001_TABLAS.sql
 desde los GeoPackages actualizados en QField Cloud.
 
 Orden de ejecución (respeta FKs):
-  1. Referencia geográfica  : localidades, tramos_bd
-  2. Presupuesto            : presupuesto_bd, presupuesto_componentes_bd
-  3. Formularios principales: registros_cantidades, registros_componentes,
-                              registros_reporteDiario, formulario_pmt
-  4. Tablas secundarias BD_ : BD_PersonalObra, BD_CondicionClimatica,
-                              BD_MaquinariaObra, BD_SST_Ambiental
-  5. Registros fotográficos : RF_Cantidades, RF_Componentes, RF_ReporteDiario
+  0. Tablas lookup                  : tramos_aux_infra, presupuesto_aux_actividad
+  1. Referencia geográfica          : localidades, tramos_bd
+  2. Presupuesto                    : presupuesto_bd, presupuesto_componentes_bd
+  3. Formularios principales        : registros_cantidades, registros_componentes,
+                                      registros_reporteDiario, formulario_pmt
+  4. Tablas secundarias BD_         : BD_PersonalObra, BD_CondicionClimatica,
+                                      BD_MaquinariaObra, BD_SST_Ambiental
+  5. Registros fotográficos         : RF_Cantidades, RF_Componentes, RF_ReporteDiario
 """
 
 import os
@@ -129,10 +130,7 @@ def download_gpkg(token, project_id, gpkg_file, tmp_path):
 
 
 def read_layer(tmp_path, layer_name=None):
-    """Lee una capa de un GeoPackage, con fallback a la primera capa, y normaliza a WGS84.
-    Los nombres de columna se convierten a minúsculas y se eliminan espacios extremos
-    para garantizar compatibilidad independientemente del caso usado en el GeoPackage.
-    """
+    """Lee una capa de un GeoPackage, normaliza columnas a minúsculas y reproyecta a WGS84."""
     try:
         gdf = gpd.read_file(tmp_path, layer=layer_name) if layer_name else gpd.read_file(tmp_path)
     except Exception as e:
@@ -146,7 +144,8 @@ def read_layer(tmp_path, layer_name=None):
         else:
             return None
 
-    # CORRECCIÓN: normalizar columnas a minúsculas + sin espacios extremos
+    # Normalizar: minúsculas + sin espacios extremos
+    # Garantiza compatibilidad sin importar el case del GPKG (ID_TRAMO, id_tramo, Id_Tramo…)
     gdf.columns = [c.strip().lower() for c in gdf.columns]
 
     if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
@@ -213,6 +212,108 @@ def upload_photo(supabase, token, project_id, file_path, folio):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 0. TABLAS LOOKUP (deben poblarse ANTES que cualquier tabla con FK)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Mapeo nombre largo → código PK de tramos_aux_infra
+# DDL: codigo TEXT PRIMARY KEY (EP/CI/MV), nombre TEXT NOT NULL
+# La FK tramos_bd.infraestructura → tramos_aux_infra(codigo)
+# El GPKG de tramos almacena el nombre largo ("Espacio Público"), no el código.
+_INFRA_NOMBRE_A_CODIGO = {
+    'espacio público': 'EP',
+    'espacio publico': 'EP',
+    'ep':              'EP',
+    'ciclorruta':      'CI',
+    'cicloruta':       'CI',
+    'ci':              'CI',
+    'malla vial':      'MV',
+    'mv':              'MV',
+}
+
+
+def _infra_a_codigo(valor):
+    """Convierte el nombre largo del GPKG al código PK de tramos_aux_infra."""
+    if not valor:
+        return None
+    key = str(valor).strip().lower()
+    # Si ya es un código conocido o desconocido, lo devuelve normalizado
+    return _INFRA_NOMBRE_A_CODIGO.get(key, str(valor).strip())
+
+
+def sync_tramos_aux_infra(supabase, token, project_id):
+    """
+    Asegura que tramos_aux_infra tenga todos los valores de infraestructura
+    presentes en el GPKG de tramos.
+    DDL: codigo TEXT PRIMARY KEY, nombre TEXT NOT NULL
+    Los tres registros base (EP/CI/MV) ya los inserta el DDL con ON CONFLICT DO UPDATE;
+    esta función agrega cualquier valor nuevo que aparezca en campo.
+    """
+    print("\n── tramos_aux_infra (TramosIDU15562025BDTRAMOS.gpkg → codigos) ──")
+    tmp = '/tmp/tramos_bd.gpkg'
+    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    # Recoger pares únicos {codigo: nombre} desde el GPKG
+    pares = {}
+    for _, row in gdf.iterrows():
+        nombre = safe(row.get('infraestructura'))
+        if nombre:
+            codigo = _infra_a_codigo(nombre)
+            if codigo:
+                pares[codigo] = nombre   # último nombre visto para ese código
+
+    count = 0
+    for codigo, nombre in sorted(pares.items()):
+        try:
+            supabase.table('tramos_aux_infra').upsert(
+                {'codigo': codigo, 'nombre': nombre},
+                on_conflict='codigo'
+            ).execute()
+            count += 1
+            print(f"  · {codigo} → {nombre}")
+        except Exception as e:
+            print(f"  ⚠ No se pudo insertar ({codigo}, {nombre}): {e}")
+
+    print(f"  → {count} upserted")
+
+
+def sync_presupuesto_aux_actividad(supabase, token, project_id):
+    """
+    Pre-pobla presupuesto_aux_actividad con los valores únicos de tipo_actividad
+    presentes en el GPKG de presupuesto.
+    DDL: tipo_actividad TEXT PRIMARY KEY
+    FK consumidores: presupuesto_bd, registros_cantidades, registros_componentes
+    """
+    print("\n── presupuesto_aux_actividad (PresupuestoIDU15562025BDPRESUPUESTO.gpkg) ──")
+    tmp = '/tmp/presupuesto_bd.gpkg'
+    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    valores = set()
+    for _, row in gdf.iterrows():
+        v = safe(row.get('tipo_actividad'))
+        if v:
+            valores.add(v)
+
+    count = 0
+    for v in sorted(valores):
+        try:
+            supabase.table('presupuesto_aux_actividad').upsert(
+                {'tipo_actividad': v}, on_conflict='tipo_actividad'
+            ).execute()
+            count += 1
+        except Exception as e:
+            print(f"  ⚠ No se pudo insertar '{v}': {e}")
+    print(f"  → {count} upserted: {sorted(valores)}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 1. TABLAS DE REFERENCIA GEOGRÁFICA
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -225,8 +326,7 @@ def sync_localidades(supabase, token, project_id):
         return
     count = 0
     for _, row in gdf.iterrows():
-        # Columnas normalizadas: loccodigo, locnombre, locaadmini, locarea, loccódigo…
-        # Se intenta con los nombres más probables tras la normalización a minúsculas
+        # Columnas normalizadas a minúsculas: loccodigo, locnombre, locaadmini, locarea
         data = {
             'loc_codigo': safe(row.get('loc_codigo') or row.get('loccodigo') or row.get('field1')),
             'loc_nombre': safe(row.get('loc_nombre') or row.get('locnombre') or row.get('field2')),
@@ -240,46 +340,21 @@ def sync_localidades(supabase, token, project_id):
     print(f"  → {count} upserted")
 
 
-def sync_tramos_aux_infra(supabase, token, project_id):
-    """
-    Pre-pobla tramos_aux_infra con los valores únicos de 'infraestructura'
-    presentes en el GeoPackage de tramos, para satisfacer la FK antes de
-    insertar tramos_bd.
-    El GPKG ya fue descargado a /tmp/tramos_bd.gpkg por sync_tramos_bd,
-    pero como este helper se llama primero, descarga de nuevo si es necesario.
-    """
-    print("\n── tramos_aux_infra (valores únicos desde TramosIDU15562025BDTRAMOS.gpkg) ──")
-    tmp = '/tmp/tramos_bd.gpkg'
-    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
-        return
-    gdf = read_layer(tmp)
-    if gdf is None or gdf.empty:
-        return
-
-    valores = set()
-    for _, row in gdf.iterrows():
-        v = safe(row.get('infraestructura'))
-        if v:
-            valores.add(v)
-
-    count = 0
-    for v in sorted(valores):
-        supabase.table('tramos_aux_infra').upsert(
-            {'infraestructura': v}, on_conflict='infraestructura'
-        ).execute()
-        count += 1
-    print(f"  → {count} valores upserted: {sorted(valores)}")
-
-
 def sync_tramos_bd(supabase, token, project_id):
+    """
+    Sincroniza tramos_bd.
+    infraestructura almacena el CÓDIGO (EP/CI/MV) — no el nombre largo —
+    porque la FK apunta a tramos_aux_infra(codigo).
+    _infra_a_codigo() convierte 'Espacio Público' → 'EP', etc.
+    """
     print("\n── tramos_bd (TramosIDU15562025BDTRAMOS.gpkg) ──")
-    # El archivo ya fue descargado por sync_tramos_aux_infra; se reutiliza.
     tmp = '/tmp/tramos_bd.gpkg'
     if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:
         return
+
     count = 0
     for _, row in gdf.iterrows():
         data = {
@@ -289,7 +364,8 @@ def sync_tramos_bd(supabase, token, project_id):
             'via_desde':         safe(row.get('via_desde')),
             'via_hasta':         safe(row.get('via_hasta')),
             'localidad':         safe(row.get('localidad')),
-            'infraestructura':   safe(row.get('infraestructura')),
+            # Convertir nombre largo → código FK válido (EP/CI/MV)
+            'infraestructura':   _infra_a_codigo(row.get('infraestructura')),
             'observaciones':     safe(row.get('observaciones')),
             'cicloruta_km':      safe_num(row.get('cicloruta_km')),
             'esp_publico_m2':    safe_num(row.get('esp_publico_m2')),
@@ -307,6 +383,7 @@ def sync_tramos_bd(supabase, token, project_id):
 
 def sync_presupuesto_bd(supabase, token, project_id):
     print("\n── presupuesto_bd (PresupuestoIDU15562025BDPRESUPUESTO.gpkg) ──")
+    # El GPKG ya fue descargado por sync_presupuesto_aux_actividad; se reutiliza.
     if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', '/tmp/presupuesto_bd.gpkg'):
         return
     gdf = read_layer('/tmp/presupuesto_bd.gpkg')
@@ -340,7 +417,7 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
         return
     count = 0
     for _, row in gdf.iterrows():
-        # 'Precio Unitario' → normalizado como 'precio unitario' (con espacio)
+        # 'Precio Unitario' en el GPKG → normalizado como 'precio unitario' (con espacio)
         data = {
             'capitulo_num':    safe(row.get('capitulo_num')   or row.get('capitulo')),
             'capitulo':        safe(row.get('capitulo')),
@@ -428,7 +505,7 @@ def sync_registros_cantidades(supabase, token, project_id):
             'documento_adj_url':  foto_urls.get('documento_adj'),
             'observaciones':      safe(row.get('observaciones')),
             'CodigoInterventor':  safe(row.get('codigointerventor')),
-            # 'Acompañamiento Interventor' → normalizado: 'acompañamiento interventor'
+            # En el GPKG normalizado a minúsculas: 'acompañamiento interventor' (con espacio)
             'AcompañamientoInterventor': safe(row.get('acompañamiento interventor')),
             'estado':             'BORRADOR',
             'qfield_sync_id':     safe(row.get('fid')),
@@ -818,22 +895,26 @@ def main():
     supabase   = get_supabase()
     project_id = get_project_id(token)
 
-    # 1. Referencia geográfica (sin FKs a otras tablas del proyecto)
+    # 0. Tablas lookup (sin FKs propias; deben ir primero)
+    sync_tramos_aux_infra(supabase, token, project_id)         # PK: codigo (EP/CI/MV)
+    sync_presupuesto_aux_actividad(supabase, token, project_id) # PK: tipo_actividad
+
+    # 1. Referencia geográfica
     sync_localidades(supabase, token, project_id)
-    sync_tramos_aux_infra(supabase, token, project_id)   # pobla FK antes de tramos_bd
-    sync_tramos_bd(supabase, token, project_id)
+    sync_tramos_bd(supabase, token, project_id)                # FK → tramos_aux_infra(codigo)
 
     # 2. Presupuesto
-    sync_presupuesto_bd(supabase, token, project_id)
+    sync_presupuesto_bd(supabase, token, project_id)           # FK → presupuesto_aux_actividad
     sync_presupuesto_componentes_bd(supabase, token, project_id)
 
     # 3. Formularios principales
+    # FK → tramos_bd, presupuesto_bd, presupuesto_componentes_bd, presupuesto_aux_actividad
     sync_registros_cantidades(supabase, token, project_id)
     sync_registros_componentes(supabase, token, project_id)
     sync_registros_reporte_diario(supabase, token, project_id)
     sync_formulario_pmt(supabase, token, project_id)
 
-    # 4. Tablas secundarias del Reporte Diario (FK → registros_reporteDiario)
+    # 4. Tablas secundarias del Reporte Diario (FK → registros_reporteDiario.Folio)
     sync_bd_personal(supabase, token, project_id)
     sync_bd_climatica(supabase, token, project_id)
     sync_bd_maquinaria(supabase, token, project_id)
