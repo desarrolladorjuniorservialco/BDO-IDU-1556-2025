@@ -17,7 +17,7 @@ from datetime import datetime, date, timedelta
 
 st.set_page_config(
     page_title="BDO · IDU-1556-2025",
-    page_icon="🏗️",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -26,21 +26,74 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
+/* ── Variables de color: modo claro por defecto ── */
+:root {
+    --bg-app:        #f5f6f8;
+    --bg-card:       #ffffff;
+    --bg-sidebar:    #f0f2f5;
+    --border:        #dde1e7;
+    --border-strong: #c4c9d4;
+    --text-primary:  #1a1d23;
+    --text-secondary:#4a5568;
+    --text-muted:    #718096;
+    --accent-blue:   #1a56db;
+    --accent-green:  #1a7a3f;
+    --accent-warn:   #92650a;
+    --accent-danger: #c0392b;
+    --badge-borrador-bg:  #edf2f7; --badge-borrador-fg: #4a5568;
+    --badge-revisado-bg:  #e6f4ec; --badge-revisado-fg: #1a7a3f;
+    --badge-aprobado-bg:  #e8eeff; --badge-aprobado-fg: #1a56db;
+    --badge-devuelto-bg:  #fce8e8; --badge-devuelto-fg: #c0392b;
+    --nav-highlight-bg:   #e8eeff;
+    --nav-highlight-fg:   #1a56db;
+    --nav-active-bg:      #e2e8f0;
+    --kpi-value-color:    #1a1d23;
+}
+
+/* ── Variables de color: modo oscuro ── */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-app:        #0d1117;
+        --bg-card:       #161b22;
+        --bg-sidebar:    #0a0e16;
+        --border:        #21262d;
+        --border-strong: #30363d;
+        --text-primary:  #e6edf3;
+        --text-secondary:#c9d1d9;
+        --text-muted:    #8b949e;
+        --accent-blue:   #388bfd;
+        --accent-green:  #3fb950;
+        --accent-warn:   #d29922;
+        --accent-danger: #f85149;
+        --badge-borrador-bg:  #21262d; --badge-borrador-fg: #8b949e;
+        --badge-revisado-bg:  #1f3d2b; --badge-revisado-fg: #3fb950;
+        --badge-aprobado-bg:  #1a3255; --badge-aprobado-fg: #388bfd;
+        --badge-devuelto-bg:  #3d1e1e; --badge-devuelto-fg: #f85149;
+        --nav-highlight-bg:   #1a3255;
+        --nav-highlight-fg:   #388bfd;
+        --nav-active-bg:      #1c2333;
+        --kpi-value-color:    #e6edf3;
+    }
+}
+
 html, body, [class*="css"] {
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
 /* ── Fondo app ── */
-.stApp { background: #0d1117; color: #c9d1d9; }
+.stApp {
+    background: var(--bg-app);
+    color: var(--text-primary);
+}
 
 /* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: #0a0e16;
-    border-right: 1px solid #1c2333;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
 }
 section[data-testid="stSidebar"] .stMarkdown p,
 section[data-testid="stSidebar"] label {
-    color: #8b949e !important;
+    color: var(--text-muted) !important;
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -49,7 +102,7 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
     text-transform: none !important;
     font-size: 0.88rem;
     letter-spacing: 0;
-    color: #c9d1d9 !important;
+    color: var(--text-secondary) !important;
 }
 
 /* ── Categorías sidebar ── */
@@ -59,17 +112,30 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #388bfd !important;
+    color: var(--text-muted) !important;
     padding: 0.6rem 0 0.2rem 0;
-    border-top: 1px solid #1c2333;
+    border-top: 1px solid var(--border);
     margin-top: 0.4rem;
 }
 .nav-category:first-child { border-top: none; margin-top: 0; }
 
-/* ── Métricas / KPI cards ── */
+/* Categorías destacadas (Cantidades, Componentes, PMTs) */
+.nav-category-highlight {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-blue) !important;
+    padding: 0.6rem 0 0.2rem 0;
+    border-top: 2px solid var(--border);
+    margin-top: 0.6rem;
+}
+
+/* ── KPI cards ── */
 .kpi-card {
-    background: #161b22;
-    border: 1px solid #21262d;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1.1rem 1.25rem;
     margin-bottom: 0.5rem;
@@ -78,25 +144,25 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #8b949e;
+    color: var(--text-muted);
     margin-bottom: 0.25rem;
     font-family: 'IBM Plex Mono', monospace;
 }
 .kpi-value {
     font-size: 1.55rem;
     font-weight: 600;
-    color: #e6edf3;
+    color: var(--kpi-value-color);
     line-height: 1.2;
 }
 .kpi-sub {
     font-size: 0.75rem;
-    color: #6e7681;
+    color: var(--text-muted);
     margin-top: 0.15rem;
 }
-.kpi-accent { color: #3fb950; }
-.kpi-warn   { color: #d29922; }
-.kpi-danger { color: #f85149; }
-.kpi-info   { color: #388bfd; }
+.kpi-accent { color: var(--accent-green) !important; }
+.kpi-warn   { color: var(--accent-warn)   !important; }
+.kpi-danger { color: var(--accent-danger) !important; }
+.kpi-info   { color: var(--accent-blue)   !important; }
 
 /* ── Tablas ── */
 .stDataFrame { border-radius: 8px; overflow: hidden; }
@@ -110,7 +176,7 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
 }
 
 /* ── Dividers ── */
-hr { border-color: #21262d; }
+hr { border-color: var(--border); }
 
 /* ── Expanders ── */
 details summary {
@@ -119,8 +185,16 @@ details summary {
 }
 
 /* ── Headings ── */
-h1,h2,h3 { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; color: #e6edf3; }
-h3 { border-bottom: 1px solid #21262d; padding-bottom: 0.4rem; margin-bottom: 1rem; }
+h1, h2, h3 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+h3 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+    margin-bottom: 1rem;
+}
 
 /* ── Status badges ── */
 .badge {
@@ -132,20 +206,21 @@ h3 { border-bottom: 1px solid #21262d; padding-bottom: 0.4rem; margin-bottom: 1r
     border-radius: 4px;
     letter-spacing: 0.06em;
 }
-.badge-borrador  { background:#21262d; color:#8b949e; }
-.badge-revisado  { background:#1f3d2b; color:#3fb950; }
-.badge-aprobado  { background:#1a3255; color:#388bfd; }
-.badge-devuelto  { background:#3d1e1e; color:#f85149; }
+.badge-borrador { background: var(--badge-borrador-bg); color: var(--badge-borrador-fg); }
+.badge-revisado { background: var(--badge-revisado-bg); color: var(--badge-revisado-fg); }
+.badge-aprobado { background: var(--badge-aprobado-bg); color: var(--badge-aprobado-fg); }
+.badge-devuelto { background: var(--badge-devuelto-bg); color: var(--badge-devuelto-fg); }
 
 /* ── Login ── */
 .login-box {
-    background: #161b22;
-    border: 1px solid #21262d;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 2.5rem 2rem;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ══════════════════════════════════════════════════════════════
 # CONEXIÓN SUPABASE
@@ -200,9 +275,40 @@ def kpi(label, value, sub="", accent_class=""):
 # ══════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=60)
-def load_registros(estados=None, fecha_ini=None, fecha_fin=None):
+def load_cantidades(estados=None, fecha_ini=None, fecha_fin=None):
+    """Carga registros_cantidades (formularios de medición de obra)."""
     sb    = get_supabase()
-    query = sb.table('registros').select('*')
+    query = sb.table('registros_cantidades').select('*')
+    if estados:
+        query = query.in_('estado', estados)
+    if fecha_ini:
+        query = query.gte('fecha_creacion', fecha_ini)
+    if fecha_fin:
+        query = query.lte('fecha_creacion', fecha_fin)
+    result = query.order('fecha_creacion', desc=True).execute()
+    return pd.DataFrame(result.data) if result.data else pd.DataFrame()
+
+
+@st.cache_data(ttl=60)
+def load_componentes(estados=None, fecha_ini=None, fecha_fin=None):
+    """Carga registros_componentes (formularios ambientales, SST, social)."""
+    sb    = get_supabase()
+    query = sb.table('registros_componentes').select('*')
+    if estados:
+        query = query.in_('estado', estados)
+    if fecha_ini:
+        query = query.gte('fecha_creacion', fecha_ini)
+    if fecha_fin:
+        query = query.lte('fecha_creacion', fecha_fin)
+    result = query.order('fecha_creacion', desc=True).execute()
+    return pd.DataFrame(result.data) if result.data else pd.DataFrame()
+
+
+@st.cache_data(ttl=60)
+def load_reporte_diario(estados=None, fecha_ini=None, fecha_fin=None):
+    """Carga registros_reporte_diario."""
+    sb    = get_supabase()
+    query = sb.table('registros_reporte_diario').select('*')
     if estados:
         query = query.in_('estado', estados)
     if fecha_ini:
@@ -223,14 +329,7 @@ def load_contrato():
 @st.cache_data(ttl=120)
 def load_presupuesto():
     sb = get_supabase()
-    r  = sb.table('presupuesto').select('*').execute()
-    return pd.DataFrame(r.data) if r.data else pd.DataFrame()
-
-
-@st.cache_data(ttl=120)
-def load_curva_s():
-    sb = get_supabase()
-    r  = sb.table('curva_s').select('*').order('semana').execute()
+    r  = sb.table('presupuesto_bd').select('*').execute()
     return pd.DataFrame(r.data) if r.data else pd.DataFrame()
 
 
@@ -248,14 +347,14 @@ def login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
         <div style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem;
-                    letter-spacing:0.14em; color:#388bfd; text-transform:uppercase;
+                    letter-spacing:0.14em; color:var(--accent-blue); text-transform:uppercase;
                     margin-bottom:0.25rem;">
             Sistema de Bitácora Digital
         </div>
-        <div style="font-size:1.8rem; font-weight:600; color:#e6edf3; margin-bottom:0.1rem;">
+        <div style="font-size:1.8rem; font-weight:600; color:var(--text-primary); margin-bottom:0.1rem;">
             BDO · IDU-1556-2025
         </div>
-        <div style="font-size:0.85rem; color:#6e7681; margin-bottom:2rem;">
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:2rem;">
             Contrato de obra · Grupo 4 · Mártires, San Cristóbal, Rafael Uribe Uribe, Santafé, Antonio Nariño
         </div>
         """, unsafe_allow_html=True)
@@ -292,37 +391,70 @@ def logout():
 
 
 # ══════════════════════════════════════════════════════════════
-# SIDEBAR
+# SIDEBAR Y NAVEGACIÓN
 # ══════════════════════════════════════════════════════════════
 
-# Mapa de acceso por rol
-NAV_ACCESS = {
-    # Bitácora
-    "Estado Actual":              ['inspector','residente','residente_amb','residente_social','interventor','int_amb','int_social','supervisor','admin'],
-    "Anotaciones":                ['inspector','residente','residente_amb','residente_social','interventor','int_amb','int_social','supervisor','admin'],
-    "Generar PDF":                ['residente','interventor','supervisor','admin'],
-    # Seguimiento
-    "Reporte Cantidades":         ['residente','interventor','supervisor','admin'],
-    "Mapa de Obra":               ['residente','interventor','supervisor','admin'],
-    "Seguimiento Presupuesto":    ['residente','interventor','supervisor','admin'],
-    "Curva S":                    ['residente','interventor','supervisor','admin'],
-    # Transversales
-    "Componente Ambiental - SST": ['residente_amb','int_amb','supervisor','admin'],
-    "Componente Social":          ['residente_social','int_social','supervisor','admin'],
-    "Componente PMT":             ['residente','interventor','supervisor','admin'],
-}
+# Roles activos en el sistema (módulo 005_USUARIOS)
+# inspector / obra        → inspectores de campo, crean registros en QField
+# residente / coordinador → revisión y aprobación nivel 1
+# interventor             → aprobación nivel 2
+# supervisor              → solo lectura
+# admin                   → acceso total
 
 ROL_LABELS = {
-    'inspector':       '📋 Inspector',
-    'residente':       '✏️ Residente de Obra',
-    'residente_amb':   '🌿 Residente Ambiental/SST',
-    'residente_social':'🤝 Residente Social',
-    'interventor':     '✅ Interventor',
-    'int_amb':         '🌿 Interventor Ambiental',
-    'int_social':      '🤝 Interventor Social',
-    'supervisor':      '👁️ Supervisor IDU',
-    'admin':           '⚙️ Administrador',
+    'inspector':    'Inspector de Campo',
+    'obra':         'Personal de Obra',
+    'residente':    'Residente de Obra',
+    'coordinador':  'Coordinador de Obra',
+    'interventor':  'Interventor IDU',
+    'supervisor':   'Supervisor IDU',
+    'admin':        'Administrador',
 }
+
+# Páginas disponibles por rol
+NAV_ACCESS = {
+    # ── General ──────────────────────────────────────────────
+    "Estado Actual":              ['inspector','obra','residente','coordinador',
+                                   'interventor','supervisor','admin'],
+    "Anotaciones":                ['inspector','obra','residente','coordinador',
+                                   'interventor','supervisor','admin'],
+    "Generar PDF":                ['residente','coordinador','interventor','supervisor','admin'],
+    "Mapa de Obra":               ['residente','coordinador','interventor','supervisor','admin'],
+    "Seguimiento Presupuesto":    ['residente','coordinador','interventor','supervisor','admin'],
+    # ── Reportes de Cantidades ────────────────────────────────
+    "Reporte Cantidades":         ['residente','coordinador','interventor','supervisor','admin'],
+    # ── Reportes de Componentes Transversales ─────────────────
+    "Componente Ambiental - SST": ['residente','coordinador','interventor','supervisor','admin'],
+    "Componente Social":          ['residente','coordinador','interventor','supervisor','admin'],
+    # ── Seguimiento de PMTs ───────────────────────────────────
+    "Seguimiento PMTs":           ['residente','coordinador','interventor','supervisor','admin'],
+}
+
+# Estructura de categorías del menú lateral
+# 'highlight': True → categoría destacada con color acento
+NAV_CATEGORIES = [
+    {
+        "label":   "General",
+        "highlight": False,
+        "pages":   ["Estado Actual", "Anotaciones", "Generar PDF",
+                    "Mapa de Obra", "Seguimiento Presupuesto"],
+    },
+    {
+        "label":   "Reportes de Cantidades",
+        "highlight": True,
+        "pages":   ["Reporte Cantidades"],
+    },
+    {
+        "label":   "Reportes de Componentes Transversales",
+        "highlight": True,
+        "pages":   ["Componente Ambiental - SST", "Componente Social"],
+    },
+    {
+        "label":   "Seguimiento de PMTs",
+        "highlight": True,
+        "pages":   ["Seguimiento PMTs"],
+    },
+]
 
 
 def sidebar(perfil):
@@ -331,95 +463,75 @@ def sidebar(perfil):
     with st.sidebar:
         # Header usuario
         st.markdown(f"""
-        <div style="padding:1rem 0 0.5rem 0; border-bottom:1px solid #1c2333; margin-bottom:0.5rem;">
-            <div style="font-size:0.72rem; color:#6e7681; font-family:'IBM Plex Mono',monospace;
+        <div style="padding:1rem 0 0.5rem 0; border-bottom:1px solid var(--border); margin-bottom:0.5rem;">
+            <div style="font-size:0.72rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;
                         text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.2rem;">
                 {ROL_LABELS.get(rol, rol)}
             </div>
-            <div style="font-size:1rem; font-weight:600; color:#e6edf3;">{perfil['nombre']}</div>
-            <div style="font-size:0.78rem; color:#8b949e;">{perfil.get('empresa','')}</div>
+            <div style="font-size:1rem; font-weight:600; color:var(--text-primary);">{perfil['nombre']}</div>
+            <div style="font-size:0.78rem; color:var(--text-secondary);">{perfil.get('empresa','')}</div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Resumen rápido
-        df_q = load_registros()
+        # Resumen rápido (cantidades)
+        df_q = load_cantidades()
         if not df_q.empty:
             total = len(df_q)
-            apr   = len(df_q[df_q['estado']=='APROBADO'])
+            apr   = len(df_q[df_q['estado'] == 'APROBADO'])
+            dev   = len(df_q[df_q['estado'] == 'DEVUELTO'])
             st.markdown(f"""
             <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
-                             background:#161b22;border:1px solid #21262d;border-radius:4px;
-                             padding:2px 7px;color:#8b949e;">Total {total}</span>
+                             background:var(--bg-card);border:1px solid var(--border);border-radius:4px;
+                             padding:2px 7px;color:var(--text-muted);">Total {total}</span>
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
-                             background:#1a3255;border-radius:4px;padding:2px 7px;color:#388bfd;">
-                    ✅ {apr}</span>
+                             background:var(--badge-aprobado-bg);border-radius:4px;padding:2px 7px;
+                             color:var(--badge-aprobado-fg);">Aprobados {apr}</span>
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
-                             background:#3d1e1e;border-radius:4px;padding:2px 7px;color:#f85149;">
-                    ↩️ {len(df_q[df_q['estado']=='DEVUELTO'])}</span>
+                             background:var(--badge-devuelto-bg);border-radius:4px;padding:2px 7px;
+                             color:var(--badge-devuelto-fg);">Devueltos {dev}</span>
             </div>
             """, unsafe_allow_html=True)
 
-        # ── Navegación por categorías ──────────────────────────
-        categories = {
-            "Bitácora de Obra": ["Estado Actual", "Anotaciones", "Generar PDF"],
-            "Seguimiento de Obra": ["Reporte Cantidades", "Mapa de Obra",
-                                    "Seguimiento Presupuesto", "Curva S"],
-            "Componentes Transversales": ["Componente Ambiental - SST",
-                                          "Componente Social", "Componente PMT"],
-        }
-
+        # Navegación por categorías
         opciones_disponibles = []
-        nav_items = []
+        for cat in NAV_CATEGORIES:
+            accesibles = [p for p in cat["pages"] if rol in NAV_ACCESS.get(p, [])]
+            for p in accesibles:
+                if p not in opciones_disponibles:
+                    opciones_disponibles.append(p)
 
-        for cat, pages in categories.items():
-            accesibles = [p for p in pages if rol in NAV_ACCESS.get(p, [])]
+        selected_page = st.session_state.get(
+            'current_page',
+            opciones_disponibles[0] if opciones_disponibles else "Estado Actual"
+        )
+
+        for cat in NAV_CATEGORIES:
+            accesibles = [p for p in cat["pages"] if rol in NAV_ACCESS.get(p, [])]
             if not accesibles:
                 continue
-            nav_items.append(("__cat__", cat))
+
+            cat_class = "nav-category-highlight" if cat["highlight"] else "nav-category"
+            st.markdown(f'<div class="{cat_class}">{cat["label"]}</div>', unsafe_allow_html=True)
+
             for page in accesibles:
-                nav_items.append(("__page__", page))
-                opciones_disponibles.append(page)
-
-        # Render categorías como markdown + radio separados por secciones
-        # Usamos un único radio pero agrupamos visualmente
-        selected_page = st.session_state.get('current_page', opciones_disponibles[0] if opciones_disponibles else "Estado Actual")
-
-        for item_type, item_val in nav_items:
-            if item_type == "__cat__":
-                st.markdown(f'<div class="nav-category">{item_val}</div>', unsafe_allow_html=True)
-            else:
-                icon = {
-                    "Estado Actual": "◈",
-                    "Anotaciones": "◉",
-                    "Generar PDF": "◫",
-                    "Reporte Cantidades": "◈",
-                    "Mapa de Obra": "◉",
-                    "Seguimiento Presupuesto": "◈",
-                    "Curva S": "◉",
-                    "Componente Ambiental - SST": "◈",
-                    "Componente Social": "◉",
-                    "Componente PMT": "◫",
-                }.get(item_val, "◈")
-
-                is_active = selected_page == item_val
-                bg = "background:#1c2333;border-radius:5px;" if is_active else ""
-                color = "#e6edf3" if is_active else "#8b949e"
-
+                is_active = selected_page == page
                 if st.button(
-                    f"{icon}  {item_val}",
-                    key=f"nav_{item_val}",
+                    page,
+                    key=f"nav_{page}",
                     use_container_width=True,
                 ):
-                    st.session_state['current_page'] = item_val
+                    st.session_state['current_page'] = page
                     st.rerun()
 
         st.divider()
-        if st.button("🚪 Cerrar sesión", use_container_width=True):
+        if st.button("Cerrar sesión", use_container_width=True):
             logout()
 
-    return st.session_state.get('current_page',
-                                 opciones_disponibles[0] if opciones_disponibles else "Estado Actual")
+    return st.session_state.get(
+        'current_page',
+        opciones_disponibles[0] if opciones_disponibles else "Estado Actual"
+    )
 
 
 # ══════════════════════════════════════════════════════════════
@@ -432,8 +544,7 @@ def page_estado_actual():
     contrato = load_contrato()
 
     if not contrato:
-        st.info("Sin datos de contrato configurados. Verifica la tabla `contratos` en Supabase.")
-        # Datos demo para visualización
+        st.info("Sin datos de contrato configurados. Verifica la tabla 'contratos' en Supabase.")
         contrato = {
             "numero": "IDU-1556-2025",
             "objeto": "Mantenimiento y rehabilitación de vías locales — Grupo 4",
@@ -451,8 +562,7 @@ def page_estado_actual():
             "valor_ejecutado": 3_200_000_000,
         }
 
-    # Cálculos
-    fecha_inicio = datetime.strptime(contrato.get('fecha_inicio','2025-01-01'), '%Y-%m-%d').date()
+    fecha_inicio = datetime.strptime(contrato.get('fecha_inicio', '2025-01-01'), '%Y-%m-%d').date()
     plazo        = int(contrato.get('plazo_dias', 0)) + int(contrato.get('adicion_plazo_dias', 0) or 0)
     dias_trans   = (date.today() - fecha_inicio).days
     dias_rest    = max(plazo - dias_trans, 0)
@@ -467,86 +577,86 @@ def page_estado_actual():
     val_amort    = safe_float(contrato.get('valor_amortizado')) or 0
     pct_amort    = round(val_amort / val_ant * 100, 1) if val_ant > 0 else 0
 
-    # ── Fila 1: Info general ──────────────────────────────────
     st.markdown("#### Información General")
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        kpi("Número de Contrato", contrato.get('numero','—'))
-        kpi("Entidad Contratante", contrato.get('entidad','—'))
+        kpi("Número de Contrato", contrato.get('numero', '—'))
+        kpi("Entidad Contratante", contrato.get('entidad', '—'))
 
     with c2:
-        kpi("Contratista", contrato.get('contratista','—'))
+        kpi("Contratista", contrato.get('contratista', '—'))
         kpi("Fecha de Inicio", fecha_inicio.strftime('%d/%m/%Y'))
 
     with c3:
-        kpi("Plazo Total", f"{plazo} días", sub=f"+{contrato.get('adicion_plazo_dias',0) or 0} días de adición")
+        kpi("Plazo Total", f"{plazo} días",
+            sub=f"+{contrato.get('adicion_plazo_dias', 0) or 0} días de adición")
         kpi("Grupos / Localidades",
-            "Mártires · S.Cristóbal · R.Uribe<br>Santafé · A.Nariño", accent_class="kpi-info")
+            "Mártires · S.Cristóbal · R.Uribe<br>Santafé · A.Nariño",
+            accent_class="kpi-info")
 
     st.markdown(f"""
     <div class="kpi-card" style="margin-bottom:1rem;">
         <div class="kpi-label">Objeto del Contrato</div>
-        <div style="color:#c9d1d9; font-size:0.95rem; line-height:1.5;">
-            {contrato.get('objeto','—')}
+        <div style="color:var(--text-secondary); font-size:0.95rem; line-height:1.5;">
+            {contrato.get('objeto', '—')}
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     st.divider()
 
-    # ── Fila 2: Tiempo ──────────────────────────────────────
     st.markdown("#### Ejecución del Plazo")
     ct1, ct2, ct3, ct4 = st.columns(4)
 
     accent_tiempo = "kpi-warn" if pct_tiempo > 70 else "kpi-accent"
     with ct1: kpi("Días Transcurridos", str(dias_trans), sub=f"{pct_tiempo}% del plazo", accent_class=accent_tiempo)
     with ct2: kpi("Días Restantes", str(dias_rest))
-    with ct3: kpi("Plazo Original", f"{contrato.get('plazo_dias','—')} días")
-    with ct4: kpi("Adiciones de Plazo", f"{contrato.get('adicion_plazo_dias',0) or 0} días",
+    with ct3: kpi("Plazo Original", f"{contrato.get('plazo_dias', '—')} días")
+    with ct4: kpi("Adiciones de Plazo", f"{contrato.get('adicion_plazo_dias', 0) or 0} días",
                   accent_class="kpi-warn" if (contrato.get('adicion_plazo_dias') or 0) > 0 else "")
 
     fig_tiempo = go.Figure(go.Bar(
         x=[pct_tiempo, 100 - pct_tiempo],
         y=["Plazo"],
         orientation='h',
-        marker_color=['#388bfd', '#21262d'],
-        text=[f"{pct_tiempo}% transcurrido", f"{100-pct_tiempo}% restante"],
+        marker_color=['#388bfd', '#e2e8f0'],
+        text=[f"{pct_tiempo}% transcurrido", f"{100 - pct_tiempo}% restante"],
         textposition='inside',
         textfont=dict(family="IBM Plex Mono", size=12, color="white"),
     ))
     fig_tiempo.update_layout(
-        height=70, margin=dict(l=0,r=0,t=0,b=0),
+        height=70, margin=dict(l=0, r=0, t=0, b=0),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False, barmode='stack',
-        xaxis=dict(showticklabels=False, range=[0,100]),
+        xaxis=dict(showticklabels=False, range=[0, 100]),
         yaxis=dict(showticklabels=False),
     )
-    st.plotly_chart(fig_tiempo, use_container_width=True, config={'displayModeBar':False})
+    st.plotly_chart(fig_tiempo, use_container_width=True, config={'displayModeBar': False})
 
     st.divider()
 
-    # ── Fila 3: Financiero ──────────────────────────────────
     st.markdown("#### Ejecución Financiera")
     cf1, cf2, cf3, cf4 = st.columns(4)
 
-    pct_ejec_accent = "kpi-danger" if pct_ejec < pct_tiempo - 15 else ("kpi-accent" if pct_ejec >= 80 else "kpi-warn")
+    pct_ejec_accent = "kpi-danger" if pct_ejec < pct_tiempo - 15 else (
+        "kpi-accent" if pct_ejec >= 80 else "kpi-warn"
+    )
     with cf1: kpi("Valor Contrato", f"${val_act:,.0f}", sub="Actualizado con adiciones", accent_class="kpi-info")
     with cf2: kpi("Valor Ejecutado", f"${val_ejec:,.0f}", sub=f"{pct_ejec}% del contrato", accent_class=pct_ejec_accent)
     with cf3: kpi("Anticipos Desembolsados", f"${val_ant:,.0f}",
-                  sub=f"{contrato.get('anticipos_total',0)} anticipo(s)")
+                  sub=f"{contrato.get('anticipos_total', 0)} anticipo(s)")
     with cf4: kpi("Amortizado", f"${val_amort:,.0f}", sub=f"{pct_amort}% del anticipo",
                   accent_class="kpi-accent" if pct_amort > 50 else "kpi-warn")
 
     if contrato.get('adicion_valor') and contrato['adicion_valor'] > 0:
         st.markdown(f"""
-        <div class="kpi-card" style="border-color:#d29922; margin-top:0.5rem;">
+        <div class="kpi-card" style="border-color:var(--accent-warn); margin-top:0.5rem;">
             <div class="kpi-label kpi-warn">Adición de Valor</div>
             <div class="kpi-value kpi-warn">${contrato['adicion_valor']:,.0f}</div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Gauge ejecutado vs tiempo
     col_g1, col_g2 = st.columns(2)
     with col_g1:
         fig_fin = go.Figure()
@@ -556,109 +666,88 @@ def page_estado_actual():
             textfont=dict(family="IBM Plex Mono", size=13, color="white"),
         ))
         fig_fin.add_trace(go.Bar(
-            name='Pendiente', x=['Financiero'], y=[100-pct_ejec],
-            marker_color='#21262d',
+            name='Pendiente', x=['Financiero'], y=[100 - pct_ejec],
+            marker_color='#e2e8f0',
         ))
         fig_fin.add_trace(go.Bar(
-            name='% Tiempo', x=['Tiempo'], y=[pct_tiempo],
+            name='Tiempo', x=['Tiempo'], y=[pct_tiempo],
             marker_color='#388bfd', text=[f"{pct_tiempo}%"], textposition='inside',
             textfont=dict(family="IBM Plex Mono", size=13, color="white"),
         ))
         fig_fin.add_trace(go.Bar(
-            name='Tiempo rest.', x=['Tiempo'], y=[100-pct_tiempo],
-            marker_color='#21262d',
+            name='Tiempo rest.', x=['Tiempo'], y=[100 - pct_tiempo],
+            marker_color='#e2e8f0',
         ))
         fig_fin.update_layout(
             barmode='stack', height=220,
-            margin=dict(l=0,r=0,t=20,b=0),
+            margin=dict(l=0, r=0, t=20, b=0),
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
             showlegend=False,
-            yaxis=dict(range=[0,100], ticksuffix='%', gridcolor='#1c2333', color='#6e7681'),
-            xaxis=dict(color='#8b949e'),
-            font=dict(family='IBM Plex Sans', color='#8b949e'),
-            title=dict(text='Ejecución Financiera vs Tiempo (%)', font=dict(color='#8b949e', size=12)),
+            yaxis=dict(range=[0, 100], ticksuffix='%'),
+            font=dict(family='IBM Plex Sans'),
+            title=dict(text='Ejecución Financiera vs Tiempo (%)', font=dict(size=12)),
         )
-        st.plotly_chart(fig_fin, use_container_width=True, config={'displayModeBar':False})
+        st.plotly_chart(fig_fin, use_container_width=True, config={'displayModeBar': False})
 
     with col_g2:
         fig_ant = go.Figure(go.Pie(
             values=[val_amort, val_ant - val_amort],
-            labels=['Amortizado','Pendiente'],
+            labels=['Amortizado', 'Pendiente'],
             hole=0.65,
-            marker_colors=['#388bfd','#21262d'],
+            marker_colors=['#388bfd', '#e2e8f0'],
             textinfo='none',
         ))
         fig_ant.add_annotation(
             text=f"{pct_amort}%<br><span style='font-size:10px'>amortizado</span>",
-            x=0.5, y=0.5, font_size=18, font_color='#e6edf3',
+            x=0.5, y=0.5, font_size=18,
             showarrow=False, font=dict(family='IBM Plex Mono'),
         )
         fig_ant.update_layout(
-            height=220, margin=dict(l=0,r=0,t=20,b=0),
+            height=220, margin=dict(l=0, r=0, t=20, b=0),
             paper_bgcolor='rgba(0,0,0,0)',
             showlegend=False,
-            title=dict(text='Amortización de Anticipos', font=dict(color='#8b949e', size=12)),
+            title=dict(text='Amortización de Anticipos', font=dict(size=12)),
         )
-        st.plotly_chart(fig_ant, use_container_width=True, config={'displayModeBar':False})
+        st.plotly_chart(fig_ant, use_container_width=True, config={'displayModeBar': False})
 
 
 # ══════════════════════════════════════════════════════════════
-# BITÁCORA 2 — ANOTACIONES
+# BITÁCORA 2 — ANOTACIONES (registros_cantidades)
 # ══════════════════════════════════════════════════════════════
 
-# Lógica de roles para aprobaciones
+# Configuración de flujo de aprobación por rol
+# Formato: rol → (estados visibles, estado al aprobar, dict de campos)
 APROBACION_CONFIG = {
-    # rol → (estados que puede ver pendientes, accion aprobar, estado resultado)
-    'inspector':        (['BORRADOR'],           None,       None),
-    'residente':        (['BORRADOR','DEVUELTO'], 'REVISADO', {
-        'campo_cant':  'cant_residente',
-        'campo_estado':'estado_residente',
-        'campo_apr':   'aprobado_residente',
-        'campo_fecha': 'fecha_residente',
-        'campo_obs':   'obs_residente',
+    'inspector':    (None,                    None,       None),
+    'obra':         (None,                    None,       None),
+    'residente':    (['BORRADOR', 'DEVUELTO'], 'REVISADO', {
+        'campo_cant':   'cant_residente',
+        'campo_estado': 'estado_residente',
+        'campo_apr':    'aprobado_residente',
+        'campo_fecha':  'fecha_residente',
+        'campo_obs':    'obs_residente',
     }),
-    'interventor':      (['REVISADO'],           'APROBADO', {
-        'campo_cant':  'cant_interventor',
-        'campo_estado':'estado_interventor',
-        'campo_apr':   'aprobado_interventor',
-        'campo_fecha': 'fecha_interventor',
-        'campo_obs':   'obs_interventor',
+    'coordinador':  (['BORRADOR', 'DEVUELTO'], 'REVISADO', {
+        'campo_cant':   'cant_residente',
+        'campo_estado': 'estado_residente',
+        'campo_apr':    'aprobado_residente',
+        'campo_fecha':  'fecha_residente',
+        'campo_obs':    'obs_residente',
     }),
-    'residente_amb':    (['BORRADOR','DEVUELTO'], 'REVISADO', {
-        'campo_cant':  'cant_residente',
-        'campo_estado':'estado_residente',
-        'campo_apr':   'aprobado_residente',
-        'campo_fecha': 'fecha_residente',
-        'campo_obs':   'obs_residente',
+    'interventor':  (['REVISADO'],             'APROBADO', {
+        'campo_cant':   'cant_interventor',
+        'campo_estado': 'estado_interventor',
+        'campo_apr':    'aprobado_interventor',
+        'campo_fecha':  'fecha_interventor',
+        'campo_obs':    'obs_interventor',
     }),
-    'int_amb':          (['REVISADO'],           'APROBADO', {
-        'campo_cant':  'cant_interventor',
-        'campo_estado':'estado_interventor',
-        'campo_apr':   'aprobado_interventor',
-        'campo_fecha': 'fecha_interventor',
-        'campo_obs':   'obs_interventor',
-    }),
-    'residente_social': (['BORRADOR','DEVUELTO'], 'REVISADO', {
-        'campo_cant':  'cant_residente',
-        'campo_estado':'estado_residente',
-        'campo_apr':   'aprobado_residente',
-        'campo_fecha': 'fecha_residente',
-        'campo_obs':   'obs_residente',
-    }),
-    'int_social':       (['REVISADO'],           'APROBADO', {
-        'campo_cant':  'cant_interventor',
-        'campo_estado':'estado_interventor',
-        'campo_apr':   'aprobado_interventor',
-        'campo_fecha': 'fecha_interventor',
-        'campo_obs':   'obs_interventor',
-    }),
-    'supervisor':       (None,                   None,       None),
-    'admin':            (['REVISADO'],           'APROBADO', {
-        'campo_cant':  'cant_interventor',
-        'campo_estado':'estado_interventor',
-        'campo_apr':   'aprobado_interventor',
-        'campo_fecha': 'fecha_interventor',
-        'campo_obs':   'obs_interventor',
+    'supervisor':   (None,                    None,       None),
+    'admin':        (['REVISADO'],             'APROBADO', {
+        'campo_cant':   'cant_interventor',
+        'campo_estado': 'estado_interventor',
+        'campo_apr':    'aprobado_interventor',
+        'campo_fecha':  'fecha_interventor',
+        'campo_obs':    'obs_interventor',
     }),
 }
 
@@ -670,55 +759,53 @@ def page_anotaciones(perfil):
     cfg = APROBACION_CONFIG.get(rol, (None, None, None))
     estados_vis, estado_apr, campos = cfg
 
-    # Filtros
     c1, c2, c3, c4 = st.columns(4)
-    with c1: fi = st.date_input("Desde", value=date.today()-timedelta(days=15))
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=15))
     with c2: ff = st.date_input("Hasta", value=date.today())
     with c3:
         if estados_vis:
             estado_f = st.selectbox("Estado", ["Todos"] + estados_vis)
         else:
-            estado_f = st.selectbox("Estado", ["Todos","BORRADOR","REVISADO","APROBADO","DEVUELTO"])
-    with c4: buscar = st.text_input("🔍 Folio / Actividad / CIV")
+            estado_f = st.selectbox("Estado", ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"])
+    with c4:
+        buscar = st.text_input("Folio / Actividad / CIV")
 
     estados_q = None if estado_f == "Todos" else [estado_f]
     if estados_vis and estado_f == "Todos":
-        estados_q = estados_vis  # supervisores/admins ven todo
+        estados_q = estados_vis
 
-    df = load_registros(estados=estados_q,
-                        fecha_ini=fi.isoformat(),
-                        fecha_fin=ff.isoformat())
+    df = load_cantidades(estados=estados_q,
+                         fecha_ini=fi.isoformat(),
+                         fecha_fin=ff.isoformat())
 
     if buscar and not df.empty:
         mask = (
-            df.get('folio','').astype(str).str.contains(buscar, case=False, na=False) |
-            df.get('tipo_actividad','').astype(str).str.contains(buscar, case=False, na=False) |
-            df.get('civ','').astype(str).str.contains(buscar, case=False, na=False)
+            df.get('folio', pd.Series(dtype=str)).astype(str).str.contains(buscar, case=False, na=False) |
+            df.get('tipo_actividad', pd.Series(dtype=str)).astype(str).str.contains(buscar, case=False, na=False) |
+            df.get('civ', pd.Series(dtype=str)).astype(str).str.contains(buscar, case=False, na=False)
         )
         df = df[mask]
 
     if df.empty:
-        st.success("✅ No hay registros para los filtros seleccionados")
+        st.info("No hay registros para los filtros seleccionados")
         return
 
-    # Contadores
     m1, m2, m3, m4 = st.columns(4)
     with m1: st.metric("Total", len(df))
-    with m2: st.metric("Borradores", len(df[df['estado']=='BORRADOR']) if 'estado' in df else 0)
-    with m3: st.metric("Revisados",  len(df[df['estado']=='REVISADO'])  if 'estado' in df else 0)
-    with m4: st.metric("Aprobados",  len(df[df['estado']=='APROBADO'])  if 'estado' in df else 0)
+    with m2: st.metric("Borradores", len(df[df['estado'] == 'BORRADOR']) if 'estado' in df else 0)
+    with m3: st.metric("Revisados",  len(df[df['estado'] == 'REVISADO'])  if 'estado' in df else 0)
+    with m4: st.metric("Aprobados",  len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0)
 
     st.divider()
 
-    # Vista solo lectura (supervisor / inspector)
+    # Vista solo lectura (inspector / obra / supervisor)
     if not campos:
-        cols = ['folio','usuario_qfield','id_tramo','civ','tipo_actividad',
-                'cantidad','unidad','estado','fecha_creacion']
+        cols = ['folio', 'usuario_qfield', 'id_tramo', 'civ', 'tipo_actividad',
+                'cantidad', 'unidad', 'estado', 'fecha_creacion']
         cols = [c for c in cols if c in df.columns]
         st.dataframe(df[cols], hide_index=True, use_container_width=True)
         return
 
-    # Vista con acciones de aprobación
     st.markdown(f"**{len(df)} registro(s) pendiente(s) de revisión**")
 
     for _, reg in df.iterrows():
@@ -727,68 +814,61 @@ def page_anotaciones(perfil):
         actividad     = reg.get('tipo_actividad', '—')
         tramo         = reg.get('tramo_descripcion', reg.get('id_tramo', '—'))
 
-        titulo = f"**{folio}** · {actividad} · {tramo}"
-
-        with st.expander(titulo, expanded=False):
+        with st.expander(f"**{folio}** · {actividad} · {tramo}", expanded=False):
             ci, ca = st.columns([2.2, 1])
 
             with ci:
                 st.markdown(f"""
                 <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
                     {badge(estado_actual)}
-                    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:#6e7681;">
-                        {str(reg.get('fecha_inicio',''))[:10]}
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+                                 color:var(--text-muted);">
+                        {str(reg.get('fecha_inicio', ''))[:10]}
                     </span>
                 </div>
                 """, unsafe_allow_html=True)
 
                 col_a, col_b, col_c = st.columns(3)
                 with col_a:
-                    st.markdown(f"**Inspector:** {reg.get('usuario_qfield','—')}")
-                    st.markdown(f"**Tramo:** {reg.get('id_tramo','—')}")
-                    st.markdown(f"**CIV:** {reg.get('civ','—')}")
+                    st.markdown(f"**Inspector:** {reg.get('usuario_qfield', '—')}")
+                    st.markdown(f"**Tramo:** {reg.get('id_tramo', '—')}")
+                    st.markdown(f"**CIV:** {reg.get('civ', '—')}")
                 with col_b:
-                    st.markdown(f"**Ítem pago:** {reg.get('item_pago','—')}")
-                    st.markdown(f"**Cód. elemento:** {reg.get('codigo_elemento','—')}")
-                    st.markdown(f"**Unidad:** {reg.get('unidad','—')}")
+                    st.markdown(f"**Item pago:** {reg.get('item_pago', '—')}")
+                    st.markdown(f"**Cod. elemento:** {reg.get('codigo_elemento', '—')}")
+                    st.markdown(f"**Unidad:** {reg.get('unidad', '—')}")
                 with col_c:
                     cant = safe_float(reg.get('cantidad')) or 0
-                    st.metric("Cant. inspector", f"{cant:.2f} {reg.get('unidad','')}")
+                    st.metric("Cant. inspector", f"{cant:.2f} {reg.get('unidad', '')}")
                     if reg.get('cant_residente'):
-                        st.metric("Cant. residente", f"{safe_float(reg.get('cant_residente') or 0):.2f}")
+                        st.metric("Cant. residente",
+                                  f"{safe_float(reg.get('cant_residente') or 0):.2f}")
 
                 if reg.get('descripcion'):
-                    st.info(f"📝 {reg['descripcion']}")
+                    st.info(reg['descripcion'])
 
-                if reg.get('obs_residente') and rol in ('interventor','int_amb','int_social','admin'):
+                if reg.get('obs_residente') and rol in ('interventor', 'admin'):
                     st.warning(f"Obs. residente: {reg['obs_residente']}")
 
-                # Registro fotográfico
-                fotos = [reg.get(f'foto_{i}_url') for i in range(1,6) if reg.get(f'foto_{i}_url')]
-                if fotos:
-                    st.markdown("**📷 Registro fotográfico**")
-                    fcols = st.columns(min(len(fotos), 3))
-                    for i, url in enumerate(fotos[:3]):
-                        with fcols[i]:
-                            st.image(url, use_column_width=True)
+                # Adjunto de campo
+                if reg.get('documento_adj'):
+                    st.caption(f"Adjunto: {reg['documento_adj']}")
 
-            # ── Panel de aprobación ──────────────────────────
+            # Panel de aprobación
             with ca:
                 st.markdown("**Validación**")
                 campo_cant = campos['campo_cant']
                 campo_obs  = campos['campo_obs']
 
-                cant_def = safe_float(reg.get(campo_cant)) or safe_float(reg.get('cantidad')) or 0.0
+                cant_def = (safe_float(reg.get(campo_cant)) or
+                            safe_float(reg.get('cantidad')) or 0.0)
 
                 cant_val = st.number_input(
-                    "Cantidad validada",
-                    value=float(cant_def),
-                    step=0.01,
-                    key=f"cant_{reg['id']}"
+                    "Cantidad validada", value=float(cant_def),
+                    step=0.01, key=f"cant_{reg['id']}"
                 )
                 obs_val = st.text_area(
-                    "Observación",
-                    key=f"obs_{reg['id']}",
+                    "Observación", key=f"obs_{reg['id']}",
                     height=80,
                     placeholder="Opcional para aprobar · Obligatoria para devolver"
                 )
@@ -796,42 +876,43 @@ def page_anotaciones(perfil):
                 b1, b2 = st.columns(2)
 
                 with b1:
-                    if st.button("✅ Aprobar", key=f"apr_{reg['id']}",
+                    if st.button("Aprobar", key=f"apr_{reg['id']}",
                                  use_container_width=True, type="primary"):
                         try:
                             sb = get_supabase()
                             update_data = {
-                                'estado':            estado_apr,
-                                campo_cant:          cant_val,
-                                campos['campo_estado']:'aprobado',
-                                campos['campo_apr']:  perfil['id'],
-                                campos['campo_fecha']: datetime.now().isoformat(),
+                                'estado':               estado_apr,
+                                campo_cant:             cant_val,
+                                campos['campo_estado']: 'aprobado',
+                                campos['campo_apr']:    perfil['id'],
+                                campos['campo_fecha']:  datetime.now().isoformat(),
                             }
                             if obs_val:
                                 update_data[campo_obs] = obs_val
-                            sb.table('registros').update(update_data).eq('id', reg['id']).execute()
+                            sb.table('registros_cantidades').update(update_data)\
+                              .eq('id', reg['id']).execute()
                             clear_cache()
-                            st.success("✅ Aprobado")
+                            st.success("Registro aprobado")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error al aprobar: {e}")
 
                 with b2:
-                    if st.button("↩️ Devolver", key=f"dev_{reg['id']}",
+                    if st.button("Devolver", key=f"dev_{reg['id']}",
                                  use_container_width=True):
                         if not obs_val:
                             st.error("Escribe una observación para devolver")
                         else:
                             try:
                                 sb = get_supabase()
-                                sb.table('registros').update({
+                                sb.table('registros_cantidades').update({
                                     'estado':               'DEVUELTO',
-                                    campos['campo_estado']:  'devuelto',
+                                    campos['campo_estado']: 'devuelto',
                                     campo_obs:              obs_val,
                                     campos['campo_fecha']:  datetime.now().isoformat(),
                                 }).eq('id', reg['id']).execute()
                                 clear_cache()
-                                st.warning("↩️ Devuelto al inspector")
+                                st.warning("Registro devuelto al inspector")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Error al devolver: {e}")
@@ -843,10 +924,10 @@ def page_anotaciones(perfil):
 
 def page_generar_pdf(perfil):
     st.markdown("### Generar PDF de Bitácora")
-    st.info("⚠️ Módulo en desarrollo. La generación de PDF se implementará con Jinja2 + WeasyPrint.")
+    st.info("Módulo en desarrollo. La generación de PDF se implementará con Jinja2 + WeasyPrint.")
 
     c1, c2 = st.columns(2)
-    with c1: fi = st.date_input("Desde", value=date.today()-timedelta(days=7))
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=7))
     with c2: ff = st.date_input("Hasta", value=date.today())
 
     tipo_reporte = st.selectbox(
@@ -856,48 +937,185 @@ def page_generar_pdf(perfil):
 
     incluir = st.multiselect(
         "Incluir secciones",
-        ["Registro de actividades", "Registro fotográfico", "Anotaciones", "Cantidades por ítem"],
+        ["Registro de actividades", "Anotaciones", "Cantidades por item"],
         default=["Registro de actividades", "Anotaciones"]
     )
 
-    df = load_registros(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+    df = load_cantidades(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
     if not df.empty:
         st.markdown(f"""
         <div class="kpi-card">
             <div class="kpi-label">Vista previa del reporte</div>
-            <div style="color:#c9d1d9; margin-top:0.5rem;">
+            <div style="color:var(--text-secondary); margin-top:0.5rem;">
                 Período: {fi.strftime('%d/%m/%Y')} — {ff.strftime('%d/%m/%Y')}<br>
                 Registros incluidos: <strong>{len(df)}</strong><br>
-                Aprobados: <strong>{len(df[df['estado']=='APROBADO'])}</strong>
+                Aprobados: <strong>{len(df[df['estado'] == 'APROBADO'])}</strong>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.button("📄 Generar y descargar PDF", type="primary",
+    st.button("Generar y descargar PDF", type="primary",
               disabled=True, use_container_width=False)
     st.caption("Próximamente disponible — módulo de PDF en construcción")
 
 
 # ══════════════════════════════════════════════════════════════
-# SEGUIMIENTO 1 — REPORTE CANTIDADES
+# MAPA DE OBRA
+# ══════════════════════════════════════════════════════════════
+
+def page_mapa(perfil):
+    st.markdown("### Mapa de Obra")
+
+    c1, c2 = st.columns(2)
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=30))
+    with c2: ff = st.date_input("Hasta", value=date.today())
+
+    df = load_cantidades(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+
+    if df.empty or 'latitud' not in df.columns or 'longitud' not in df.columns:
+        st.info("No hay registros con coordenadas para el período seleccionado.")
+        return
+
+    df_geo = df.dropna(subset=['latitud', 'longitud']).copy()
+    df_geo['latitud']  = pd.to_numeric(df_geo['latitud'],  errors='coerce')
+    df_geo['longitud'] = pd.to_numeric(df_geo['longitud'], errors='coerce')
+    df_geo = df_geo.dropna(subset=['latitud', 'longitud'])
+
+    if df_geo.empty:
+        st.info("No hay registros con coordenadas válidas.")
+        return
+
+    color_map = {
+        'BORRADOR': '#8b949e',
+        'REVISADO': '#3fb950',
+        'APROBADO': '#388bfd',
+        'DEVUELTO': '#f85149',
+    }
+
+    fig = px.scatter_mapbox(
+        df_geo,
+        lat='latitud',
+        lon='longitud',
+        color='estado' if 'estado' in df_geo else None,
+        color_discrete_map=color_map,
+        hover_data=['folio', 'tipo_actividad', 'id_tramo', 'cantidad', 'unidad']
+                   if all(c in df_geo.columns for c in ['folio', 'tipo_actividad']) else None,
+        zoom=12,
+        height=560,
+    )
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        margin=dict(l=0, r=0, t=0, b=0),
+        legend=dict(orientation="h", y=0.01, x=0.01),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ══════════════════════════════════════════════════════════════
+# SEGUIMIENTO PRESUPUESTO
+# ══════════════════════════════════════════════════════════════
+
+def page_presupuesto(perfil):
+    st.markdown("### Seguimiento Presupuestal")
+
+    df = load_presupuesto()
+
+    if df.empty:
+        st.info("No hay datos de presupuesto disponibles. Verifica la tabla 'presupuesto_bd'.")
+        return
+
+    # Columnas posibles según el esquema presupuesto_bd
+    cols_show = [c for c in [
+        'componente', 'compenente',   # acepta typo del GPKG
+        'item_pago', 'descripcion', 'und',
+        'cantidad_contrato', 'valor_unitario', 'valor_total',
+        'cantidad_ejecutada', 'valor_ejecutado', 'pct_ejecutado',
+    ] if c in df.columns]
+
+    # Normalizar nombre del campo componente (puede venir con typo)
+    if 'compenente' in df.columns and 'componente' not in df.columns:
+        df = df.rename(columns={'compenente': 'componente'})
+        if 'componente' not in cols_show:
+            cols_show = ['componente'] + [c for c in cols_show if c != 'compenente']
+
+    if not cols_show:
+        st.dataframe(df, hide_index=True, use_container_width=True)
+        return
+
+    # KPIs financieros
+    if 'valor_total' in df.columns:
+        total_contrato = df['valor_total'].apply(safe_float).sum()
+        m1, m2 = st.columns(2)
+        with m1:
+            kpi("Valor Total Contrato", f"${total_contrato:,.0f}", accent_class="kpi-info")
+        if 'valor_ejecutado' in df.columns:
+            total_ejec = df['valor_ejecutado'].apply(safe_float).sum()
+            pct_e = round(total_ejec / total_contrato * 100, 1) if total_contrato > 0 else 0
+            with m2:
+                kpi("Valor Ejecutado", f"${total_ejec:,.0f}",
+                    sub=f"{pct_e}% del contrato",
+                    accent_class="kpi-accent" if pct_e >= 70 else "kpi-warn")
+        st.divider()
+
+    # Agrupación por componente
+    if 'componente' in df.columns and 'valor_total' in df.columns:
+        df_grp = df.groupby('componente').agg(
+            valor_total=('valor_total', lambda x: x.apply(safe_float).sum())
+        ).reset_index()
+        if not df_grp.empty:
+            fig = px.bar(df_grp, x='componente', y='valor_total',
+                         title='Valor Presupuestado por Componente',
+                         height=300)
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=30, b=0),
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family='IBM Plex Sans'),
+                xaxis_title='', yaxis_title='Valor ($)',
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    st.dataframe(
+        df[cols_show],
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            'valor_total':      st.column_config.NumberColumn('Valor Total ($)',      format="$%.0f"),
+            'valor_ejecutado':  st.column_config.NumberColumn('Valor Ejecutado ($)',  format="$%.0f"),
+            'valor_unitario':   st.column_config.NumberColumn('Valor Unitario ($)',   format="$%.0f"),
+            'pct_ejecutado':    st.column_config.ProgressColumn('Ejecutado (%)', format="%.1f%%",
+                                                                  min_value=0, max_value=100),
+        }
+    )
+
+    csv = df[cols_show].to_csv(index=False).encode('utf-8')
+    st.download_button(
+        "Exportar CSV",
+        data=csv,
+        file_name="Presupuesto_IDU-1556-2025.csv",
+        mime="text/csv"
+    )
+
+
+# ══════════════════════════════════════════════════════════════
+# REPORTES DE CANTIDADES
 # ══════════════════════════════════════════════════════════════
 
 def page_reporte_cantidades(perfil):
     rol = perfil['rol']
-    st.markdown("### Reporte de Cantidades")
+    st.markdown("### Reportes de Cantidades")
 
     c1, c2, c3 = st.columns(3)
-    with c1: fi = st.date_input("Desde", value=date.today()-timedelta(days=15))
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=15))
     with c2: ff = st.date_input("Hasta", value=date.today())
-    with c3: buscar = st.text_input("🔍 Folio / Actividad")
+    with c3: buscar = st.text_input("Folio / Actividad")
 
-    df = load_registros(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+    df = load_cantidades(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
     if buscar and not df.empty:
         mask = (
-            df.get('folio','').astype(str).str.contains(buscar, case=False, na=False) |
-            df.get('tipo_actividad','').astype(str).str.contains(buscar, case=False, na=False)
+            df.get('folio', pd.Series(dtype=str)).astype(str).str.contains(buscar, case=False, na=False) |
+            df.get('tipo_actividad', pd.Series(dtype=str)).astype(str).str.contains(buscar, case=False, na=False)
         )
         df = df[mask]
 
@@ -907,8 +1125,9 @@ def page_reporte_cantidades(perfil):
 
     m1, m2, m3, m4 = st.columns(4)
     with m1: st.metric("Total registros", len(df))
-    with m2: st.metric("Aprobados",       len(df[df['estado']=='APROBADO']))
-    with m3: st.metric("Pendientes",      len(df[df['estado'].isin(['BORRADOR','DEVUELTO'])]))
+    with m2: st.metric("Aprobados", len(df[df['estado'] == 'APROBADO']) if 'estado' in df else 0)
+    with m3: st.metric("Pendientes",
+                        len(df[df['estado'].isin(['BORRADOR', 'DEVUELTO'])]) if 'estado' in df else 0)
     with m4:
         if 'cantidad' in df.columns:
             total_cant = df['cantidad'].apply(safe_float).sum()
@@ -916,9 +1135,9 @@ def page_reporte_cantidades(perfil):
 
     st.divider()
 
-    cols_show = ['folio','usuario_qfield','id_tramo','civ','codigo_elemento',
-                 'tipo_actividad','item_pago','item_descripcion',
-                 'cantidad','unidad','cant_residente','cant_interventor','estado']
+    cols_show = ['folio', 'usuario_qfield', 'id_tramo', 'civ', 'codigo_elemento',
+                 'tipo_actividad', 'item_pago', 'item_descripcion',
+                 'cantidad', 'unidad', 'cant_residente', 'cant_interventor', 'estado']
     cols_show = [c for c in cols_show if c in df.columns]
 
     st.dataframe(
@@ -926,37 +1145,37 @@ def page_reporte_cantidades(perfil):
         hide_index=True,
         use_container_width=True,
         column_config={
-            'cantidad':         st.column_config.NumberColumn('Cant. Inspector',  format="%.2f"),
-            'cant_residente':   st.column_config.NumberColumn('Cant. Residente',  format="%.2f"),
-            'cant_interventor': st.column_config.NumberColumn('Cant. Interventor',format="%.2f"),
+            'cantidad':         st.column_config.NumberColumn('Cant. Inspector',   format="%.2f"),
+            'cant_residente':   st.column_config.NumberColumn('Cant. Residente',   format="%.2f"),
+            'cant_interventor': st.column_config.NumberColumn('Cant. Interventor', format="%.2f"),
             'estado':           st.column_config.TextColumn('Estado'),
         }
     )
 
-    # Detalle con fotos
+    # Adjuntos de campo (documento_adj)
     st.divider()
-    st.markdown("#### Detalle con registro fotográfico")
+    st.markdown("#### Registros con adjunto de campo")
 
-    registros_con_fotos = df[[bool(r.get('foto_1_url') or r.get('foto_2_url'))
-                               for _, r in df.iterrows()]] if not df.empty else pd.DataFrame()
-
-    if registros_con_fotos.empty:
-        st.caption("No hay registros con fotos en el período seleccionado")
+    if 'documento_adj' in df.columns:
+        df_adj = df[df['documento_adj'].notna() & (df['documento_adj'] != '')]
+        if df_adj.empty:
+            st.caption("No hay registros con adjunto en el período seleccionado.")
+        else:
+            for _, reg in df_adj.head(10).iterrows():
+                with st.expander(
+                    f"**{reg.get('folio', '—')}** · {reg.get('tipo_actividad', '—')}",
+                    expanded=False
+                ):
+                    st.markdown(f"CIV: `{reg.get('civ', '—')}` · Item: `{reg.get('item_pago', '—')}` "
+                                f"· Cod. elemento: `{reg.get('codigo_elemento', '—')}`")
+                    st.caption(f"Adjunto: {reg['documento_adj']}")
     else:
-        for _, reg in registros_con_fotos.head(5).iterrows():
-            with st.expander(f"**{reg.get('folio','—')}** · {reg.get('tipo_actividad','—')}", expanded=False):
-                st.markdown(f"CIV: `{reg.get('civ','—')}` · Ítem: `{reg.get('item_pago','—')}` · Código elemento: `{reg.get('codigo_elemento','—')}`")
-                fotos = [reg.get(f'foto_{i}_url') for i in range(1,6) if reg.get(f'foto_{i}_url')]
-                if fotos:
-                    fcols = st.columns(min(len(fotos), 4))
-                    for i, url in enumerate(fotos[:4]):
-                        with fcols[i]:
-                            st.image(url, use_column_width=True)
+        st.caption("No hay columna de adjuntos disponible.")
 
-    # CSV
+    # Exportar CSV
     csv = df[cols_show].to_csv(index=False).encode('utf-8')
     st.download_button(
-        "📊 Exportar CSV",
+        "Exportar CSV",
         data=csv,
         file_name=f"Cantidades_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
         mime="text/csv"
@@ -964,376 +1183,53 @@ def page_reporte_cantidades(perfil):
 
 
 # ══════════════════════════════════════════════════════════════
-# SEGUIMIENTO 2 — MAPA DE OBRA
+# REPORTES DE COMPONENTES TRANSVERSALES — base común
 # ══════════════════════════════════════════════════════════════
 
-def page_mapa(perfil):
-    st.markdown("### Mapa de Obra")
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1: fi = st.date_input("Desde", value=date.today()-timedelta(days=30))
-    with c2: ff = st.date_input("Hasta", value=date.today())
-    with c3: estado_f = st.selectbox("Estado", ["Todos","BORRADOR","REVISADO","APROBADO","DEVUELTO"])
-    with c4: civ_f = st.text_input("CIV")
-    with c5: tramo_f = st.text_input("Tramo")
-
-    if st.button("🔄 Actualizar", use_container_width=False):
-        clear_cache()
-        st.rerun()
-
-    estados = None if estado_f == "Todos" else [estado_f]
-    df = load_registros(estados=estados, fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
-
-    if civ_f and not df.empty:
-        df = df[df.get('civ','').astype(str).str.contains(civ_f, case=False, na=False)]
-    if tramo_f and not df.empty:
-        df = df[df.get('id_tramo','').astype(str).str.contains(tramo_f, case=False, na=False)]
-
-    if df.empty:
-        st.info("No hay registros para los filtros seleccionados")
-        return
-
-    df_geo = df.dropna(subset=['latitud','longitud']).copy()
-    if df_geo.empty:
-        st.warning("Los registros del período no tienen coordenadas GPS")
-        return
-
-    df_geo['lat'] = pd.to_numeric(df_geo['latitud'],  errors='coerce')
-    df_geo['lon'] = pd.to_numeric(df_geo['longitud'], errors='coerce')
-    df_geo = df_geo.dropna(subset=['lat','lon'])
-
-    COLOR_MAP = {
-        'BORRADOR': '#a0aec0',
-        'REVISADO': '#68d391',
-        'APROBADO': '#388bfd',
-        'DEVUELTO': '#f85149',
-    }
-
-    fig = px.scatter_mapbox(
-        df_geo,
-        lat='lat', lon='lon',
-        color='estado',
-        color_discrete_map=COLOR_MAP,
-        hover_name='tramo_descripcion',
-        hover_data={
-            'folio':          True,
-            'usuario_qfield': True,
-            'tipo_actividad': True,
-            'item_pago':      True,
-            'cantidad':       True,
-            'unidad':         True,
-            'civ':            True,
-            'lat': False, 'lon': False
-        },
-        size_max=14,
-        zoom=12,
-        height=560,
-        mapbox_style='carto-darkmatter',
-    )
-    fig.update_traces(marker_size=11)
-    fig.update_layout(
-        margin=dict(l=0,r=0,t=0,b=0),
-        paper_bgcolor='rgba(0,0,0,0)',
-        legend=dict(
-            bgcolor='#161b22', bordercolor='#21262d', borderwidth=1,
-            font=dict(family='IBM Plex Mono', color='#c9d1d9', size=11),
-        )
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    st.caption(f"{len(df_geo)} puntos con coordenadas GPS · {len(df) - len(df_geo)} sin coordenadas")
-
-
-# ══════════════════════════════════════════════════════════════
-# SEGUIMIENTO 3 — SEGUIMIENTO PRESUPUESTO
-# ══════════════════════════════════════════════════════════════
-
-def page_presupuesto(perfil):
-    st.markdown("### Seguimiento de Presupuesto")
-
-    df_ppto = load_presupuesto()
-    df_reg  = load_registros()
-
-    if df_ppto.empty:
-        st.info("Sin datos de presupuesto. Verifica la tabla `presupuesto` en Supabase.")
-        # Demo
-        df_ppto = pd.DataFrame({
-            'capitulo_num':  [1,1,2,2,3],
-            'capitulo':      ['Demolición','Demolición','Pavimentación','Pavimentación','Señalización'],
-            'item_pago':     ['1.1','1.2','2.1','2.2','3.1'],
-            'item_descripcion':['Demolición concreto','Retiro escombros','Concreto fc28','Asfalto MDC-2','Demarcación vial'],
-            'unidad':        ['m3','m3','m3','ton','m2'],
-            'cantidad_total':[500,800,1200,900,2000],
-            'precio_unitario':[85000,42000,520000,680000,15000],
-        })
-
-    # Calcular ejecutado desde registros
-    if not df_reg.empty and 'item_pago' in df_reg.columns and 'cant_interventor' in df_reg.columns:
-        df_ejec = (df_reg[df_reg['estado']=='APROBADO']
-                   .groupby('item_pago')['cant_interventor']
-                   .apply(lambda x: pd.to_numeric(x, errors='coerce').sum())
-                   .reset_index(name='cantidad_ejecutada'))
-        df_ppto = df_ppto.merge(df_ejec, on='item_pago', how='left')
-        df_ppto['cantidad_ejecutada'] = df_ppto['cantidad_ejecutada'].fillna(0)
-    else:
-        df_ppto['cantidad_ejecutada'] = 0
-
-    df_ppto['pct_ejec'] = (df_ppto['cantidad_ejecutada'] / df_ppto['cantidad_total'].replace(0,1) * 100).round(1)
-    if 'precio_unitario' in df_ppto.columns:
-        df_ppto['valor_total']    = df_ppto['cantidad_total']    * df_ppto['precio_unitario']
-        df_ppto['valor_ejecutado']= df_ppto['cantidad_ejecutada']* df_ppto['precio_unitario']
-
-    # Filtros
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        caps = ['Todos'] + sorted(df_ppto['capitulo'].dropna().unique().tolist())
-        cap_f = st.selectbox("Capítulo", caps)
-    with c2:
-        items = ['Todos'] + sorted(df_ppto['item_pago'].dropna().unique().tolist())
-        item_f = st.selectbox("Ítem de pago", items)
-    with c3:
-        buscar = st.text_input("🔍 Actividad")
-
-    df_f = df_ppto.copy()
-    if cap_f != 'Todos':   df_f = df_f[df_f['capitulo']==cap_f]
-    if item_f != 'Todos':  df_f = df_f[df_f['item_pago']==item_f]
-    if buscar:             df_f = df_f[df_f['item_descripcion'].str.contains(buscar, case=False, na=False)]
-
-    if df_f.empty:
-        st.info("Sin resultados para los filtros seleccionados")
-        return
-
-    # KPIs financieros
-    if 'valor_total' in df_f.columns:
-        m1, m2, m3, m4 = st.columns(4)
-        with m1: kpi("Valor Contrato Filtrado",   f"${df_f['valor_total'].sum():,.0f}", accent_class="kpi-info")
-        with m2: kpi("Valor Ejecutado",           f"${df_f['valor_ejecutado'].sum():,.0f}", accent_class="kpi-accent")
-        with m3:
-            pct = round(df_f['valor_ejecutado'].sum() / df_f['valor_total'].sum() * 100, 1) if df_f['valor_total'].sum() else 0
-            kpi("% Ejecución", f"{pct}%", accent_class="kpi-accent" if pct>70 else "kpi-warn")
-        with m4: kpi("Ítems", str(len(df_f)))
-
-    st.divider()
-
-    # Tabla
-    cols_t = ['capitulo','item_pago','item_descripcion','unidad',
-              'cantidad_total','cantidad_ejecutada','pct_ejec']
-    if 'valor_total' in df_f.columns:
-        cols_t += ['valor_total','valor_ejecutado']
-    cols_t = [c for c in cols_t if c in df_f.columns]
-
-    st.dataframe(
-        df_f[cols_t],
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            'cantidad_total':     st.column_config.NumberColumn('Cant. Total',    format="%.2f"),
-            'cantidad_ejecutada': st.column_config.NumberColumn('Cant. Ejecutada',format="%.2f"),
-            'pct_ejec':           st.column_config.ProgressColumn('% Ejec.',     format="%.1f%%", min_value=0, max_value=100),
-            'valor_total':        st.column_config.NumberColumn('Valor Total ($)',format="$%,.0f"),
-            'valor_ejecutado':    st.column_config.NumberColumn('Valor Ejec. ($)',format="$%,.0f"),
-        }
-    )
-
-    # Gráfico barras por capítulo
-    if 'capitulo' in df_f.columns:
-        df_cap = df_f.groupby('capitulo').agg(
-            total=('cantidad_total','sum'),
-            ejecutado=('cantidad_ejecutada','sum')
-        ).reset_index()
-        fig = px.bar(df_cap, x='capitulo', y=['total','ejecutado'],
-                     barmode='group', height=320,
-                     color_discrete_map={'total':'#21262d','ejecutado':'#3fb950'},
-                     labels={'value':'Cantidad','capitulo':'Capítulo','variable':''},
-                     )
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='IBM Plex Sans', color='#8b949e'),
-            legend=dict(bgcolor='rgba(0,0,0,0)'),
-            xaxis=dict(gridcolor='#1c2333'), yaxis=dict(gridcolor='#1c2333'),
-            margin=dict(l=0,r=0,t=20,b=0),
-        )
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar':False})
-
-
-# ══════════════════════════════════════════════════════════════
-# SEGUIMIENTO 4 — CURVA S
-# ══════════════════════════════════════════════════════════════
-
-def page_curva_s(perfil):
-    st.markdown("### Curva S — Avance de Obra")
-
-    df_cs = load_curva_s()
-
-    if df_cs.empty:
-        st.info("Sin datos de Curva S. Verifica la tabla `curva_s` en Supabase.")
-        # Demo
-        semanas = list(range(1, 27))
-        pct_prog = [0,2,5,9,14,20,27,35,43,51,58,64,70,75,80,84,87,90,92,94,96,97,98,99,99.5,100]
-        pct_ejec = [0,1,3,7,11,16,22,29,36,44,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        df_cs = pd.DataFrame({
-            'semana': semanas,
-            'pct_programado': pct_prog,
-            'pct_ejecutado':  pct_ejec,
-        })
-
-    # KPIs
-    semana_actual = df_cs[df_cs['pct_ejecutado'] > 0]['semana'].max() if 'semana' in df_cs.columns else None
-
-    if semana_actual:
-        row = df_cs[df_cs['semana']==semana_actual].iloc[0]
-        prog = row.get('pct_programado', 0)
-        ejec = row.get('pct_ejecutado', 0)
-        delta = round(ejec - prog, 1)
-
-        m1, m2, m3, m4 = st.columns(4)
-        with m1: kpi("Semana Actual", str(int(semana_actual)))
-        with m2: kpi("Avance Programado", f"{prog:.1f}%")
-        with m3: kpi("Avance Ejecutado",  f"{ejec:.1f}%",
-                     accent_class="kpi-accent" if delta >= 0 else "kpi-danger")
-        with m4: kpi("Desviación", f"{delta:+.1f}%",
-                     accent_class="kpi-accent" if delta >= 0 else "kpi-danger")
-        st.divider()
-
-    # Gráfico Curva S
-    fig = go.Figure()
-
-    # Área programada
-    fig.add_trace(go.Scatter(
-        x=df_cs['semana'], y=df_cs['pct_programado'],
-        mode='lines',
-        name='Programado',
-        line=dict(color='#388bfd', width=2.5, dash='dot'),
-        fill='tozeroy',
-        fillcolor='rgba(56,139,253,0.08)',
-    ))
-
-    # Ejecutado
-    df_ejec = df_cs[df_cs['pct_ejecutado'] > 0]
-    if not df_ejec.empty:
-        fig.add_trace(go.Scatter(
-            x=df_ejec['semana'], y=df_ejec['pct_ejecutado'],
-            mode='lines+markers',
-            name='Ejecutado',
-            line=dict(color='#3fb950', width=3),
-            marker=dict(size=7, color='#3fb950', symbol='circle'),
-            fill='tozeroy',
-            fillcolor='rgba(63,185,80,0.12)',
-        ))
-
-        # Línea vertical semana actual
-        if semana_actual:
-            fig.add_vline(
-                x=float(semana_actual),
-                line_color='#d29922',
-                line_dash='dot',
-                line_width=1.5,
-                annotation_text=f"Sem. {int(semana_actual)}",
-                annotation_font_color='#d29922',
-                annotation_font_size=11,
-            )
-
-    fig.update_layout(
-        height=440,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(family='IBM Plex Sans', color='#8b949e', size=12),
-        legend=dict(
-            bgcolor='#161b22', bordercolor='#21262d', borderwidth=1,
-            font=dict(family='IBM Plex Mono', color='#c9d1d9', size=11),
-            orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0,
-        ),
-        xaxis=dict(
-            title='Semana de ejecución',
-            gridcolor='#1c2333', color='#6e7681',
-            tickfont=dict(family='IBM Plex Mono'),
-        ),
-        yaxis=dict(
-            title='Avance acumulado (%)',
-            gridcolor='#1c2333', color='#6e7681',
-            ticksuffix='%', range=[0,105],
-            tickfont=dict(family='IBM Plex Mono'),
-        ),
-        hovermode='x unified',
-        hoverlabel=dict(
-            bgcolor='#161b22', bordercolor='#21262d',
-            font=dict(family='IBM Plex Mono', color='#c9d1d9'),
-        ),
-        margin=dict(l=0,r=0,t=40,b=0),
-    )
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar':False})
-
-    # Tabla de avances
-    with st.expander("Ver tabla de avances por semana", expanded=False):
-        st.dataframe(df_cs, hide_index=True, use_container_width=True,
-                     column_config={
-                         'semana':           st.column_config.NumberColumn('Semana', format="%d"),
-                         'pct_programado':   st.column_config.ProgressColumn('Programado (%)', format="%.1f%%", min_value=0, max_value=100),
-                         'pct_ejecutado':    st.column_config.ProgressColumn('Ejecutado (%)',  format="%.1f%%", min_value=0, max_value=100),
-                     })
-
-
-# ══════════════════════════════════════════════════════════════
-# TRANSVERSAL — BASE KPI
-# ══════════════════════════════════════════════════════════════
-
-def panel_transversal_base(perfil, tipo: str, extra_section=None):
+def panel_componentes_base(perfil, filtro_tipo=None):
     """
-    Base común para Ambiental/SST, Social y PMT.
-    tipo: 'ambiental', 'social', 'pmt'
+    Panel base para Ambiental/SST y Social.
+    Carga de registros_componentes con opción de filtrar por tipo.
     """
     rol = perfil['rol']
 
-    # Filtros de fecha
     c1, c2 = st.columns(2)
-    with c1: fi = st.date_input("Desde", value=date.today()-timedelta(days=7))
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=7))
     with c2: ff = st.date_input("Hasta", value=date.today())
 
-    df = load_registros(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+    df = load_componentes(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
-    # ── KPIs diarios ──────────────────────────────────────────
-    st.markdown("#### KPIs del período")
+    # Filtrar por tipo de componente si se especifica
+    if filtro_tipo and not df.empty and 'tipo_componente' in df.columns:
+        df = df[df['tipo_componente'].str.contains(filtro_tipo, case=False, na=False)]
+
+    # KPIs
+    st.markdown("#### Resumen del período")
     kc1, kc2, kc3, kc4 = st.columns(4)
-
-    personal = 0
-    maquinaria = 0
-
-    if not df.empty:
-        if 'personal_monc' in df.columns:
-            personal = pd.to_numeric(df['personal_monc'], errors='coerce').sum()
-        if 'maquinaria' in df.columns:
-            maquinaria = pd.to_numeric(df['maquinaria'], errors='coerce').sum()
-
-    with kc1: kpi("Personal MONC Reportado", f"{int(personal)}", accent_class="kpi-info")
-    with kc2: kpi("Maquinaria", f"{int(maquinaria)}")
-    with kc3: kpi("Anotaciones", str(len(df)))
-    with kc4:
-        if not df.empty and 'cantidad' in df.columns:
-            cant = df['cantidad'].apply(safe_float).sum()
-            kpi("Cantidades (suma)", f"{cant:,.2f}", accent_class="kpi-accent")
-        else:
-            kpi("Cantidades", "—")
+    with kc1: kpi("Total registros", str(len(df)))
+    with kc2: kpi("Aprobados",
+                   str(len(df[df['estado'] == 'APROBADO'])) if not df.empty and 'estado' in df else "0",
+                   accent_class="kpi-accent")
+    with kc3: kpi("Pendientes",
+                   str(len(df[df['estado'].isin(['BORRADOR', 'DEVUELTO'])])) if not df.empty and 'estado' in df else "0")
+    with kc4: kpi("Devueltos",
+                   str(len(df[df['estado'] == 'DEVUELTO'])) if not df.empty and 'estado' in df else "0",
+                   accent_class="kpi-danger" if not df.empty and 'estado' in df and len(df[df['estado'] == 'DEVUELTO']) > 0 else "")
 
     st.divider()
-
-    # ── Sección extra (para PMT) ──────────────────────────────
-    if extra_section:
-        extra_section()
-        st.divider()
-
-    # ── Tabla de anotaciones con aprobación escalonada ────────
     st.markdown("#### Registros del período")
 
-    # Determinar config de aprobación según rol
     cfg = APROBACION_CONFIG.get(rol, (None, None, None))
     estados_vis, estado_apr, campos = cfg
 
     if df.empty:
-        st.info("Sin registros para el período")
+        st.info("Sin registros para el período seleccionado")
         return
 
     if not campos:
         # Solo lectura
-        cols = ['folio','usuario_qfield','id_tramo','tipo_actividad','cantidad','unidad','estado']
+        cols = ['folio', 'usuario_qfield', 'id_tramo', 'tipo_componente',
+                'estado', 'fecha_creacion']
         cols = [c for c in cols if c in df.columns]
         st.dataframe(df[cols], hide_index=True, use_container_width=True)
         return
@@ -1341,133 +1237,157 @@ def panel_transversal_base(perfil, tipo: str, extra_section=None):
     df_vis = df[df['estado'].isin(estados_vis)] if estados_vis else df
 
     if df_vis.empty:
-        st.success("✅ No hay registros pendientes")
+        st.success("No hay registros pendientes")
     else:
         st.markdown(f"**{len(df_vis)} pendiente(s)**")
 
         for _, reg in df_vis.iterrows():
-            with st.expander(f"**{reg.get('folio','—')}** · {reg.get('tipo_actividad','—')}", expanded=False):
-                ci, ca = st.columns([2,1])
+            with st.expander(
+                f"**{reg.get('folio', '—')}** · {reg.get('tipo_componente', reg.get('tipo_actividad', '—'))}",
+                expanded=False
+            ):
+                ci, ca = st.columns([2, 1])
                 with ci:
-                    st.markdown(f"""
-                    **Inspector:** {reg.get('usuario_qfield','—')} &nbsp;|&nbsp;
-                    **Tramo:** {reg.get('id_tramo','—')} &nbsp;|&nbsp;
-                    **Unidad:** {reg.get('unidad','—')}
-                    """)
+                    st.markdown(f"**Inspector:** {reg.get('usuario_qfield', '—')} &nbsp;|&nbsp; "
+                                f"**Tramo:** {reg.get('id_tramo', '—')}")
                     cant = safe_float(reg.get('cantidad')) or 0
-                    st.metric("Cantidad reportada", f"{cant:.2f} {reg.get('unidad','')}")
+                    st.metric("Cantidad reportada", f"{cant:.2f} {reg.get('unidad', '')}")
                     if reg.get('descripcion'):
-                        st.info(f"📝 {reg['descripcion']}")
+                        st.info(reg['descripcion'])
 
                 with ca:
                     campo_cant = campos['campo_cant']
                     campo_obs  = campos['campo_obs']
-                    cant_def   = safe_float(reg.get(campo_cant)) or safe_float(reg.get('cantidad')) or 0.0
+                    cant_def   = (safe_float(reg.get(campo_cant)) or
+                                  safe_float(reg.get('cantidad')) or 0.0)
 
                     cant_val = st.number_input("Cant. validada", value=float(cant_def),
                                                step=0.01, key=f"tx_cant_{reg['id']}")
                     obs_val  = st.text_area("Observación", key=f"tx_obs_{reg['id']}",
-                                            height=70, placeholder="Opcional / Obligatoria para devolver")
+                                            height=70,
+                                            placeholder="Opcional / Obligatoria para devolver")
                     b1, b2 = st.columns(2)
                     with b1:
-                        if st.button("✅", key=f"tx_apr_{reg['id']}", use_container_width=True, type="primary"):
+                        if st.button("Aprobar", key=f"tx_apr_{reg['id']}",
+                                     use_container_width=True, type="primary"):
                             try:
                                 sb = get_supabase()
                                 upd = {
-                                    'estado': estado_apr,
-                                    campo_cant: cant_val,
+                                    'estado':               estado_apr,
+                                    campo_cant:             cant_val,
                                     campos['campo_estado']: 'aprobado',
                                     campos['campo_apr']:    perfil['id'],
                                     campos['campo_fecha']:  datetime.now().isoformat(),
                                 }
-                                if obs_val: upd[campo_obs] = obs_val
-                                sb.table('registros').update(upd).eq('id', reg['id']).execute()
-                                clear_cache(); st.rerun()
+                                if obs_val:
+                                    upd[campo_obs] = obs_val
+                                sb.table('registros_componentes').update(upd)\
+                                  .eq('id', reg['id']).execute()
+                                clear_cache()
+                                st.rerun()
                             except Exception as e:
                                 st.error(str(e))
                     with b2:
-                        if st.button("↩️", key=f"tx_dev_{reg['id']}", use_container_width=True):
+                        if st.button("Devolver", key=f"tx_dev_{reg['id']}",
+                                     use_container_width=True):
                             if not obs_val:
                                 st.error("Escribe observación")
                             else:
                                 try:
                                     sb = get_supabase()
-                                    sb.table('registros').update({
-                                        'estado': 'DEVUELTO',
+                                    sb.table('registros_componentes').update({
+                                        'estado':               'DEVUELTO',
                                         campos['campo_estado']: 'devuelto',
-                                        campo_obs: obs_val,
-                                        campos['campo_fecha']: datetime.now().isoformat(),
+                                        campo_obs:              obs_val,
+                                        campos['campo_fecha']:  datetime.now().isoformat(),
                                     }).eq('id', reg['id']).execute()
-                                    clear_cache(); st.rerun()
+                                    clear_cache()
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(str(e))
 
 
-# ══════════════════════════════════════════════════════════════
-# TRANSVERSALES
-# ══════════════════════════════════════════════════════════════
-
 def page_ambiental(perfil):
-    st.markdown("### Componente Ambiental · SST")
-    panel_transversal_base(perfil, tipo='ambiental')
+    st.markdown("### Componente Ambiental y SST")
+    panel_componentes_base(perfil, filtro_tipo='ambiental')
 
 
 def page_social(perfil):
     st.markdown("### Componente Social")
-    panel_transversal_base(perfil, tipo='social')
-
-
-def page_pmt(perfil):
-    st.markdown("### Componente PMT")
-
-    def seccion_pmt():
-        st.markdown("#### Seguimiento de PMTs")
-        # Tabla PMTs activos (requiere tabla `pmts` en Supabase)
-        try:
-            sb = get_supabase()
-            r  = sb.table('pmts').select('*').execute()
-            df_pmt = pd.DataFrame(r.data) if r.data else pd.DataFrame()
-        except Exception:
-            df_pmt = pd.DataFrame()
-
-        if df_pmt.empty:
-            st.info("Sin registros de PMTs. Configura la tabla `pmts` en Supabase.")
-            # Demo
-            df_pmt = pd.DataFrame({
-                'codigo':    ['PMT-01','PMT-02','PMT-03'],
-                'tramo':     ['Av. Boyacá x Calle 3','Carrera 10 x Calle 1S','Av. Caracas x Calle 14S'],
-                'estado':    ['ACTIVO','VENCIDO','ACTIVO'],
-                'vigencia':  ['2025-05-01','2025-03-15','2025-06-30'],
-                'observaciones':['OK','Renovar','Modificar por desvío'],
-            })
-
-        col_a, col_v = st.columns([2,1])
-        with col_a:
-            st.dataframe(df_pmt, hide_index=True, use_container_width=True)
-        with col_v:
-            activos = len(df_pmt[df_pmt['estado']=='ACTIVO']) if 'estado' in df_pmt else 0
-            vencidos = len(df_pmt[df_pmt['estado']=='VENCIDO']) if 'estado' in df_pmt else 0
-            kpi("PMTs Activos",  str(activos),  accent_class="kpi-accent")
-            kpi("PMTs Vencidos", str(vencidos), accent_class="kpi-danger" if vencidos > 0 else "")
-
-    panel_transversal_base(perfil, tipo='pmt', extra_section=seccion_pmt)
+    panel_componentes_base(perfil, filtro_tipo='social')
 
 
 # ══════════════════════════════════════════════════════════════
-# MAIN
+# SEGUIMIENTO DE PMTs
+# ══════════════════════════════════════════════════════════════
+
+def page_pmt(perfil):
+    st.markdown("### Seguimiento de PMTs")
+
+    # Tabla PMTs activos
+    try:
+        sb     = get_supabase()
+        r      = sb.table('pmts').select('*').execute()
+        df_pmt = pd.DataFrame(r.data) if r.data else pd.DataFrame()
+    except Exception:
+        df_pmt = pd.DataFrame()
+
+    if df_pmt.empty:
+        st.info("Sin registros de PMTs. Configura la tabla 'pmts' en Supabase.")
+        df_pmt = pd.DataFrame({
+            'codigo':       ['PMT-01', 'PMT-02', 'PMT-03'],
+            'tramo':        ['Av. Boyacá x Calle 3', 'Carrera 10 x Calle 1S', 'Av. Caracas x Calle 14S'],
+            'estado':       ['ACTIVO', 'VENCIDO', 'ACTIVO'],
+            'vigencia':     ['2025-05-01', '2025-03-15', '2025-06-30'],
+            'observaciones':['OK', 'Renovar', 'Modificar por desvío'],
+        })
+
+    # KPIs
+    k1, k2, k3 = st.columns(3)
+    activos  = len(df_pmt[df_pmt['estado'] == 'ACTIVO'])  if 'estado' in df_pmt else 0
+    vencidos = len(df_pmt[df_pmt['estado'] == 'VENCIDO']) if 'estado' in df_pmt else 0
+    total    = len(df_pmt)
+    with k1: kpi("PMTs Totales", str(total))
+    with k2: kpi("PMTs Activos",  str(activos),  accent_class="kpi-accent")
+    with k3: kpi("PMTs Vencidos", str(vencidos),
+                  accent_class="kpi-danger" if vencidos > 0 else "")
+
+    st.divider()
+    st.markdown("#### Listado de PMTs")
+    st.dataframe(df_pmt, hide_index=True, use_container_width=True)
+
+    # Panel de registros de componentes asociados al PMT
+    st.divider()
+    st.markdown("#### Registros de Campo Asociados")
+
+    c1, c2 = st.columns(2)
+    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=7))
+    with c2: ff = st.date_input("Hasta", value=date.today())
+
+    df_comp = load_componentes(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+
+    if df_comp.empty:
+        st.info("No hay registros de componentes en el período.")
+    else:
+        cols = ['folio', 'usuario_qfield', 'id_tramo', 'tipo_componente', 'estado', 'fecha_creacion']
+        cols = [c for c in cols if c in df_comp.columns]
+        st.dataframe(df_comp[cols], hide_index=True, use_container_width=True)
+
+
+# ══════════════════════════════════════════════════════════════
+# MAPA DE PÁGINAS Y MAIN
 # ══════════════════════════════════════════════════════════════
 
 PAGE_MAP = {
     "Estado Actual":              page_estado_actual,
     "Anotaciones":                page_anotaciones,
     "Generar PDF":                page_generar_pdf,
-    "Reporte Cantidades":         page_reporte_cantidades,
     "Mapa de Obra":               page_mapa,
     "Seguimiento Presupuesto":    page_presupuesto,
-    "Curva S":                    page_curva_s,
+    "Reporte Cantidades":         page_reporte_cantidades,
     "Componente Ambiental - SST": page_ambiental,
     "Componente Social":          page_social,
-    "Componente PMT":             page_pmt,
+    "Seguimiento PMTs":           page_pmt,
 }
 
 
