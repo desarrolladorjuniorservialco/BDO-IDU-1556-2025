@@ -1,21 +1,71 @@
 """
-sync_qfield.py
+sync_qfield.py  v2  — columnas corregidas contra GPKGs reales
 BDO IDU-1556-2025 · Sincronización QFieldCloud → Supabase
-Alimenta todas las tablas definidas en 001_TABLAS.sql
-desde los GeoPackages actualizados en QField Cloud.
 
-Todos los nombres de tabla y columna están en minúsculas sin comillas,
-en concordancia con el DDL v4 que elimina el error 42703.
+═══════════════════════════════════════════════════════════════
+DISCREPANCIAS ENCONTRADAS AL INSPECCIONAR LOS GPKG LOCALES
+(carpeta SERVIALCO__BDO_IDU-1556-2025)
+═══════════════════════════════════════════════════════════════
 
-Orden de ejecución (respeta FKs):
-  0. Tablas lookup             : tramos_aux_infra, presupuesto_aux_actividad
-  1. Referencia geográfica     : localidades, tramos_bd
-  2. Presupuesto               : presupuesto_bd, presupuesto_componentes_bd
-  3. Formularios principales   : registros_cantidades, registros_componentes,
-                                 registros_reporte_diario, formulario_pmt
-  4. Tablas secundarias BD_    : bd_personal_obra, bd_condicion_climatica,
-                                 bd_maquinaria_obra, bd_sst_ambiental
-  5. Registros fotográficos    : rf_cantidades, rf_componentes, rf_reporte_diario
+[D-01] Formulario_Cantidades.gpkg
+  · foto_1…foto_5 NO existen como columnas; las fotos van en RF_Cantidades.gpkg
+  · fecha_inicio / fecha_fin no existen; solo existe 'fecha'
+    → fecha se mapea a fecha_inicio; fecha_fin queda NULL
+  · 'codigointerventor' → columna real: 'codigo_interventor'
+  · 'acompañamiento interventor' (con espacio) → real: 'acompañamiento_interventor'
+
+[D-02] Reporte_Componentes.gpkg
+  · Layer real: 'PMT - Plan de Manejo del Transito' (nombre interno del GPKG)
+    El script lee sin especificar layer → toma la primera, que es esa. OK.
+  · Mismo problema codigointerventor / acompañamiento_interventor que D-01
+
+[D-03] Reporte_Diario.gpkg
+  · TYPO en columna: 'feca_reporte' (le falta la 'h') en lugar de 'fecha_reporte'
+    → el script debe leer 'feca_reporte' OR 'fecha_reporte' (compatibilidad futura)
+
+[D-04] BD_PersonalObra.gpkg
+  · 'personaloperativo'  → real: 'personal_operativo'
+  · 'personalboal'       → real: 'perosnal_boal'  (¡TYPO en GPKG: 'perosnal'!)
+  · 'personaltransito'   → real: 'personal_transito'
+
+[D-05] BD_CondicionClimatica.gpkg
+  · 'estadoclima'  → real: 'estado_clima'
+
+[D-06] BD_MaquinariaObra.gpkg  — nombres descriptivos completos con paréntesis
+  · 'equiposespeciales'    → real: 'equipos_especiales'
+  · 'minicargador'         → real: 'minicargador_(con_aditamento_martillo)'
+  · 'ruteadora'            → real: 'ruteadora_(rortadora_de_pavimento)'
+    (ojo: 'rortadora' es un typo del GPKG)
+  · 'compresor'            → real: 'compresor_de_aire'
+  · 'retrocargador'        → real: 'retrocargador_(con_aditamento_martillo)'
+  · 'extendedoraasfalto'   → real: 'extendedora_de_asfalto_(finisher)'
+  · 'compactadorneumatico' → real: 'compactador_neumatico'
+
+[D-07] BD_SST-Ambiental.gpkg
+  · Layer real: 'BBD_SST-Ambiental' (doble B — NO es typo, es el nombre real)
+    La versión corregida anterior cambió esto incorrectamente a 'BD_SST-Ambiental'.
+    Se revierte a 'BBD_SST-Ambiental'.
+  · 'kitantiderrames'   → real: 'kit_antiderrames'
+  · 'puntohidratacion'  → real: 'punto_de_hidratacion'
+
+[D-08] TramosIDU15562025BDTRAMOS.gpkg
+  · 'cicloruta_km'   → real: 'ciclorruta_km'  (doble 'r' en el GPKG)
+
+[D-09] Presupuesto_Componentes.gpkg
+  · 'componente'  → real: 'compenente'  (TYPO en GPKG: le falta una 'o')
+    Se lee el typo real; cuando el GPKG sea corregido, el OR cubre ambos.
+
+[D-10] GPKGs en carpeta NO sincronizados (presentes pero no usados):
+  · TramosIDU15562025AUXINFRA.gpkg     → tramos_aux_infra  (el script la puebla
+  · PresupuestoIDU15562025AUXACTIVIDAD.gpkg  desde los BD gpkg, no desde aux)
+  · PresupuestoIDU15562025AUXCAPITULOS.gpkg → presupuesto_aux_capitulos (no sincronizado)
+  · TramosIDU15562025AUXTRAMOS.gpkg    → tramos_aux_tramos (no sincronizado)
+  · Ciclorrutas_Tramos_15562025.gpkg, Espacio_Publico_*.gpkg, Tramos_15562025.gpkg
+    → capas geográficas visuales, no van a Supabase
+
+[BUG-PY-001] (de versión anterior) estado sobreescrito → CORREGIDO: sin 'estado' en dict
+[BUG-PY-002] (de versión anterior) layer SST con typo → REVERTIDO: 'BBD_SST-Ambiental'
+═══════════════════════════════════════════════════════════════
 """
 
 import os
@@ -62,7 +112,7 @@ def safe_num(val):
 
 def coords_from_geom(row):
     lat = lon = None
-    geom = row.get('geometry')
+    geom = row.get('geometry') or row.get('geom')
     if geom is not None:
         try:
             if hasattr(geom, 'x') and hasattr(geom, 'y'):
@@ -138,6 +188,7 @@ def read_layer(tmp_path, layer_name=None):
         print(f"  ⚠ Error leyendo capa '{layer_name}': {e}")
         if layer_name:
             try:
+                print(f"  · Reintentando sin especificar capa...")
                 gdf = gpd.read_file(tmp_path)
             except Exception as e2:
                 print(f"  ✗ Error fatal: {e2}")
@@ -213,7 +264,6 @@ def upload_photo(supabase, token, project_id, file_path, folio):
 # 0. TABLAS LOOKUP
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Mapeo: nombre largo del GPKG → código PK de tramos_aux_infra
 _INFRA_NOMBRE_A_CODIGO = {
     'espacio público': 'EP',
     'espacio publico': 'EP',
@@ -234,7 +284,6 @@ def _infra_a_codigo(valor):
 
 
 def sync_tramos_aux_infra(supabase, token, project_id):
-    """Pobla tramos_aux_infra(codigo, nombre) antes de insertar tramos_bd."""
     print("\n── tramos_aux_infra ──")
     tmp = '/tmp/tramos_bd.gpkg'
     if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
@@ -265,7 +314,6 @@ def sync_tramos_aux_infra(supabase, token, project_id):
 
 
 def sync_presupuesto_aux_actividad(supabase, token, project_id):
-    """Pobla presupuesto_aux_actividad(tipo_actividad) antes de insertar presupuesto_bd."""
     print("\n── presupuesto_aux_actividad ──")
     tmp = '/tmp/presupuesto_bd.gpkg'
     if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', tmp):
@@ -295,16 +343,18 @@ def sync_localidades(supabase, token, project_id):
     print("\n── localidades ──")
     if not download_gpkg(token, project_id, 'loca.gpkg', '/tmp/loca.gpkg'):
         return
+    # Layer 'Loca' con columnas en PascalCase → normalizadas a minúsculas por read_layer
+    # loccodigo, locnombre, locaadmini, locarea  (después de lower())
     gdf = read_layer('/tmp/loca.gpkg', 'Loca')
     if gdf is None or gdf.empty:
         return
     count = 0
     for _, row in gdf.iterrows():
         data = {
-            'loc_codigo': safe(row.get('loc_codigo') or row.get('loccodigo') or row.get('field1')),
-            'loc_nombre': safe(row.get('loc_nombre') or row.get('locnombre') or row.get('field2')),
-            'loc_admin':  safe(row.get('loc_admin')  or row.get('locaadmini')),
-            'loc_area':   safe_num(row.get('loc_area') or row.get('locarea')),
+            'loc_codigo': safe(row.get('loccodigo')  or row.get('loc_codigo')),
+            'loc_nombre': safe(row.get('locnombre')  or row.get('loc_nombre')),
+            'loc_admin':  safe(row.get('locaadmini') or row.get('loc_admin')),
+            'loc_area':   safe_num(row.get('locarea') or row.get('loc_area')),
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('loc_codigo') and data.get('loc_nombre'):
@@ -314,7 +364,9 @@ def sync_localidades(supabase, token, project_id):
 
 
 def sync_tramos_bd(supabase, token, project_id):
-    """infraestructura almacena el CÓDIGO (EP/CI/MV), no el nombre largo."""
+    """
+    [D-08] GPKG tiene 'ciclorruta_km' (con doble r), NO 'cicloruta_km'.
+    """
     print("\n── tramos_bd ──")
     tmp = '/tmp/tramos_bd.gpkg'
     if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
@@ -325,15 +377,16 @@ def sync_tramos_bd(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
-            'id_tramo':          safe(row.get('id_tramo')          or row.get('field1')),
-            'tramo_descripcion': safe(row.get('tramo_descripcion') or row.get('field2')),
+            'id_tramo':          safe(row.get('id_tramo')),
+            'tramo_descripcion': safe(row.get('tramo_descripcion')),
             'via_principal':     safe(row.get('via_principal')),
             'via_desde':         safe(row.get('via_desde')),
             'via_hasta':         safe(row.get('via_hasta')),
             'localidad':         safe(row.get('localidad')),
             'infraestructura':   _infra_a_codigo(row.get('infraestructura')),
             'observaciones':     safe(row.get('observaciones')),
-            'cicloruta_km':      safe_num(row.get('cicloruta_km')),
+            # [D-08] columna real: 'ciclorruta_km' (doble r)
+            'cicloruta_km':      safe_num(row.get('ciclorruta_km') or row.get('cicloruta_km')),
             'esp_publico_m2':    safe_num(row.get('esp_publico_m2')),
         }
         data = {k: v for k, v in data.items() if v is not None}
@@ -360,7 +413,7 @@ def sync_presupuesto_bd(supabase, token, project_id):
             'tipo_actividad': safe(row.get('tipo_actividad')),
             'capitulo_num':   safe(row.get('capitulo_num')),
             'capitulo':       safe(row.get('capitulo')),
-            'codigo_idu':     safe(row.get('codigo_idu') or row.get('field1')),
+            'codigo_idu':     safe(row.get('codigo_idu')),
             'item_pago':      safe(row.get('item_pago')),
             'descripcion':    safe(row.get('descripcion')),
             'unidad':         safe(row.get('unidad')),
@@ -374,6 +427,10 @@ def sync_presupuesto_bd(supabase, token, project_id):
 
 
 def sync_presupuesto_componentes_bd(supabase, token, project_id):
+    """
+    [D-09] GPKG tiene TYPO 'compenente' en lugar de 'componente'.
+    Se lee con OR para cubrir cuando corrijan el GPKG.
+    """
     print("\n── presupuesto_componentes_bd ──")
     if not download_gpkg(token, project_id, 'Presupuesto_Componentes.gpkg', '/tmp/ppto_comp.gpkg'):
         return
@@ -383,15 +440,16 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
-            'capitulo_num':    safe(row.get('capitulo_num')   or row.get('capitulo')),
+            'capitulo_num':    safe(row.get('capitulo_num')),
             'capitulo':        safe(row.get('capitulo')),
-            'componente':      safe(row.get('componente')     or row.get('field2')),
-            'tipo_actividad':  safe(row.get('tipo_actividad') or row.get('field3')),
-            'codigo_idu':      safe(row.get('codigo_idu')     or row.get('field1')),
+            # [D-09] typo real en GPKG: 'compenente'; OR para versión corregida futura
+            'componente':      safe(row.get('compenente') or row.get('componente')),
+            'tipo_actividad':  safe(row.get('tipo_actividad')),
+            'codigo_idu':      safe(row.get('codigo_idu')),
             'descripcion':     safe(row.get('descripcion')),
             'unidad':          safe(row.get('unidad')),
             'cantidad_ppto':   safe_num(row.get('cantidad_ppto')),
-            'precio_unitario': safe_num(row.get('precio_unitario') or row.get('precio unitario')),
+            'precio_unitario': safe_num(row.get('precio_unitario')),
             'item_pago':       safe(row.get('item_pago')),
         }
         data = {k: v for k, v in data.items() if v is not None}
@@ -406,6 +464,16 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def sync_registros_cantidades(supabase, token, project_id):
+    """
+    [D-01] Columnas corregidas:
+      · foto_1…foto_5 NO existen en el GPKG → se eliminan del mapeo
+        (las fotos de cantidades van en RF_Cantidades.gpkg)
+      · documento_adj sí existe → se sube como foto
+      · fecha_inicio / fecha_fin no existen → se mapea 'fecha' a fecha_inicio
+      · codigo_interventor (GPKG) → codigointerventor (Supabase)
+      · acompañamiento_interventor (GPKG, con guión bajo) → acompañamientointerventor (Supabase)
+    [BUG-PY-001] 'estado' eliminado del dict para no sobreescribir registros aprobados
+    """
     print("\n── registros_cantidades ──")
     if not download_gpkg(token, project_id, 'Formulario_Cantidades.gpkg', '/tmp/cantidades.gpkg'):
         return
@@ -413,7 +481,7 @@ def sync_registros_cantidades(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    nuevos = omitidos = 0
+    nuevos = omitidos = errores = 0
     for _, row in gdf.iterrows():
         folio = safe(row.get('folio'))
         if not folio:
@@ -422,11 +490,11 @@ def sync_registros_cantidades(supabase, token, project_id):
 
         lat, lon = coords_from_geom(row)
 
-        foto_urls = {}
-        for campo in ['foto_1', 'foto_2', 'foto_3', 'foto_4', 'foto_5', 'documento_adj']:
-            path = safe(row.get(campo))
-            if path:
-                foto_urls[campo] = upload_photo(supabase, token, project_id, path, folio)
+        # Solo documento_adj existe como adjunto en cantidades
+        doc_url = None
+        doc_path = safe(row.get('documento_adj'))
+        if doc_path:
+            doc_url = upload_photo(supabase, token, project_id, doc_path, folio)
 
         data = {
             'folio':                     str(folio),
@@ -440,7 +508,8 @@ def sync_registros_cantidades(supabase, token, project_id):
             'codigo_elemento':           safe(row.get('codigo_elemento')),
             'latitud':                   lat,
             'longitud':                  lon,
-            'fecha_inicio':              safe(row.get('fecha_inicio')),
+            # [D-01] 'fecha' → fecha_inicio; fecha_fin no existe en GPKG
+            'fecha_inicio':              safe(row.get('fecha_inicio') or row.get('fecha')),
             'fecha_fin':                 safe(row.get('fecha_fin')),
             'tipo_actividad':            safe(row.get('tipo_actividad')),
             'capitulo_num':              safe(row.get('capitulo_num')),
@@ -450,42 +519,45 @@ def sync_registros_cantidades(supabase, token, project_id):
             'unidad':                    safe(row.get('unidad')),
             'cantidad':                  safe_num(row.get('cantidad')),
             'descripcion':               safe(row.get('descripcion')),
-            'foto_1_path':               safe(row.get('foto_1')),
-            'foto_1_url':                foto_urls.get('foto_1'),
-            'foto_2_path':               safe(row.get('foto_2')),
-            'foto_2_url':                foto_urls.get('foto_2'),
-            'foto_3_path':               safe(row.get('foto_3')),
-            'foto_3_url':                foto_urls.get('foto_3'),
-            'foto_4_path':               safe(row.get('foto_4')),
-            'foto_4_url':                foto_urls.get('foto_4'),
-            'foto_5_path':               safe(row.get('foto_5')),
-            'foto_5_url':                foto_urls.get('foto_5'),
-            'documento_adj_path':        safe(row.get('documento_adj')),
-            'documento_adj_url':         foto_urls.get('documento_adj'),
+            # [D-01] foto_1…foto_5 no existen; solo documento_adj
+            'documento_adj_path':        doc_path,
+            'documento_adj_url':         doc_url,
             'observaciones':             safe(row.get('observaciones')),
-            # columnas DDL: codigointerventor, acompañamientointerventor (minúsculas)
-            'codigointerventor':         safe(row.get('codigointerventor')),
-            'acompañamientointerventor': safe(row.get('acompañamiento interventor')),
-            'estado':                    'BORRADOR',
+            # [D-01] columna real: 'codigo_interventor' → campo DB: 'codigointerventor'
+            'codigointerventor':         safe(row.get('codigo_interventor') or row.get('codigointerventor')),
+            # [D-01] columna real: 'acompañamiento_interventor' (guión bajo)
+            'acompañamientointerventor': safe(row.get('acompañamiento_interventor')
+                                             or row.get('acompañamiento interventor')),
+            # [BUG-PY-001] sin 'estado': DEFAULT 'BORRADOR' aplica solo en INSERT
             'qfield_sync_id':            safe(row.get('fid')),
         }
         data = {k: v for k, v in data.items() if v is not None}
-        supabase.table('registros_cantidades').upsert(data, on_conflict='folio').execute()
-        nuevos += 1
-        print(f"  ✓ {folio}")
+        try:
+            supabase.table('registros_cantidades').upsert(data, on_conflict='folio').execute()
+            nuevos += 1
+            print(f"  ✓ {folio}")
+        except Exception as e:
+            errores += 1
+            print(f"  ✗ {folio}: {e}")
 
-    print(f"  → {nuevos} upserted · {omitidos} sin folio")
+    print(f"  → {nuevos} upserted · {omitidos} sin folio · {errores} errores")
 
 
 def sync_registros_componentes(supabase, token, project_id):
+    """
+    [D-02] Layer real: 'PMT - Plan de Manejo del Transito'
+      El script NO especifica layer_name → geopandas toma la primera capa.
+      Columnas de interventor corregidas igual que D-01.
+    """
     print("\n── registros_componentes ──")
     if not download_gpkg(token, project_id, 'Reporte_Componentes.gpkg', '/tmp/componentes.gpkg'):
         return
+    # No se especifica layer_name: gpd lee la primera capa disponible
     gdf = read_layer('/tmp/componentes.gpkg')
     if gdf is None or gdf.empty:
         return
 
-    count = omitidos = 0
+    count = omitidos = errores = 0
     for _, row in gdf.iterrows():
         folio = safe(row.get('folio'))
         if not folio:
@@ -519,19 +591,30 @@ def sync_registros_componentes(supabase, token, project_id):
             'precio_unitario':           safe_num(row.get('precio_unitario')),
             'observaciones':             safe(row.get('observaciones')),
             'profesional':               safe(row.get('profesional')),
-            'codigointerventor':         safe(row.get('codigointerventor')),
-            'acompañamientointerventor': safe(row.get('acompañamiento interventor')),
-            'estado':                    'BORRADOR',
+            # [D-02] columna real: 'codigo_interventor'
+            'codigointerventor':         safe(row.get('codigo_interventor') or row.get('codigointerventor')),
+            # [D-02] columna real: 'acompañamiento_interventor' (guión bajo)
+            'acompañamientointerventor': safe(row.get('acompañamiento_interventor')
+                                             or row.get('acompañamiento interventor')),
+            # [BUG-PY-001] sin 'estado'
             'qfield_sync_id':            safe(row.get('fid')),
         }
         data = {k: v for k, v in data.items() if v is not None}
-        supabase.table('registros_componentes').upsert(data, on_conflict='folio').execute()
-        count += 1
+        try:
+            supabase.table('registros_componentes').upsert(data, on_conflict='folio').execute()
+            count += 1
+        except Exception as e:
+            errores += 1
+            print(f"  ✗ {folio}: {e}")
 
-    print(f"  → {count} upserted · {omitidos} sin folio")
+    print(f"  → {count} upserted · {omitidos} sin folio · {errores} errores")
 
 
 def sync_registros_reporte_diario(supabase, token, project_id):
+    """
+    [D-03] TYPO en GPKG: 'feca_reporte' en lugar de 'fecha_reporte'.
+      Se lee con OR para cubrir cuando lo corrijan en QField.
+    """
     print("\n── registros_reporte_diario ──")
     if not download_gpkg(token, project_id, 'Reporte_Diario.gpkg', '/tmp/reporte_diario.gpkg'):
         return
@@ -539,7 +622,7 @@ def sync_registros_reporte_diario(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    count = omitidos = 0
+    count = omitidos = errores = 0
     for _, row in gdf.iterrows():
         folio = safe(row.get('folio'))
         if not folio:
@@ -556,27 +639,33 @@ def sync_registros_reporte_diario(supabase, token, project_id):
             'latitud':        lat,
             'longitud':       lon,
             'fecha':          safe(row.get('fecha')),
-            'fecha_reporte':  safe(row.get('fecha_reporte')),
+            # [D-03] typo real en GPKG: 'feca_reporte'; OR cubre corrección futura
+            'fecha_reporte':  safe(row.get('feca_reporte') or row.get('fecha_reporte')),
             'observaciones':  safe(row.get('observaciones')),
-            'estado':         'BORRADOR',
+            # [BUG-PY-001] sin 'estado'
             'qfield_sync_id': safe(row.get('fid')),
         }
         data = {k: v for k, v in data.items() if v is not None}
-        supabase.table('registros_reporte_diario').upsert(data, on_conflict='folio').execute()
-        count += 1
+        try:
+            supabase.table('registros_reporte_diario').upsert(data, on_conflict='folio').execute()
+            count += 1
+        except Exception as e:
+            errores += 1
+            print(f"  ✗ {folio}: {e}")
 
-    print(f"  → {count} upserted · {omitidos} sin folio")
+    print(f"  → {count} upserted · {omitidos} sin folio · {errores} errores")
 
 
 def sync_formulario_pmt(supabase, token, project_id):
     print("\n── formulario_pmt ──")
     if not download_gpkg(token, project_id, 'Formulario_PMT.gpkg', '/tmp/pmt.gpkg'):
         return
+    # Layer real: 'formulario_pmt' — read_layer sin layer_name lo toma automáticamente
     gdf = read_layer('/tmp/pmt.gpkg')
     if gdf is None or gdf.empty:
         return
 
-    count = omitidos = 0
+    count = omitidos = errores = 0
     for _, row in gdf.iterrows():
         folio = safe(row.get('folio'))
         if not folio:
@@ -597,18 +686,27 @@ def sync_formulario_pmt(supabase, token, project_id):
             'longitud':        lon,
         }
         data = {k: v for k, v in data.items() if v is not None}
-        supabase.table('formulario_pmt').upsert(data, on_conflict='folio').execute()
-        count += 1
+        try:
+            supabase.table('formulario_pmt').upsert(data, on_conflict='folio').execute()
+            count += 1
+        except Exception as e:
+            errores += 1
+            print(f"  ✗ {folio}: {e}")
 
-    print(f"  → {count} upserted · {omitidos} sin folio")
+    print(f"  → {count} upserted · {omitidos} sin folio · {errores} errores")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. TABLAS SECUNDARIAS (bd_*)
-#    FK: folio → registros_reporte_diario.folio
 # ─────────────────────────────────────────────────────────────────────────────
 
 def sync_bd_personal(supabase, token, project_id):
+    """
+    [D-04] Columnas reales en GPKG:
+      · personal_operativo  (con guión bajo, no camelCase)
+      · perosnal_boal       (TYPO en GPKG: 'perosnal')
+      · personal_transito   (con guión bajo)
+    """
     print("\n── bd_personal_obra ──")
     if not download_gpkg(token, project_id, 'BD_PersonalObra.gpkg', '/tmp/personal.gpkg'):
         return
@@ -624,9 +722,12 @@ def sync_bd_personal(supabase, token, project_id):
         data = {
             'folio':              safe(row.get('folio')),
             'inspectores':        safe_num(row.get('inspectores')),
-            'personal_operativo': safe_num(row.get('personaloperativo')),
-            'personal_boal':      safe_num(row.get('personalboal')),
-            'personal_transito':  safe_num(row.get('personaltransito')),
+            # [D-04] columna real: 'personal_operativo' (con guión bajo)
+            'personal_operativo': safe_num(row.get('personal_operativo') or row.get('personaloperativo')),
+            # [D-04] TYPO en GPKG: 'perosnal_boal'; OR cubre corrección futura
+            'personal_boal':      safe_num(row.get('perosnal_boal') or row.get('personal_boal')),
+            # [D-04] columna real: 'personal_transito' (con guión bajo)
+            'personal_transito':  safe_num(row.get('personal_transito') or row.get('personaltransito')),
             'longitud':           lon,
             'latitud':            lat,
         }
@@ -640,6 +741,9 @@ def sync_bd_personal(supabase, token, project_id):
 
 
 def sync_bd_climatica(supabase, token, project_id):
+    """
+    [D-05] Columna real: 'estado_clima' (con guión bajo, no 'estadoclima')
+    """
     print("\n── bd_condicion_climatica ──")
     if not download_gpkg(token, project_id, 'BD_CondicionClimatica.gpkg', '/tmp/climatica.gpkg'):
         return
@@ -654,7 +758,8 @@ def sync_bd_climatica(supabase, token, project_id):
         lat, lon = coords_from_geom(row)
         data = {
             'folio':         safe(row.get('folio')),
-            'estado_clima':  safe(row.get('estadoclima')),
+            # [D-05] columna real: 'estado_clima' (con guión bajo)
+            'estado_clima':  safe(row.get('estado_clima') or row.get('estadoclima')),
             'hora':          safe(row.get('hora')),
             'observaciones': safe(row.get('observaciones')),
             'longitud':      lon,
@@ -670,6 +775,17 @@ def sync_bd_climatica(supabase, token, project_id):
 
 
 def sync_bd_maquinaria(supabase, token, project_id):
+    """
+    [D-06] Nombres completos de columna en GPKG (con guiones bajos y paréntesis):
+      · equipos_especiales
+      · minicargador_(con_aditamento_martillo)
+      · ruteadora_(rortadora_de_pavimento)   ← también tiene typo 'rortadora'
+      · compresor_de_aire
+      · retrocargador_(con_aditamento_martillo)
+      · extendedora_de_asfalto_(finisher)
+      · compactador_neumatico
+    Después de normalize a lowercase, los nombres con paréntesis se conservan igual.
+    """
     print("\n── bd_maquinaria_obra ──")
     if not download_gpkg(token, project_id, 'BD_MaquinariaObra.gpkg', '/tmp/maquinaria.gpkg'):
         return
@@ -687,13 +803,25 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'operarios':             safe_num(row.get('operarios')),
             'volquetas':             safe_num(row.get('volquetas')),
             'vibrocompactador':      safe_num(row.get('vibrocompactador')),
-            'equipos_especiales':    safe_num(row.get('equiposespeciales')),
-            'minicargador':          safe_num(row.get('minicargador')),
-            'ruteadora':             safe_num(row.get('ruteadora')),
-            'compresor':             safe_num(row.get('compresor')),
-            'retrocargador':         safe_num(row.get('retrocargador')),
-            'extendedora_asfalto':   safe_num(row.get('extendedoraasfalto')),
-            'compactador_neumatico': safe_num(row.get('compactadorneumatico')),
+            # [D-06] columna real: 'equipos_especiales'
+            'equipos_especiales':    safe_num(row.get('equipos_especiales') or row.get('equiposespeciales')),
+            # [D-06] columna real: 'minicargador_(con_aditamento_martillo)'
+            'minicargador':          safe_num(row.get('minicargador_(con_aditamento_martillo)')
+                                              or row.get('minicargador')),
+            # [D-06] columna real: 'ruteadora_(rortadora_de_pavimento)'
+            'ruteadora':             safe_num(row.get('ruteadora_(rortadora_de_pavimento)')
+                                              or row.get('ruteadora')),
+            # [D-06] columna real: 'compresor_de_aire'
+            'compresor':             safe_num(row.get('compresor_de_aire') or row.get('compresor')),
+            # [D-06] columna real: 'retrocargador_(con_aditamento_martillo)'
+            'retrocargador':         safe_num(row.get('retrocargador_(con_aditamento_martillo)')
+                                              or row.get('retrocargador')),
+            # [D-06] columna real: 'extendedora_de_asfalto_(finisher)'
+            'extendedora_asfalto':   safe_num(row.get('extendedora_de_asfalto_(finisher)')
+                                              or row.get('extendedora_asfalto')),
+            # [D-06] columna real: 'compactador_neumatico' (con guión bajo)
+            'compactador_neumatico': safe_num(row.get('compactador_neumatico')
+                                              or row.get('compactadorneumatico')),
             'observaciones':         safe(row.get('observaciones')),
             'longitud':              lon,
             'latitud':               lat,
@@ -708,9 +836,18 @@ def sync_bd_maquinaria(supabase, token, project_id):
 
 
 def sync_bd_sst(supabase, token, project_id):
+    """
+    [D-07] Layer real: 'BBD_SST-Ambiental' (doble B — nombre real, no typo).
+      La versión anterior del script lo "corrigió" a 'BD_SST-Ambiental', lo cual
+      era incorrecto. Se revierte al nombre real.
+    [D-07] Columnas corregidas:
+      · 'kit_antiderrames'   (con guiones bajos)
+      · 'punto_de_hidratacion' (con guiones bajos, más una preposición 'de')
+    """
     print("\n── bd_sst_ambiental ──")
     if not download_gpkg(token, project_id, 'BD_SST-Ambiental.gpkg', '/tmp/sst.gpkg'):
         return
+    # [D-07] Layer real con doble B: 'BBD_SST-Ambiental'
     gdf = read_layer('/tmp/sst.gpkg', 'BBD_SST-Ambiental')
     if gdf is None or gdf.empty:
         return
@@ -726,9 +863,11 @@ def sync_bd_sst(supabase, token, project_id):
             'longitud':           lon,
             'latitud':            lat,
             'botiquin':           safe_num(row.get('botiquin')),
-            'kit_antiderrames':   safe_num(row.get('kitantiderrames')),
-            'punto_hidratacion':  safe_num(row.get('puntohidratacion')),
-            'punto_ecologico':    safe_num(row.get('puntoecologico')),
+            # [D-07] columna real: 'kit_antiderrames'
+            'kit_antiderrames':   safe_num(row.get('kit_antiderrames') or row.get('kitantiderrames')),
+            # [D-07] columna real: 'punto_de_hidratacion'
+            'punto_hidratacion':  safe_num(row.get('punto_de_hidratacion') or row.get('punto_hidratacion')),
+            'punto_ecologico':    safe_num(row.get('punto_ecologico')),
             'extintor':           safe_num(row.get('extintor')),
         }
         data = {k: v for k, v in data.items() if v is not None}
@@ -742,7 +881,6 @@ def sync_bd_sst(supabase, token, project_id):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. REGISTROS FOTOGRÁFICOS (rf_*)
-#    FK: id_unico → [formulario].id_unico
 # ─────────────────────────────────────────────────────────────────────────────
 
 def sync_rf_cantidades(supabase, token, project_id):
@@ -758,11 +896,11 @@ def sync_rf_cantidades(supabase, token, project_id):
     rows = []
     for _, row in gdf.iterrows():
         data = {
-            'folio':              safe(row.get('folio')),
-            'id_unico':           safe(row.get('id_unico')),
-            'observacion':        safe(row.get('observacion')),
-            'nombre_foto':        safe(row.get('nombre_foto')),
-            'ruta_destino_foto':  safe(row.get('ruta_destino_foto')),
+            'folio':             safe(row.get('folio')),
+            'id_unico':          safe(row.get('id_unico')),
+            'observacion':       safe(row.get('observacion')),
+            'nombre_foto':       safe(row.get('nombre_foto')),
+            'ruta_destino_foto': safe(row.get('ruta_destino_foto')),
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('id_unico'):
@@ -801,6 +939,11 @@ def sync_rf_componentes(supabase, token, project_id):
 
 
 def sync_rf_reporte_diario(supabase, token, project_id):
+    """
+    RF_ReporteDiario.gpkg tiene columnas en PascalCase:
+    'Observaciones', 'ID_Unico', 'Folio', 'Foto'
+    read_layer() normaliza a minúsculas → 'observaciones', 'id_unico', 'folio', 'foto'
+    """
     print("\n── rf_reporte_diario ──")
     if not download_gpkg(token, project_id, 'RF_ReporteDiario.gpkg', '/tmp/rf_reporte_diario.gpkg'):
         return
@@ -841,15 +984,15 @@ def main():
     project_id = get_project_id(token)
 
     # 0. Tablas lookup (sin FKs propias — van primero)
-    sync_tramos_aux_infra(supabase, token, project_id)          # PK: codigo
-    sync_presupuesto_aux_actividad(supabase, token, project_id) # PK: tipo_actividad
+    sync_tramos_aux_infra(supabase, token, project_id)
+    sync_presupuesto_aux_actividad(supabase, token, project_id)
 
     # 1. Referencia geográfica
     sync_localidades(supabase, token, project_id)
-    sync_tramos_bd(supabase, token, project_id)                 # FK → tramos_aux_infra(codigo)
+    sync_tramos_bd(supabase, token, project_id)
 
     # 2. Presupuesto
-    sync_presupuesto_bd(supabase, token, project_id)            # FK → presupuesto_aux_actividad
+    sync_presupuesto_bd(supabase, token, project_id)
     sync_presupuesto_componentes_bd(supabase, token, project_id)
 
     # 3. Formularios principales
