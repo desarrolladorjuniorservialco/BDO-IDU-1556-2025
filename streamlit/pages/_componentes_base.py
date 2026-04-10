@@ -1,15 +1,26 @@
 """
 pages/_componentes_base.py — Panel base compartido para componentes transversales.
 Importado por: componente_ambiental, componente_social, componente_pmt.
+
+SEGURIDAD:
+  - re.escape() previene ReDoS en filtro_tipo (parámetro interno, pero
+    se trata como no confiable por buenas prácticas defensivas).
+  - max_chars en text_area limita payloads de observación.
+  - Errores de Supabase se loguean internamente; el usuario recibe
+    mensajes genéricos.
 """
 
+import logging
+import re
 from datetime import datetime, date, timedelta
 
 import streamlit as st
 
 from config import APROBACION_CONFIG
-from database import load_componentes, get_supabase, clear_cache
+from database import load_componentes, get_user_client, clear_cache
 from ui import kpi, safe_float
+
+_log = logging.getLogger(__name__)
 
 
 def panel_componentes(
@@ -34,7 +45,10 @@ def panel_componentes(
     df = load_componentes(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
     if filtro_tipo and not df.empty and 'tipo_componente' in df.columns:
-        df = df[df['tipo_componente'].str.contains(filtro_tipo, case=False, na=False)]
+        # re.escape previene ReDoS; el filtro se trata como literal
+        df = df[df['tipo_componente'].str.contains(
+            re.escape(filtro_tipo), case=False, na=False
+        )]
 
     # ── KPIs ───────────────────────────────────────────────
     total = len(df)
@@ -108,6 +122,7 @@ def panel_componentes(
                 )
                 obs_val = st.text_area(
                     "Observación", key=f"tc_obs_{reg['id']}", height=70,
+                    max_chars=1000,
                     placeholder="Opcional / Obligatoria para devolver"
                 )
 
@@ -116,7 +131,8 @@ def panel_componentes(
                     if st.button("Aprobar", key=f"tc_apr_{reg['id']}",
                                  use_container_width=True, type="primary"):
                         try:
-                            sb  = get_supabase()
+                            # get_user_client → RLS activo (JWT del usuario)
+                            sb  = get_user_client(st.session_state.get('_access_token', ''))
                             upd = {
                                 'estado':               estado_apr,
                                 campo_cant:             cant_val,
@@ -129,16 +145,21 @@ def panel_componentes(
                             sb.table(tabla).update(upd).eq('id', reg['id']).execute()
                             clear_cache()
                             st.rerun()
-                        except Exception as e:
-                            st.error(str(e))
+                        except Exception:
+                            _log.exception(
+                                "Error al aprobar registro id=%s tabla=%s",
+                                reg.get('id'), tabla,
+                            )
+                            st.error("No fue posible aprobar el registro. Intenta de nuevo.")
                 with b2:
                     if st.button("Devolver", key=f"tc_dev_{reg['id']}",
                                  use_container_width=True):
                         if not obs_val:
-                            st.error("Escribe observación")
+                            st.error("Escribe una observación para devolver el registro")
                         else:
                             try:
-                                sb = get_supabase()
+                                # get_user_client → RLS activo (JWT del usuario)
+                                sb = get_user_client(st.session_state.get('_access_token', ''))
                                 sb.table(tabla).update({
                                     'estado':               'DEVUELTO',
                                     campos['campo_estado']: 'devuelto',
@@ -147,5 +168,9 @@ def panel_componentes(
                                 }).eq('id', reg['id']).execute()
                                 clear_cache()
                                 st.rerun()
-                            except Exception as e:
-                                st.error(str(e))
+                            except Exception:
+                                _log.exception(
+                                    "Error al devolver registro id=%s tabla=%s",
+                                    reg.get('id'), tabla,
+                                )
+                                st.error("No fue posible devolver el registro. Intenta de nuevo.")

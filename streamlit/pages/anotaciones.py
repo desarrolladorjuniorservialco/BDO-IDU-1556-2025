@@ -1,16 +1,26 @@
 """
 pages/anotaciones.py — Página: Anotaciones de Bitácora
 Flujo de aprobación escalonada sobre registros_cantidades.
+
+SEGURIDAD:
+  - re.escape() previene ReDoS en el campo de búsqueda libre.
+  - max_chars en text_area de observación limita payloads grandes.
+  - Errores de Supabase se loguean internamente; el usuario recibe
+    mensajes genéricos (no se filtran detalles de la BD).
 """
 
+import logging
+import re
 from datetime import datetime, date, timedelta
 
 import pandas as pd
 import streamlit as st
 
 from config import APROBACION_CONFIG
-from database import load_cantidades, get_supabase, clear_cache
+from database import load_cantidades, get_user_client, clear_cache
 from ui import badge, section_badge, safe_float
+
+_log = logging.getLogger(__name__)
 
 
 def page_anotaciones(perfil: dict) -> None:
@@ -42,13 +52,16 @@ def page_anotaciones(perfil: dict) -> None:
                          fecha_fin=ff.isoformat())
 
     if buscar and not df.empty:
+        # re.escape previene ReDoS: trata el input del usuario como literal,
+        # no como expresión regular
+        buscar_safe = re.escape(buscar)
         mask = (
             df.get('folio', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar, case=False, na=False)
+              .astype(str).str.contains(buscar_safe, case=False, na=False)
             | df.get('tipo_actividad', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar, case=False, na=False)
+              .astype(str).str.contains(buscar_safe, case=False, na=False)
             | df.get('civ', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar, case=False, na=False)
+              .astype(str).str.contains(buscar_safe, case=False, na=False)
         )
         df = df[mask]
 
@@ -131,6 +144,7 @@ def page_anotaciones(perfil: dict) -> None:
                 )
                 obs_val = st.text_area(
                     "Observación", key=f"obs_{reg['id']}", height=80,
+                    max_chars=1000,
                     placeholder="Opcional para aprobar · Obligatoria para devolver"
                 )
 
@@ -139,7 +153,8 @@ def page_anotaciones(perfil: dict) -> None:
                     if st.button("Aprobar", key=f"apr_{reg['id']}",
                                  use_container_width=True, type="primary"):
                         try:
-                            sb  = get_supabase()
+                            # get_user_client → RLS activo (JWT del usuario)
+                            sb  = get_user_client(st.session_state.get('_access_token', ''))
                             upd = {
                                 'estado':               estado_apr,
                                 campo_cant:             cant_val,
@@ -154,8 +169,9 @@ def page_anotaciones(perfil: dict) -> None:
                             clear_cache()
                             st.success("Aprobado")
                             st.rerun()
-                        except Exception as e:
-                            st.error(f"Error: {e}")
+                        except Exception:
+                            _log.exception("Error al actualizar registro id=%s", reg.get('id'))
+                            st.error("No fue posible actualizar el registro. Intenta de nuevo.")
                 with b2:
                     if st.button("Devolver", key=f"dev_{reg['id']}",
                                  use_container_width=True):
@@ -163,7 +179,8 @@ def page_anotaciones(perfil: dict) -> None:
                             st.error("Escribe una observación para devolver")
                         else:
                             try:
-                                sb = get_supabase()
+                                # get_user_client → RLS activo (JWT del usuario)
+                                sb = get_user_client(st.session_state.get('_access_token', ''))
                                 sb.table('registros_cantidades').update({
                                     'estado':               'DEVUELTO',
                                     campos['campo_estado']: 'devuelto',
@@ -173,5 +190,8 @@ def page_anotaciones(perfil: dict) -> None:
                                 clear_cache()
                                 st.warning("Devuelto")
                                 st.rerun()
-                            except Exception as e:
-                                st.error(f"Error: {e}")
+                            except Exception:
+                                _log.exception(
+                                    "Error al devolver registro id=%s", reg.get('id')
+                                )
+                                st.error("No fue posible devolver el registro. Intenta de nuevo.")

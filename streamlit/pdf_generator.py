@@ -1,8 +1,16 @@
 """
 pdf_generator.py — Generación de PDF de Bitácora Digital
 Usa reportlab. Instalar: pip install reportlab
+
+SEGURIDAD:
+  - ReportLab interpreta XML internamente; caracteres <, >, & en datos de
+    la base de datos causarían errores de parseo o inyección de marcado.
+  - _esc() aplica html.escape() a todos los valores que provienen de la BD
+    antes de pasarlos a Paragraph().
+  - Los datos de fecha/período son internamente generados (no escapados).
 """
 
+import html as _html
 import io
 import math
 from datetime import datetime, date
@@ -118,16 +126,21 @@ def generate_pdf_bitacora(
     story.append(Spacer(1, 0.3 * cm))
 
     # ── INFORMACIÓN DEL CONTRATO ───────────────────────────
+    # Todos los valores de la BD se escapan antes de entregarlos a Paragraph
+    # porque ReportLab los procesa como XML.
     if contrato:
+        def _ce(key, default):
+            return _html.escape(str(contrato.get(key, default) or default))
+
         info_rows = [
             [Paragraph('Contrato',    S['info_key']),
-             Paragraph(contrato.get('numero', 'IDU-1556-2025'), S['info_val'])],
+             Paragraph(_ce('numero', 'IDU-1556-2025'), S['info_val'])],
             [Paragraph('Contratista', S['info_key']),
-             Paragraph(contrato.get('contratista', 'SERVIALCO S.A.S.'), S['info_val'])],
+             Paragraph(_ce('contratista', 'SERVIALCO S.A.S.'), S['info_val'])],
             [Paragraph('Entidad',     S['info_key']),
-             Paragraph(contrato.get('entidad', 'IDU'), S['info_val'])],
+             Paragraph(_ce('entidad', 'IDU'), S['info_val'])],
             [Paragraph('Objeto',      S['info_key']),
-             Paragraph(contrato.get('objeto', '—'), S['info_val'])],
+             Paragraph(_ce('objeto', '—'), S['info_val'])],
         ]
         info_tbl = Table(info_rows, colWidths=[2.5 * cm, W - 2.5 * cm])
         info_tbl.setStyle(TableStyle([
@@ -232,6 +245,15 @@ def _safe_float(val) -> float:
         return 0.0
 
 
+def _esc(val) -> str:
+    """
+    Escapa caracteres especiales XML/HTML antes de pasarlos a Paragraph().
+    ReportLab parsea el contenido de Paragraph() como XML, por lo que
+    caracteres < > & provenientes de la BD causarían errores de parseo.
+    """
+    return _html.escape(str(val) if val is not None else '')
+
+
 def _build_records_table(story, df, S, C_DARK, C_LGRAY, C_MGRAY, C_WHITE, W):
     """Construye y agrega la tabla de registros al story de reportlab."""
     from reportlab.platypus import Table, TableStyle
@@ -281,7 +303,9 @@ def _build_records_table(story, df, S, C_DARK, C_LGRAY, C_MGRAY, C_WHITE, W):
             elif c in ('cantidad', 'cant_residente', 'cant_interventor'):
                 f = _safe_float(val)
                 val = f"{f:.2f}" if f else '—'
-            row.append(_P(str(val), S['td']))
+            # _esc() escapa XML antes de pasarlo a Paragraph para prevenir
+            # inyección de marcado y errores de parseo en ReportLab
+            row.append(_P(_esc(val), S['td']))
         rows.append(row)
 
     tbl = Table(rows, colWidths=col_widths, repeatRows=1)

@@ -1,8 +1,12 @@
 """
 pages/reporte_cantidades.py — Página: Reportes de Cantidades
 Medición y validación de cantidades de obra con gráficas y exportación CSV.
+
+SEGURIDAD:
+  - re.escape() previene ReDoS en el campo de búsqueda libre.
 """
 
+import re
 from datetime import date, timedelta
 
 import pandas as pd
@@ -25,11 +29,13 @@ def page_reporte_cantidades(perfil: dict) -> None:
     df = load_cantidades(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
 
     if buscar and not df.empty:
+        # re.escape previene ReDoS: el input se trata como literal, no como regex
+        buscar_safe = re.escape(buscar)
         mask = (
             df.get('folio', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar, case=False, na=False)
+              .astype(str).str.contains(buscar_safe, case=False, na=False)
             | df.get('tipo_actividad', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar, case=False, na=False)
+              .astype(str).str.contains(buscar_safe, case=False, na=False)
         )
         df = df[mask]
 
