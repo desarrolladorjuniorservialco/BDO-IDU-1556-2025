@@ -118,6 +118,7 @@ def panel_componentes(
 
                 cant_val = st.number_input(
                     "Cant. validada", value=float(cant_def),
+                    min_value=0.0, max_value=9_999_999.0,
                     step=0.01, key=f"tc_cant_{reg['id']}"
                 )
                 obs_val = st.text_area(

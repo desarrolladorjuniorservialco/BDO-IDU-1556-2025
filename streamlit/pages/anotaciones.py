@@ -140,6 +140,7 @@ def page_anotaciones(perfil: dict) -> None:
 
                 cant_val = st.number_input(
                     "Cantidad validada", value=float(cant_def),
+                    min_value=0.0, max_value=9_999_999.0,
                     step=0.01, key=f"cant_{reg['id']}"
                 )
                 obs_val = st.text_area(

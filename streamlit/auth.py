@@ -18,6 +18,7 @@ SEGURIDAD:
 
 import logging
 import re
+import threading
 from datetime import datetime, timedelta
 
 import streamlit as st
@@ -39,53 +40,105 @@ _ROLES_VALIDOS = frozenset({
     'interventor', 'supervisor', 'admin',
 })
 
-# ── Rate limiting ──────────────────────────────────────────
-_MAX_INTENTOS      = 5    # intentos fallidos antes del bloqueo
-_BLOQUEO_SEGUNDOS  = 300  # 5 minutos de bloqueo
-_KEY_INTENTOS      = '_login_intentos'
-_KEY_BLOQUEO_HASTA = '_login_bloqueo_hasta'
+# ── Rate limiting SERVER-SIDE ──────────────────────────────
+# El contador se guarda en un cache compartido entre TODAS las sesiones
+# del servidor (st.cache_resource), no solo en la pestaña del navegador.
+# Esto impide que abrir pestañas nuevas evite el bloqueo.
+# El tracking es por email (el objetivo del ataque, no la IP).
+#
+# Adicionalmente, activar "Rate Limits" en Supabase Dashboard:
+#   Auth → Settings → Rate Limits
+# para protección a nivel de infraestructura independiente del código.
+
+_MAX_INTENTOS     = 3    # intentos fallidos antes del bloqueo
+_BLOQUEO_SEGUNDOS = 900  # 15 minutos de bloqueo
 
 
-def _bloqueado() -> bool:
+@st.cache_resource
+def _rate_limiter() -> dict:
     """
-    Retorna True si el usuario está en período de bloqueo y muestra
-    el tiempo restante. Limpia el bloqueo si ya expiró.
+    Cache compartido entre todas las sesiones Streamlit del servidor.
+    Estructura: { email_hash: (intentos: int, bloqueado_hasta: datetime | None) }
+    Usa un threading.Lock para seguridad en entornos con múltiples hilos.
     """
-    hasta = st.session_state.get(_KEY_BLOQUEO_HASTA)
-    if hasta is None:
-        return False
+    return {'datos': {}, 'lock': threading.Lock()}
+
+
+def _hash_email(email: str) -> str:
+    """Hash simple del email para no almacenar el valor original en memoria."""
+    import hashlib
+    return hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+
+
+def _verificar_intento(email: str, registrar_fallo: bool = False) -> bool:
+    """
+    Operación ATÓMICA que verifica bloqueo y, opcionalmente, registra un fallo.
+    Usar un solo lock para ambas acciones elimina la race condition entre
+    _bloqueado() y _registrar_fallo() cuando múltiples hilos intentan login.
+
+    Retorna True si el email está bloqueado (no debe continuar).
+
+    Parámetros:
+        email:           dirección de correo del intento.
+        registrar_fallo: si True, incrementa el contador antes de retornar.
+                         Usar solo cuando el intento ya falló (credenciales
+                         incorrectas). No usar en la verificación previa.
+    """
+    rl    = _rate_limiter()
+    llave = _hash_email(email)
     ahora = datetime.now()
-    if ahora < hasta:
-        restante = int((hasta - ahora).total_seconds())
-        st.error(
-            f"Demasiados intentos fallidos. "
-            f"Espera {restante} segundo(s) antes de intentarlo de nuevo."
-        )
-        return True
-    # Bloqueo expirado: limpiar contadores
-    st.session_state.pop(_KEY_INTENTOS, None)
-    st.session_state.pop(_KEY_BLOQUEO_HASTA, None)
-    return False
+
+    with rl['lock']:
+        # Limpiar entradas expiradas (evita memory leak en servidores longevos)
+        expiradas = [
+            k for k, (_, hasta) in rl['datos'].items()
+            if hasta and ahora >= hasta
+        ]
+        for k in expiradas:
+            del rl['datos'][k]
+
+        intentos, hasta = rl['datos'].get(llave, (0, None))
+
+        # ── Verificar si ya está bloqueado ─────────────────
+        if hasta and ahora < hasta:
+            restante = int((hasta - ahora).total_seconds())
+            minutos  = restante // 60
+            segundos = restante % 60
+            # Mostramos el error fuera del lock no es posible aquí,
+            # lo almacenamos y lo mostramos tras liberar el lock.
+            # st.error se llama dentro del lock solo brevemente.
+            st.error(
+                f"Demasiados intentos fallidos. "
+                f"Espera {minutos}m {segundos}s antes de intentarlo de nuevo."
+            )
+            return True
+
+        # ── Registrar fallo si se solicita ─────────────────
+        if registrar_fallo:
+            intentos += 1
+            nueva_hasta = None
+            if intentos >= _MAX_INTENTOS:
+                nueva_hasta = ahora + timedelta(seconds=_BLOQUEO_SEGUNDOS)
+                _log.warning(
+                    "Login bloqueado para hash=%s tras %d intentos. Hasta %s",
+                    llave, intentos, nueva_hasta.isoformat(),
+                )
+            else:
+                _log.warning(
+                    "Intento de login fallido para hash=%s (%d/%d)",
+                    llave, intentos, _MAX_INTENTOS,
+                )
+            rl['datos'][llave] = (intentos, nueva_hasta)
+
+        return False
 
 
-def _registrar_fallo() -> None:
-    """Incrementa el contador de fallos y aplica bloqueo si se supera el límite."""
-    intentos = st.session_state.get(_KEY_INTENTOS, 0) + 1
-    st.session_state[_KEY_INTENTOS] = intentos
-    _log.warning("Intento de login fallido (%d/%d)", intentos, _MAX_INTENTOS)
-    if intentos >= _MAX_INTENTOS:
-        hasta = datetime.now() + timedelta(seconds=_BLOQUEO_SEGUNDOS)
-        st.session_state[_KEY_BLOQUEO_HASTA] = hasta
-        _log.warning(
-            "Login bloqueado por %d intentos fallidos. Bloqueado hasta %s",
-            intentos, hasta.isoformat(),
-        )
-
-
-def _resetear_intentos() -> None:
-    """Limpia el contador tras un login exitoso."""
-    st.session_state.pop(_KEY_INTENTOS, None)
-    st.session_state.pop(_KEY_BLOQUEO_HASTA, None)
+def _resetear_intentos(email: str) -> None:
+    """Limpia el contador del email tras un login exitoso."""
+    rl    = _rate_limiter()
+    llave = _hash_email(email)
+    with rl['lock']:
+        rl['datos'].pop(llave, None)
 
 
 def login() -> None:
@@ -131,8 +184,8 @@ def login() -> None:
         if not submit:
             return
 
-        # ── Verificar bloqueo por intentos fallidos ────────
-        if _bloqueado():
+        # ── Verificar bloqueo server-side (atómico, sin race condition) ──
+        if _verificar_intento(email, registrar_fallo=False):
             return
 
         # ── Validación local antes de llamar a Supabase ────
@@ -141,8 +194,7 @@ def login() -> None:
             return
 
         if not _EMAIL_RE.match(email):
-            # Mensaje genérico para no confirmar existencia de cuentas
-            _registrar_fallo()
+            _verificar_intento(email, registrar_fallo=True)
             st.error("Correo o contraseña incorrectos.")
             return
 
@@ -152,53 +204,50 @@ def login() -> None:
             resp = sb.auth.sign_in_with_password({"email": email, "password": password})
 
             if not resp.user:
-                _registrar_fallo()
+                _verificar_intento(email, registrar_fallo=True)
                 st.error("Correo o contraseña incorrectos.")
                 return
 
             # ── Cargar perfil ──────────────────────────────
             perfil_r = (
                 sb.table('perfiles')
-                .select('id, nombre, rol, empresa')   # solo columnas necesarias
+                .select('id, nombre, rol, empresa')
                 .eq('id', resp.user.id)
                 .execute()
             )
 
             if not perfil_r.data:
-                _registrar_fallo()
+                _verificar_intento(email, registrar_fallo=True)
                 st.error("Cuenta sin perfil configurado. Contacta al administrador.")
-                _log.warning("Login sin perfil: user_id=%s", resp.user.id)
+                _log.warning("Login sin perfil: user_id=%s", _hash_email(email))
                 return
 
             perfil = perfil_r.data[0]
 
             # ── Validar rol ────────────────────────────────
             if perfil.get('rol') not in _ROLES_VALIDOS:
-                _registrar_fallo()
+                _verificar_intento(email, registrar_fallo=True)
                 st.error("Rol no reconocido. Contacta al administrador.")
                 _log.warning(
-                    "Rol inválido en login: user_id=%s rol=%s",
-                    resp.user.id, perfil.get('rol'),
+                    "Rol inválido en login: hash=%s rol=%s",
+                    _hash_email(email), perfil.get('rol'),
                 )
                 return
 
             # ── Escribir sesión ────────────────────────────
-            # El access_token se guarda por separado para usarlo en el
-            # cliente con RLS (get_user_client). No se incluye en 'perfil'
-            # para evitar que circule innecesariamente por el código de UI.
-            _resetear_intentos()
+            _resetear_intentos(email)
             access_token = None
             if resp.session:
                 access_token = resp.session.access_token
-            st.session_state['user']            = resp.user
-            st.session_state['perfil']          = perfil
-            st.session_state['_access_token']   = access_token
+            st.session_state['user']          = resp.user
+            st.session_state['perfil']        = perfil
+            st.session_state['_access_token'] = access_token
             st.rerun()
 
         except Exception:
-            # Loguear detalles internos; mostrar mensaje genérico
-            _registrar_fallo()
-            _log.exception("Error en autenticación para email=%s", email[:20])
+            _verificar_intento(email, registrar_fallo=True)
+            # Log con hash del email, nunca el valor original
+            _log.exception("Error en autenticación para hash=%s", _hash_email(email))
             st.error("No fue posible iniciar sesión. Intenta de nuevo.")
 
 
