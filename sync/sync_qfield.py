@@ -702,10 +702,7 @@ def sync_formulario_pmt(supabase, token, project_id):
 
 def sync_bd_personal(supabase, token, project_id):
     """
-    [D-04] Columnas reales en GPKG:
-      · personal_operativo  (con guión bajo, no camelCase)
-      · perosnal_boal       (TYPO en GPKG: 'perosnal')
-      · personal_transito   (con guión bajo)
+    [D-04] Corregido: Mantiene estructura constante para evitar PGRST102.
     """
     print("\n── bd_personal_obra ──")
     if not download_gpkg(token, project_id, 'BD_PersonalObra.gpkg', '/tmp/personal.gpkg'):
@@ -719,19 +716,17 @@ def sync_bd_personal(supabase, token, project_id):
     rows = []
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
+        # Se definen todas las llaves explícitamente
         data = {
             'folio':              safe(row.get('folio')),
             'inspectores':        safe_num(row.get('inspectores')),
-            # [D-04] columna real: 'personal_operativo' (con guión bajo)
             'personal_operativo': safe_num(row.get('personal_operativo') or row.get('personaloperativo')),
-            # [D-04] TYPO en GPKG: 'perosnal_boal'; OR cubre corrección futura
             'personal_boal':      safe_num(row.get('perosnal_boal') or row.get('personal_boal')),
-            # [D-04] columna real: 'personal_transito' (con guión bajo)
             'personal_transito':  safe_num(row.get('personal_transito') or row.get('personaltransito')),
             'longitud':           lon,
             'latitud':            lat,
         }
-        data = {k: v for k, v in data.items() if v is not None}
+        # Solo filtramos el registro completo si no tiene folio
         if data.get('folio'):
             rows.append(data)
 
@@ -742,7 +737,7 @@ def sync_bd_personal(supabase, token, project_id):
 
 def sync_bd_climatica(supabase, token, project_id):
     """
-    [D-05] Columna real: 'estado_clima' (con guión bajo, no 'estadoclima')
+    [D-05] Corregido: Mantiene estructura constante para evitar PGRST102.
     """
     print("\n── bd_condicion_climatica ──")
     if not download_gpkg(token, project_id, 'BD_CondicionClimatica.gpkg', '/tmp/climatica.gpkg'):
@@ -758,14 +753,12 @@ def sync_bd_climatica(supabase, token, project_id):
         lat, lon = coords_from_geom(row)
         data = {
             'folio':         safe(row.get('folio')),
-            # [D-05] columna real: 'estado_clima' (con guión bajo)
             'estado_clima':  safe(row.get('estado_clima') or row.get('estadoclima')),
             'hora':          safe(row.get('hora')),
             'observaciones': safe(row.get('observaciones')),
             'longitud':      lon,
             'latitud':       lat,
         }
-        data = {k: v for k, v in data.items() if v is not None}
         if data.get('folio'):
             rows.append(data)
 
@@ -776,15 +769,7 @@ def sync_bd_climatica(supabase, token, project_id):
 
 def sync_bd_maquinaria(supabase, token, project_id):
     """
-    [D-06] Nombres completos de columna en GPKG (con guiones bajos y paréntesis):
-      · equipos_especiales
-      · minicargador_(con_aditamento_martillo)
-      · ruteadora_(rortadora_de_pavimento)   ← también tiene typo 'rortadora'
-      · compresor_de_aire
-      · retrocargador_(con_aditamento_martillo)
-      · extendedora_de_asfalto_(finisher)
-      · compactador_neumatico
-    Después de normalize a lowercase, los nombres con paréntesis se conservan igual.
+    [D-06] Corregido: Mantiene estructura constante para evitar PGRST102.
     """
     print("\n── bd_maquinaria_obra ──")
     if not download_gpkg(token, project_id, 'BD_MaquinariaObra.gpkg', '/tmp/maquinaria.gpkg'):
@@ -803,30 +788,17 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'operarios':             safe_num(row.get('operarios')),
             'volquetas':             safe_num(row.get('volquetas')),
             'vibrocompactador':      safe_num(row.get('vibrocompactador')),
-            # [D-06] columna real: 'equipos_especiales'
             'equipos_especiales':    safe_num(row.get('equipos_especiales') or row.get('equiposespeciales')),
-            # [D-06] columna real: 'minicargador_(con_aditamento_martillo)'
-            'minicargador':          safe_num(row.get('minicargador_(con_aditamento_martillo)')
-                                              or row.get('minicargador')),
-            # [D-06] columna real: 'ruteadora_(rortadora_de_pavimento)'
-            'ruteadora':             safe_num(row.get('ruteadora_(rortadora_de_pavimento)')
-                                              or row.get('ruteadora')),
-            # [D-06] columna real: 'compresor_de_aire'
+            'minicargador':          safe_num(row.get('minicargador_(con_aditamento_martillo)') or row.get('minicargador')),
+            'ruteadora':             safe_num(row.get('ruteadora_(rortadora_de_pavimento)') or row.get('ruteadora')),
             'compresor':             safe_num(row.get('compresor_de_aire') or row.get('compresor')),
-            # [D-06] columna real: 'retrocargador_(con_aditamento_martillo)'
-            'retrocargador':         safe_num(row.get('retrocargador_(con_aditamento_martillo)')
-                                              or row.get('retrocargador')),
-            # [D-06] columna real: 'extendedora_de_asfalto_(finisher)'
-            'extendedora_asfalto':   safe_num(row.get('extendedora_de_asfalto_(finisher)')
-                                              or row.get('extendedora_asfalto')),
-            # [D-06] columna real: 'compactador_neumatico' (con guión bajo)
-            'compactador_neumatico': safe_num(row.get('compactador_neumatico')
-                                              or row.get('compactadorneumatico')),
+            'retrocargador':         safe_num(row.get('retrocargador_(con_aditamento_martillo)') or row.get('retrocargador')),
+            'extendedora_asfalto':   safe_num(row.get('extendedora_de_asfalto_(finisher)') or row.get('extendedora_asfalto')),
+            'compactador_neumatico': safe_num(row.get('compactador_neumatico') or row.get('compactadorneumatico')),
             'observaciones':         safe(row.get('observaciones')),
             'longitud':              lon,
             'latitud':               lat,
         }
-        data = {k: v for k, v in data.items() if v is not None}
         if data.get('folio'):
             rows.append(data)
 
@@ -837,17 +809,11 @@ def sync_bd_maquinaria(supabase, token, project_id):
 
 def sync_bd_sst(supabase, token, project_id):
     """
-    [D-07] Layer real: 'BBD_SST-Ambiental' (doble B — nombre real, no typo).
-      La versión anterior del script lo "corrigió" a 'BD_SST-Ambiental', lo cual
-      era incorrecto. Se revierte al nombre real.
-    [D-07] Columnas corregidas:
-      · 'kit_antiderrames'   (con guiones bajos)
-      · 'punto_de_hidratacion' (con guiones bajos, más una preposición 'de')
+    [D-07] Corregido: Mantiene estructura constante para evitar PGRST102.
     """
     print("\n── bd_sst_ambiental ──")
     if not download_gpkg(token, project_id, 'BD_SST-Ambiental.gpkg', '/tmp/sst.gpkg'):
         return
-    # [D-07] Layer real con doble B: 'BBD_SST-Ambiental'
     gdf = read_layer('/tmp/sst.gpkg', 'BBD_SST-Ambiental')
     if gdf is None or gdf.empty:
         return
@@ -863,14 +829,11 @@ def sync_bd_sst(supabase, token, project_id):
             'longitud':           lon,
             'latitud':            lat,
             'botiquin':           safe_num(row.get('botiquin')),
-            # [D-07] columna real: 'kit_antiderrames'
             'kit_antiderrames':   safe_num(row.get('kit_antiderrames') or row.get('kitantiderrames')),
-            # [D-07] columna real: 'punto_de_hidratacion'
             'punto_hidratacion':  safe_num(row.get('punto_de_hidratacion') or row.get('punto_hidratacion')),
             'punto_ecologico':    safe_num(row.get('punto_ecologico')),
             'extintor':           safe_num(row.get('extintor')),
         }
-        data = {k: v for k, v in data.items() if v is not None}
         if data.get('folio'):
             rows.append(data)
 
@@ -902,7 +865,7 @@ def sync_rf_cantidades(supabase, token, project_id):
             'nombre_foto':       safe(row.get('nombre_foto')),
             'ruta_destino_foto': safe(row.get('ruta_destino_foto')),
         }
-        data = {k: v for k, v in data.items() if v is not None}
+        # IMPORTANTE: No filtramos llaves individuales, solo el registro si falta id_unico
         if data.get('id_unico'):
             rows.append(data)
 
@@ -929,7 +892,6 @@ def sync_rf_componentes(supabase, token, project_id):
             'observaciones': safe(row.get('observaciones')),
             'foto':          safe(row.get('foto')),
         }
-        data = {k: v for k, v in data.items() if v is not None}
         if data.get('id_unico'):
             rows.append(data)
 
@@ -939,11 +901,6 @@ def sync_rf_componentes(supabase, token, project_id):
 
 
 def sync_rf_reporte_diario(supabase, token, project_id):
-    """
-    RF_ReporteDiario.gpkg tiene columnas en PascalCase:
-    'Observaciones', 'ID_Unico', 'Folio', 'Foto'
-    read_layer() normaliza a minúsculas → 'observaciones', 'id_unico', 'folio', 'foto'
-    """
     print("\n── rf_reporte_diario ──")
     if not download_gpkg(token, project_id, 'RF_ReporteDiario.gpkg', '/tmp/rf_reporte_diario.gpkg'):
         return
@@ -961,7 +918,6 @@ def sync_rf_reporte_diario(supabase, token, project_id):
             'observaciones': safe(row.get('observaciones')),
             'foto':          safe(row.get('foto')),
         }
-        data = {k: v for k, v in data.items() if v is not None}
         if data.get('id_unico'):
             rows.append(data)
 
@@ -983,31 +939,20 @@ def main():
     supabase   = get_supabase()
     project_id = get_project_id(token)
 
-    # 0. Tablas lookup (sin FKs propias — van primero)
     sync_tramos_aux_infra(supabase, token, project_id)
     sync_presupuesto_aux_actividad(supabase, token, project_id)
-
-    # 1. Referencia geográfica
     sync_localidades(supabase, token, project_id)
     sync_tramos_bd(supabase, token, project_id)
-
-    # 2. Presupuesto
     sync_presupuesto_bd(supabase, token, project_id)
     sync_presupuesto_componentes_bd(supabase, token, project_id)
-
-    # 3. Formularios principales
     sync_registros_cantidades(supabase, token, project_id)
     sync_registros_componentes(supabase, token, project_id)
     sync_registros_reporte_diario(supabase, token, project_id)
     sync_formulario_pmt(supabase, token, project_id)
-
-    # 4. Tablas secundarias (FK → registros_reporte_diario.folio)
     sync_bd_personal(supabase, token, project_id)
     sync_bd_climatica(supabase, token, project_id)
     sync_bd_maquinaria(supabase, token, project_id)
     sync_bd_sst(supabase, token, project_id)
-
-    # 5. Registros fotográficos (FK → formularios via id_unico)
     sync_rf_cantidades(supabase, token, project_id)
     sync_rf_componentes(supabase, token, project_id)
     sync_rf_reporte_diario(supabase, token, project_id)
