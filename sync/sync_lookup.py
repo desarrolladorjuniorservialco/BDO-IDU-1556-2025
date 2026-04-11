@@ -1,0 +1,72 @@
+from .utils import safe
+from .gpkg import download_gpkg, read_layer
+
+_INFRA_NOMBRE_A_CODIGO = {
+    'espacio público': 'EP',
+    'espacio publico': 'EP',
+    'ep':              'EP',
+    'ciclorruta':      'CI',
+    'cicloruta':       'CI',
+    'ci':              'CI',
+    'malla vial':      'MV',
+    'mv':              'MV',
+}
+
+
+def _infra_a_codigo(valor):
+    if not valor:
+        return None
+    key = str(valor).strip().lower()
+    return _INFRA_NOMBRE_A_CODIGO.get(key, str(valor).strip())
+
+
+def sync_tramos_aux_infra(supabase, token, project_id):
+    print("\n── tramos_aux_infra ──")
+    tmp = '/tmp/tramos_bd.gpkg'
+    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    pares = {}
+    for _, row in gdf.iterrows():
+        nombre = safe(row.get('infraestructura'))
+        if nombre:
+            codigo = _infra_a_codigo(nombre)
+            if codigo:
+                pares[codigo] = nombre
+
+    count = 0
+    for codigo, nombre in sorted(pares.items()):
+        try:
+            supabase.table('tramos_aux_infra').upsert(
+                {'codigo': codigo, 'nombre': nombre}, on_conflict='codigo'
+            ).execute()
+            count += 1
+            print(f"  · {codigo} → {nombre}")
+        except Exception as e:
+            print(f"  ⚠ ({codigo}, {nombre}): {e}")
+    print(f"  → {count} upserted")
+
+
+def sync_presupuesto_aux_actividad(supabase, token, project_id):
+    print("\n── presupuesto_aux_actividad ──")
+    tmp = '/tmp/presupuesto_bd.gpkg'
+    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    valores = {safe(row.get('tipo_actividad')) for _, row in gdf.iterrows()} - {None}
+    count = 0
+    for v in sorted(valores):
+        try:
+            supabase.table('presupuesto_aux_actividad').upsert(
+                {'tipo_actividad': v}, on_conflict='tipo_actividad'
+            ).execute()
+            count += 1
+        except Exception as e:
+            print(f"  ⚠ '{v}': {e}")
+    print(f"  → {count} upserted: {sorted(valores)}")
