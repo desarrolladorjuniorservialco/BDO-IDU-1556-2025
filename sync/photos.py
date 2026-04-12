@@ -33,7 +33,12 @@ def upload_photo(supabase, token, project_id, file_path, folio):
             content_type = r.headers.get('Content-Type', 'image/jpeg')
             break
     if not content:
-        print(f"    ⚠ Foto no descargada: {file_path}")
+        ruta = str(file_path)
+        if any(ruta.startswith(p) for p in ['../../../', '../../', 'C:/', 'D:/']):
+            print(f"    ⚠ Foto fuera del proyecto QField (ruta local PC): {file_path}")
+            print(f"       → El inspector debe guardar la foto dentro de la carpeta del proyecto.")
+        else:
+            print(f"    ⚠ Foto no encontrada en QFieldCloud: {file_path}")
         return None
     filename = str(file_path).strip().replace('\\', '/').split('/')[-1]
     storage_path = f"{folio}/{filename}"
