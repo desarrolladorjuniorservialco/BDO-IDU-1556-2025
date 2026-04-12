@@ -232,20 +232,6 @@ Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada regi
 
 ---
 
-## Configuración — Secrets de GitHub
-
-Ir a **Settings → Secrets and variables → Actions** y agregar:
-
-| Secret | Descripción |
-|---|---|
-| `SUPABASE_URL` | `https://<proyecto>.supabase.co` |
-| `SUPABASE_KEY` | Service role key (Panel Supabase → Settings → API) |
-| `SUPABASE_DB_PASSWORD` | Contraseña de la base de datos (reservado para uso futuro) |
-| `QFIELD_USER` | Usuario de QFieldCloud |
-| `QFIELD_PASSWORD` | Contraseña de QFieldCloud |
-
----
-
 ## Ejecución local (desarrollo y pruebas)
 
 **1. Instalar dependencias del sistema** (Linux/Codespaces — GDAL para geopandas):
