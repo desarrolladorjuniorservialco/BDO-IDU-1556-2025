@@ -13,3 +13,4 @@ QFIELD_PASSWORD = os.environ['QFIELD_PASSWORD']
 PROJECT_NAME    = 'BDO_IDU-1556-2025'
 BASE_URL        = 'https://app.qfield.cloud/api/v1'
 CONTRATO_ID     = 'IDU-1556-2025'
+STORAGE_BUCKET  = 'Registro_Obra'

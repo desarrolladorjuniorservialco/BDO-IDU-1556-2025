@@ -1,5 +1,5 @@
 import requests
-from .config import BASE_URL, SUPABASE_URL
+from .config import BASE_URL, SUPABASE_URL, STORAGE_BUCKET
 from .connections import qfield_headers
 
 
@@ -38,12 +38,12 @@ def upload_photo(supabase, token, project_id, file_path, folio):
     filename = str(file_path).strip().replace('\\', '/').split('/')[-1]
     storage_path = f"{folio}/{filename}"
     try:
-        supabase.storage.from_('fotos-obra').upload(
+        supabase.storage.from_(STORAGE_BUCKET).upload(
             path=storage_path,
             file=content,
             file_options={"content-type": content_type, "upsert": "true"},
         )
-        return f"{SUPABASE_URL}/storage/v1/object/public/fotos-obra/{storage_path}"
+        return f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
     except Exception as e:
         print(f"    ⚠ Error subiendo foto: {e}")
         return None
