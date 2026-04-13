@@ -1,0 +1,4 @@
+[ui]
+# Oculta la navegación multi-página automática de Streamlit.
+# La app usa navegación personalizada en sidebar.py.
+hideSidebarNav = true

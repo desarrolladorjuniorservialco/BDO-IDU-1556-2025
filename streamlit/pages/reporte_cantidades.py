@@ -188,39 +188,45 @@ def page_reporte_cantidades(perfil: dict) -> None:
     cfg = APROBACION_CONFIG.get(rol, (None, None, None))
     estados_vis, estado_apr, campos = cfg
 
-    # ── Filtros — fila 1 ──────────────────────────────────
-    fc1, fc2, fc3, fc4 = st.columns(4)
-    with fc1:
-        fi = st.date_input("Desde",
-                           value=date.today() - timedelta(days=30),
-                           key="rc_fi")
-    with fc2:
-        ff = st.date_input("Hasta", value=date.today(), key="rc_ff")
-    with fc3:
-        opts = (["Todos"] + estados_vis) if estados_vis else (
-            ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
-        )
-        estado_f = st.selectbox("Estado", opts, key="rc_est")
-    with fc4:
-        buscar = st.text_input(
-            "Buscar: folio / CIV / actividad / tramo",
-            key="rc_bus",
-        )
-
-    # ── Filtros — fila 2 ──────────────────────────────────
-    with st.expander("Filtros avanzados", expanded=False):
-        fa1, fa2, fa3 = st.columns(3)
+    # ── Filtros ───────────────────────────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    with st.form("form_rc"):
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            fi = st.date_input("Desde",
+                               value=date.today() - timedelta(days=30),
+                               key="rc_fi")
+        with fc2:
+            ff = st.date_input("Hasta", value=date.today(), key="rc_ff")
+        with fc3:
+            opts = (["Todos"] + estados_vis) if estados_vis else (
+                ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
+            )
+            estado_f = st.selectbox("Estado", opts, key="rc_est")
+        with fc4:
+            buscar = st.text_input(
+                "Buscar: folio / CIV / actividad / tramo",
+                key="rc_bus",
+            )
+        fa1, fa2, fa3, fa4, fa5 = st.columns(5)
         with fa1:
             tramo_f = st.text_input("Tramo (ID)", key="rc_tramo")
         with fa2:
             civ_f   = st.text_input("CIV", key="rc_civ")
         with fa3:
             item_f  = st.text_input("Ítem de pago", key="rc_item")
-        fa4, fa5 = st.columns(2)
         with fa4:
-            comp_f  = st.text_input("Componente / Capítulo", key="rc_comp")
+            comp_f  = st.text_input("Componente / Cap.", key="rc_comp")
         with fa5:
-            user_f  = st.text_input("Inspector / Usuario QField", key="rc_user")
+            user_f  = st.text_input("Inspector / Usuario", key="rc_user")
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if not aplicar and 'rc_loaded' not in st.session_state:
+        st.info("Define los filtros y presiona **Aplicar filtros** para cargar.")
+        return
+    st.session_state['rc_loaded'] = True
 
     # ── Carga de datos ─────────────────────────────────────
     estados_q = None if estado_f == "Todos" else [estado_f]

@@ -1,12 +1,11 @@
 """
 pages/anotaciones.py — Página: Anotaciones de Bitácora
-Flujo de aprobación escalonada sobre registros_cantidades.
+Vista de registros_cantidades APROBADOS con registro fotográfico.
+Flujo de aprobación (para roles con acceso) sobre los mismos registros.
 
 SEGURIDAD:
   - re.escape() previene ReDoS en el campo de búsqueda libre.
   - max_chars en text_area de observación limita payloads grandes.
-  - Errores de Supabase se loguean internamente; el usuario recibe
-    mensajes genéricos (no se filtran detalles de la BD).
 """
 
 import logging
@@ -17,182 +16,194 @@ import pandas as pd
 import streamlit as st
 
 from config import APROBACION_CONFIG
-from database import load_cantidades, get_user_client, clear_cache
+from database import (
+    load_cantidades, load_fotos_cantidades,
+    get_user_client, clear_cache,
+)
 from ui import badge, section_badge, safe_float
 
 _log = logging.getLogger(__name__)
 
 
+def _pill(label: str, valor, color: str = "") -> str:
+    if valor is None or str(valor).strip() in ('', 'nan', 'None', '—'):
+        return ""
+    cls = f"info-pill {color}" if color else "info-pill"
+    return f'<span class="{cls}">{label}: {valor}</span>'
+
+
 def page_anotaciones(perfil: dict) -> None:
     rol = perfil['rol']
-    section_badge("Anotaciones de Bitácora", "purple")
-    st.markdown("### Registro y aprobación de actividades")
+    section_badge("Anotaciones Aprobadas", "green")
+    st.markdown("### Registro de Actividades Aprobadas")
 
     cfg = APROBACION_CONFIG.get(rol, (None, None, None))
     estados_vis, estado_apr, campos = cfg
 
-    # ── Filtros ────────────────────────────────────────────
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=15))
-    with c2: ff = st.date_input("Hasta", value=date.today())
-    with c3:
-        opts = (["Todos"] + estados_vis) if estados_vis else (
-            ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
-        )
-        estado_f = st.selectbox("Estado", opts)
-    with c4:
-        buscar = st.text_input("Folio / Actividad / CIV")
+    # ── Formulario de filtros ──────────────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    with st.form("form_anotaciones"):
+        fc1, fc2, fc3 = st.columns(3)
+        with fc1:
+            fi = st.date_input("Desde", value=date.today() - timedelta(days=30))
+        with fc2:
+            ff = st.date_input("Hasta", value=date.today())
+        with fc3:
+            buscar = st.text_input("Folio / Actividad / CIV / Tramo")
 
-    estados_q = None if estado_f == "Todos" else [estado_f]
-    if estados_vis and estado_f == "Todos":
-        estados_q = estados_vis
+        fa1, fa2 = st.columns(2)
+        with fa1:
+            tramo_f = st.text_input("Tramo")
+        with fa2:
+            civ_f = st.text_input("CIV")
 
-    df = load_cantidades(estados=estados_q,
-                         fecha_ini=fi.isoformat(),
-                         fecha_fin=ff.isoformat())
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if buscar and not df.empty:
-        # re.escape previene ReDoS: trata el input del usuario como literal,
-        # no como expresión regular
-        buscar_safe = re.escape(buscar)
-        mask = (
-            df.get('folio', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar_safe, case=False, na=False)
-            | df.get('tipo_actividad', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar_safe, case=False, na=False)
-            | df.get('civ', pd.Series(dtype=str))
-              .astype(str).str.contains(buscar_safe, case=False, na=False)
-        )
+    # Solo carga tras primer submit o recarga normal
+    if not aplicar and 'anot_df' not in st.session_state:
+        st.info("Define los filtros y presiona **Aplicar filtros** para cargar.")
+        return
+
+    # Siempre cargar solo APROBADO (la página es solo lectura de aprobados)
+    df = load_cantidades(
+        estados=['APROBADO'],
+        fecha_ini=fi.isoformat(),
+        fecha_fin=ff.isoformat(),
+    )
+
+    def _tf(df, col, val):
+        if val.strip() and not df.empty and col in df.columns:
+            return df[df[col].astype(str).str.contains(
+                re.escape(val.strip()), case=False, na=False
+            )]
+        return df
+
+    if buscar.strip() and not df.empty:
+        b = re.escape(buscar.strip())
+        mask = pd.Series(False, index=df.index)
+        for col in ['folio', 'tipo_actividad', 'civ', 'id_tramo',
+                    'item_pago', 'item_descripcion', 'usuario_qfield']:
+            if col in df.columns:
+                mask |= df[col].astype(str).str.contains(b, case=False, na=False)
         df = df[mask]
 
+    df = _tf(df, 'id_tramo', tramo_f)
+    df = _tf(df, 'civ',      civ_f)
+
     if df.empty:
-        st.info("No hay registros para los filtros seleccionados")
+        st.info("No hay registros aprobados para los filtros seleccionados.")
         return
 
     # ── Métricas ───────────────────────────────────────────
-    m1, m2, m3, m4 = st.columns(4)
-    with m1: st.metric("Total", len(df))
-    with m2: st.metric("Borradores", len(df[df['estado'] == 'BORRADOR']) if 'estado' in df else 0)
-    with m3: st.metric("Revisados",  len(df[df['estado'] == 'REVISADO'])  if 'estado' in df else 0)
-    with m4: st.metric("Aprobados",  len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0)
+    cant_col  = 'cant_interventor' if 'cant_interventor' in df.columns else 'cantidad'
+    suma_cant = df[cant_col].apply(safe_float).sum() if cant_col in df.columns else 0
+
+    m1, m2, m3 = st.columns(3)
+    with m1: st.metric("Registros aprobados", len(df))
+    with m2: st.metric("Σ Cantidad (Interventor)", f"{suma_cant:,.3f}")
+    with m3:
+        tramos_uniq = df['id_tramo'].nunique() if 'id_tramo' in df.columns else 0
+        st.metric("Tramos involucrados", tramos_uniq)
     st.divider()
 
-    # ── Vista solo lectura ─────────────────────────────────
-    if not campos:
-        cols = ['folio', 'usuario_qfield', 'id_tramo', 'civ',
-                'tipo_actividad', 'cantidad', 'unidad', 'estado', 'fecha_creacion']
-        cols = [c for c in cols if c in df.columns]
-        st.dataframe(df[cols], hide_index=True, use_container_width=True)
-        return
+    # Carga en batch de fotos
+    folios = tuple(df['folio'].dropna().tolist()) if 'folio' in df.columns else ()
+    df_fot = load_fotos_cantidades(folios) if folios else pd.DataFrame()
 
-    # ── Vista con aprobación ───────────────────────────────
-    st.markdown(f"**{len(df)} registro(s) para revisión**")
+    st.markdown(f"**{len(df)} registro(s) aprobado(s)**")
 
     for _, reg in df.iterrows():
-        estado_actual = reg.get('estado', '')
-        folio         = reg.get('folio', '—')
-        actividad     = reg.get('tipo_actividad', '—')
-        tramo         = reg.get('tramo_descripcion', reg.get('id_tramo', '—'))
+        est_actual = str(reg.get('estado', ''))
+        folio      = str(reg.get('folio', '—'))
+        actividad  = str(reg.get('tipo_actividad', reg.get('item_descripcion', '—')))
+        tramo      = str(reg.get('id_tramo', '—'))
+        fecha_c    = str(reg.get('fecha_creacion', reg.get('fecha_inicio', '')))[:10]
+        usuario    = str(reg.get('usuario_qfield', '—'))
 
-        with st.expander(f"**{folio}** · {actividad} · {tramo}", expanded=False):
+        with st.expander(f"**{folio}** · {actividad[:55]} · {tramo}", expanded=False):
+            st.markdown(
+                f'<div class="record-meta-row">'
+                f'{badge(est_actual)}'
+                f'<span class="info-pill">{fecha_c}</span>'
+                f'{_pill("Tramo", tramo, "blue")}'
+                f'{_pill("CIV", reg.get("civ"), "teal")}'
+                f'{_pill("Ítem", reg.get("item_pago"), "orange")}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
             ci, ca = st.columns([2.2, 1])
 
             with ci:
-                st.markdown(f"""
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-                    {badge(estado_actual)}
-                    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;
-                                 color:var(--text-muted);">
-                        {str(reg.get('fecha_inicio', ''))[:10]}
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="record-field-grid">'
+                    f'<div><div class="record-field-label">Inspector</div>'
+                    f'<div class="record-field-value">{usuario}</div></div>'
+                    f'<div><div class="record-field-label">Componente / Cap.</div>'
+                    f'<div class="record-field-value">{reg.get("codigo_elemento","—")}</div></div>'
+                    f'<div><div class="record-field-label">Ítem de pago</div>'
+                    f'<div class="record-field-value">{reg.get("item_pago","—")}</div></div>'
+                    f'<div><div class="record-field-label">Actividad</div>'
+                    f'<div class="record-field-value">{actividad[:80]}</div></div>'
+                    f'<div><div class="record-field-label">Cant. Inspector</div>'
+                    f'<div class="record-field-value">{safe_float(reg.get("cantidad")) or 0:.3f} {reg.get("unidad","")}</div></div>'
+                    f'<div><div class="record-field-label">Cant. Residente</div>'
+                    f'<div class="record-field-value">{safe_float(reg.get("cant_residente")) or "—"}</div></div>'
+                    f'<div><div class="record-field-label">Cant. Interventor</div>'
+                    f'<div class="record-field-value kpi-green">{safe_float(reg.get("cant_interventor")) or "—"}</div></div>'
+                    f'<div><div class="record-field-label">Unidad</div>'
+                    f'<div class="record-field-value">{reg.get("unidad","—")}</div></div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
 
-                ca1, ca2, ca3 = st.columns(3)
-                with ca1:
-                    st.markdown(f"**Inspector:** {reg.get('usuario_qfield', '—')}")
-                    st.markdown(f"**Tramo:** {reg.get('id_tramo', '—')}")
-                    st.markdown(f"**CIV:** {reg.get('civ', '—')}")
-                with ca2:
-                    st.markdown(f"**Item pago:** {reg.get('item_pago', '—')}")
-                    st.markdown(f"**Cod. elemento:** {reg.get('codigo_elemento', '—')}")
-                    st.markdown(f"**Unidad:** {reg.get('unidad', '—')}")
-                with ca3:
-                    cant = safe_float(reg.get('cantidad')) or 0
-                    st.metric("Cant. inspector", f"{cant:.2f} {reg.get('unidad', '')}")
-                    if reg.get('cant_residente'):
-                        st.metric("Cant. residente",
-                                  f"{safe_float(reg.get('cant_residente') or 0):.2f}")
+                if reg.get('observaciones'):
+                    st.info(str(reg['observaciones']))
 
-                if reg.get('descripcion'):
-                    st.info(reg['descripcion'])
-                if reg.get('obs_residente') and rol in ('interventor', 'admin'):
-                    st.warning(f"Obs. residente: {reg['obs_residente']}")
-                if reg.get('documento_adj'):
-                    st.caption(f"Adjunto de campo: {reg['documento_adj']}")
+                # Registro fotográfico
+                if not df_fot.empty and 'folio' in df_fot.columns:
+                    fotos_r = df_fot[df_fot['folio'] == folio]
+                    urls = fotos_r['foto_url'].dropna().tolist() if not fotos_r.empty else []
+                    if urls:
+                        st.markdown(
+                            '<div style="font-family:\'JetBrains Mono\',monospace;'
+                            'font-size:0.63rem;text-transform:uppercase;'
+                            'letter-spacing:0.1em;color:var(--text-muted);'
+                            'margin:0.6rem 0 0.35rem;">Registro fotográfico</div>',
+                            unsafe_allow_html=True,
+                        )
+                        f_cols = st.columns(min(len(urls), 4))
+                        for i, url in enumerate(urls[:4]):
+                            with f_cols[i]:
+                                st.image(url, use_column_width=True)
+                    else:
+                        st.caption("Sin fotos registradas")
 
             with ca:
-                st.markdown("**Validación**")
-                campo_cant = campos['campo_cant']
-                campo_obs  = campos['campo_obs']
-                cant_def   = (safe_float(reg.get(campo_cant)) or
-                              safe_float(reg.get('cantidad')) or 0.0)
-
-                cant_val = st.number_input(
-                    "Cantidad validada", value=float(cant_def),
-                    min_value=0.0, max_value=9_999_999.0,
-                    step=0.01, key=f"cant_{reg['id']}"
-                )
-                obs_val = st.text_area(
-                    "Observación", key=f"obs_{reg['id']}", height=80,
-                    max_chars=1000,
-                    placeholder="Opcional para aprobar · Obligatoria para devolver"
-                )
-
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.button("Aprobar", key=f"apr_{reg['id']}",
-                                 use_container_width=True, type="primary"):
-                        try:
-                            # get_user_client → RLS activo (JWT del usuario)
-                            sb  = get_user_client(st.session_state.get('_access_token', ''))
-                            upd = {
-                                'estado':               estado_apr,
-                                campo_cant:             cant_val,
-                                campos['campo_estado']: 'aprobado',
-                                campos['campo_apr']:    perfil['id'],
-                                campos['campo_fecha']:  datetime.now().isoformat(),
-                            }
-                            if obs_val:
-                                upd[campo_obs] = obs_val
-                            sb.table('registros_cantidades')\
-                              .update(upd).eq('id', reg['id']).execute()
-                            clear_cache()
-                            st.success("Aprobado")
-                            st.rerun()
-                        except Exception:
-                            _log.exception("Error al actualizar registro id=%s", reg.get('id'))
-                            st.error("No fue posible actualizar el registro. Intenta de nuevo.")
-                with b2:
-                    if st.button("Devolver", key=f"dev_{reg['id']}",
-                                 use_container_width=True):
-                        if not obs_val:
-                            st.error("Escribe una observación para devolver")
-                        else:
-                            try:
-                                # get_user_client → RLS activo (JWT del usuario)
-                                sb = get_user_client(st.session_state.get('_access_token', ''))
-                                sb.table('registros_cantidades').update({
-                                    'estado':               'DEVUELTO',
-                                    campos['campo_estado']: 'devuelto',
-                                    campo_obs:              obs_val,
-                                    campos['campo_fecha']:  datetime.now().isoformat(),
-                                }).eq('id', reg['id']).execute()
-                                clear_cache()
-                                st.warning("Devuelto")
-                                st.rerun()
-                            except Exception:
-                                _log.exception(
-                                    "Error al devolver registro id=%s", reg.get('id')
-                                )
-                                st.error("No fue posible devolver el registro. Intenta de nuevo.")
+                # Trazabilidad de aprobación
+                if reg.get('aprobado_residente'):
+                    fec = str(reg.get('fecha_residente', ''))[:10]
+                    obs = reg.get('obs_residente', '')
+                    st.markdown(
+                        f'<div class="approval-history">'
+                        f'<div class="approval-history-item">'
+                        f'<span class="approval-history-role">Residente · {fec}</span>'
+                        f'<span style="font-size:0.78rem;">{reg["aprobado_residente"]}</span>'
+                        f'{f"<span style=\'color:var(--accent-orange);font-size:0.76rem;\'>↩ {obs}</span>" if obs else ""}'
+                        f'</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                if reg.get('aprobado_interventor'):
+                    fec = str(reg.get('fecha_interventor', ''))[:10]
+                    obs = reg.get('obs_interventor', '')
+                    st.markdown(
+                        f'<div class="approval-history">'
+                        f'<div class="approval-history-item">'
+                        f'<span class="approval-history-role">Interventor · {fec}</span>'
+                        f'<span style="font-size:0.78rem;">{reg["aprobado_interventor"]}</span>'
+                        f'{f"<span style=\'color:var(--accent-orange);font-size:0.76rem;\'>↩ {obs}</span>" if obs else ""}'
+                        f'</div></div>',
+                        unsafe_allow_html=True,
+                    )

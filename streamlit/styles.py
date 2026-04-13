@@ -298,6 +298,39 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .kpi-info   { color: var(--accent-blue)   !important; }
 
 /* ════════════════════════════════════════════
+   FILTROS — contraste garantizado
+   ════════════════════════════════════════════ */
+.stTextInput label, .stSelectbox label,
+.stDateInput label, .stMultiSelect label,
+.stRadio label, .stCheckbox label {
+    color: var(--text-primary) !important;
+    font-family: 'Barlow', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+}
+.filter-form-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem 0.5rem;
+    margin-bottom: 1rem;
+}
+.filter-form-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.63rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+/* Tags del multiselect */
+.stMultiSelect [data-baseweb="tag"] {
+    background-color: var(--accent-blue-lt) !important;
+    color: var(--accent-blue) !important;
+    font-weight: 700 !important;
+}
+
+/* ════════════════════════════════════════════
    SECTION BADGE (estilo IDU)
    ════════════════════════════════════════════ */
 .section-badge {
@@ -349,17 +382,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     position: relative;
     overflow: hidden;
 }
-.contract-header::after {
-    content: 'IDU';
-    position: absolute;
-    right: -10px; top: -18px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 6rem;
-    font-weight: 800;
-    color: rgba(255,255,255,0.04);
-    letter-spacing: -2px;
-    user-select: none;
-}
+/* watermark removido */
 .contract-id {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;

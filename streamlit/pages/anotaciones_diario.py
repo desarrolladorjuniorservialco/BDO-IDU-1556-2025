@@ -93,24 +93,31 @@ def page_anotaciones_diario(perfil: dict) -> None:
     cfg = APROBACION_CONFIG.get(rol, (None, None, None))
     estados_vis, estado_apr, campos = cfg
 
-    # ── Filtros ────────────────────────────────────────────
-    fc1, fc2, fc3, fc4 = st.columns(4)
-    with fc1:
-        fi = st.date_input("Desde",
-                           value=date.today() - timedelta(days=15),
-                           key="rd_fi")
-    with fc2:
-        ff = st.date_input("Hasta", value=date.today(), key="rd_ff")
-    with fc3:
-        opts_est = (["Todos"] + estados_vis) if estados_vis else (
-            ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
-        )
-        estado_f = st.selectbox("Estado", opts_est, key="rd_est")
-    with fc4:
-        buscar = st.text_input(
-            "Buscar: folio / usuario / observación",
-            key="rd_bus",
-        )
+    # ── Formulario de filtros ──────────────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    with st.form("form_rd"):
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            fi = st.date_input("Desde",
+                               value=date.today() - timedelta(days=15),
+                               key="rd_fi")
+        with fc2:
+            ff = st.date_input("Hasta", value=date.today(), key="rd_ff")
+        with fc3:
+            opts_est = (["Todos"] + estados_vis) if estados_vis else (
+                ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
+            )
+            estado_f = st.selectbox("Estado", opts_est, key="rd_est")
+        with fc4:
+            buscar = st.text_input("Buscar: folio / usuario / observación", key="rd_bus")
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if not aplicar and 'rd_loaded' not in st.session_state:
+        st.info("Define los filtros y presiona **Aplicar filtros** para cargar.")
+        return
+    st.session_state['rd_loaded'] = True
 
     # ── Carga de datos ─────────────────────────────────────
     estados_q = None if estado_f == "Todos" else [estado_f]

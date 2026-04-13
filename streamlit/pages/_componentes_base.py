@@ -177,32 +177,42 @@ def panel_componentes(
     estados_vis, estado_apr, campos = cfg
 
     # ── Filtros ────────────────────────────────────────────
-    fc1, fc2, fc3, fc4 = st.columns(4)
-    with fc1:
-        fi = st.date_input("Desde",
-                           value=date.today() - timedelta(days=15),
-                           key=f"comp_{filtro_tipo}_fi")
-    with fc2:
-        ff = st.date_input("Hasta",
-                           value=date.today(),
-                           key=f"comp_{filtro_tipo}_ff")
-    with fc3:
-        opts_est = (["Todos"] + estados_vis) if estados_vis else (
-            ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
-        )
-        estado_f = st.selectbox("Estado", opts_est, key=f"comp_{filtro_tipo}_est")
-    with fc4:
-        buscar = st.text_input(
-            "Buscar folio / actividad / tramo",
-            key=f"comp_{filtro_tipo}_bus",
-        )
-
-    with st.expander("Filtros avanzados", expanded=False):
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    _form_key = f"form_comp_{filtro_tipo or 'all'}"
+    with st.form(_form_key):
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            fi = st.date_input("Desde",
+                               value=date.today() - timedelta(days=15),
+                               key=f"comp_{filtro_tipo}_fi")
+        with fc2:
+            ff = st.date_input("Hasta",
+                               value=date.today(),
+                               key=f"comp_{filtro_tipo}_ff")
+        with fc3:
+            opts_est = (["Todos"] + estados_vis) if estados_vis else (
+                ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
+            )
+            estado_f = st.selectbox("Estado", opts_est, key=f"comp_{filtro_tipo}_est")
+        with fc4:
+            buscar = st.text_input(
+                "Buscar folio / actividad / tramo",
+                key=f"comp_{filtro_tipo}_bus",
+            )
         fa1, fa2 = st.columns(2)
         with fa1:
             tramo_f = st.text_input("Tramo", key=f"comp_{filtro_tipo}_tramo")
         with fa2:
             act_f = st.text_input("Tipo actividad", key=f"comp_{filtro_tipo}_act")
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    _sess_key = f"comp_loaded_{filtro_tipo or 'all'}"
+    if not aplicar and _sess_key not in st.session_state:
+        st.info("Define los filtros y presiona **Aplicar filtros** para cargar.")
+        return
+    st.session_state[_sess_key] = True
 
     # ── Carga de datos ─────────────────────────────────────
     estados_q = None if estado_f == "Todos" else [estado_f]

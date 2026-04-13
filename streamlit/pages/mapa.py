@@ -86,39 +86,47 @@ def page_mapa(perfil: dict) -> None:
     section_badge("Mapa de Ejecución", "teal")
     st.markdown("### Distribución Geográfica de Registros")
 
-    # ── Filtros globales — fila 1 ──────────────────────────
-    fc1, fc2, fc3, fc4 = st.columns(4)
-    with fc1:
-        fi = st.date_input("Desde",
-                           value=date.today() - timedelta(days=30),
-                           key="map_fi")
-    with fc2:
-        ff = st.date_input("Hasta", value=date.today(), key="map_ff")
-    with fc3:
-        estado_f = st.selectbox("Estado", _ESTADO_OPTS, key="map_est")
-    with fc4:
-        buscar = st.text_input("Búsqueda libre (folio, CIV, tramo…)", key="map_bus")
+    # ── Formulario de filtros ──────────────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros y capas</div>', unsafe_allow_html=True)
+    with st.form("form_mapa"):
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            fi = st.date_input("Desde",
+                               value=date.today() - timedelta(days=30),
+                               key="map_fi")
+        with fc2:
+            ff = st.date_input("Hasta", value=date.today(), key="map_ff")
+        with fc3:
+            estado_f = st.selectbox("Estado", _ESTADO_OPTS, key="map_est")
+        with fc4:
+            buscar = st.text_input("Búsqueda libre (folio, CIV, tramo…)", key="map_bus")
 
-    # ── Filtros avanzados ──────────────────────────────────
-    with st.expander("Filtros avanzados", expanded=False):
         fa1, fa2, fa3, fa4 = st.columns(4)
         with fa1:
-            tramo_f = st.text_input("Tramo",             key="map_tramo")
+            tramo_f = st.text_input("Tramo", key="map_tramo")
         with fa2:
-            civ_f   = st.text_input("CIV",               key="map_civ")
+            civ_f   = st.text_input("CIV",   key="map_civ")
         with fa3:
-            item_f  = st.text_input("Ítem de pago",      key="map_item")
+            item_f  = st.text_input("Ítem de pago", key="map_item")
         with fa4:
             comp_f  = st.text_input("Componente / Cap.", key="map_comp")
 
-    # ── Toggles de capa ────────────────────────────────────
-    lc1, lc2, lc3 = st.columns(3)
-    with lc1:
-        show_cant   = st.checkbox("Cantidades de Obra",  value=True,  key="map_cant")
-    with lc2:
-        show_comp   = st.checkbox("Componentes Transv.", value=True,  key="map_comp_tog")
-    with lc3:
-        show_diario = st.checkbox("Reporte Diario",      value=False, key="map_diario")
+        lc1, lc2, lc3 = st.columns(3)
+        with lc1:
+            show_cant   = st.checkbox("Cantidades de Obra",  value=True, key="map_cant")
+        with lc2:
+            show_comp   = st.checkbox("Componentes Transv.", value=True, key="map_comp_tog")
+        with lc3:
+            show_diario = st.checkbox("Reporte Diario",      value=True, key="map_diario")
+
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if not aplicar and 'mapa_loaded' not in st.session_state:
+        st.info("Define los filtros y presiona **Aplicar filtros** para cargar el mapa.")
+        return
+    st.session_state['mapa_loaded'] = True
 
     estados_q = None if estado_f == "Todos" else [estado_f]
 

@@ -62,52 +62,52 @@ def page_generar_pdf(perfil: dict) -> None:
     section_badge("Generar Informe", "teal")
     st.markdown("### Exportación de Bitácora Digital")
 
-    # ── Filtros de período ─────────────────────────────────
-    section_badge("Período y Contenido", "teal")
+    # ── Filtros de período y contenido ────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Período y Contenido</div>', unsafe_allow_html=True)
+    with st.form("form_informe"):
+        ff1, ff2 = st.columns(2)
+        with ff1:
+            fi = st.date_input("Desde",
+                               value=date.today() - timedelta(days=7),
+                               key="inf_fi")
+        with ff2:
+            ff = st.date_input("Hasta", value=date.today(), key="inf_ff")
 
-    ff1, ff2 = st.columns(2)
-    with ff1:
-        fi = st.date_input("Desde",
-                           value=date.today() - timedelta(days=7),
-                           key="inf_fi")
-    with ff2:
-        ff = st.date_input("Hasta", value=date.today(), key="inf_ff")
-
-    # ── Selección de contenido ─────────────────────────────
-    fo1, fo2 = st.columns(2)
-    with fo1:
-        tipos_sel = st.multiselect(
-            "Tipos de formulario a incluir",
-            list(_TIPOS.keys()),
-            default=["Cantidades de Obra"],
-            key="inf_tipos",
-        )
-    with fo2:
-        estado_f = st.selectbox(
-            "Estado de las anotaciones",
-            list(_FILTRO_ESTADOS.keys()),
-            key="inf_est",
-        )
-
-    # ── Opciones adicionales ───────────────────────────────
-    with st.expander("Opciones avanzadas", expanded=False):
-        fo3, fo4 = st.columns(2)
+        fo1, fo2, fo3 = st.columns(3)
+        with fo1:
+            tipos_sel = st.multiselect(
+                "Tipos de formulario a incluir",
+                list(_TIPOS.keys()),
+                default=["Cantidades de Obra"],
+                key="inf_tipos",
+            )
+        with fo2:
+            estado_f = st.selectbox(
+                "Estado de las anotaciones",
+                list(_FILTRO_ESTADOS.keys()),
+                key="inf_est",
+            )
         with fo3:
             formato = st.selectbox(
                 "Formato de exportación",
                 ["PDF", "CSV", "Excel (multi-hoja)"],
                 key="inf_fmt",
             )
-        with fo4:
-            st.caption("Nota: El PDF incluye solo datos de texto. "
-                       "El Excel incluye todos los campos disponibles.")
 
-        # Filtros adicionales de tramo / usuario
         fa1, fa2 = st.columns(2)
         with fa1:
             tramo_f = st.text_input("Filtrar por Tramo", key="inf_tramo")
         with fa2:
             user_f  = st.text_input("Filtrar por Usuario / Inspector", key="inf_user")
+
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if not aplicar and 'inf_loaded' not in st.session_state:
+        st.info("Define el período y presiona **Aplicar filtros** para previsualizar registros.")
+        return
+    st.session_state['inf_loaded'] = True
 
     estados_q = _FILTRO_ESTADOS[estado_f]
 

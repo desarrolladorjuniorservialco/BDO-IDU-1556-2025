@@ -117,29 +117,46 @@ def page_presupuesto(perfil: dict) -> None:
         st.info("Sin datos de presupuesto. Verifica la tabla 'presupuesto_bd' en Supabase.")
         return
 
-    # Normalizar typo de columna
-    if 'compenente' in df_raw.columns and 'componente' not in df_raw.columns:
-        df_raw = df_raw.rename(columns={'compenente': 'componente'})
+    # Normalizar typos de columna de componente (varios nombres posibles en la BD)
+    for _old in ('compenente', 'Componente', 'COMPONENTE', 'capitulo', 'Capitulo'):
+        if _old in df_raw.columns and 'componente' not in df_raw.columns:
+            df_raw = df_raw.rename(columns={_old: 'componente'})
+            break
 
     # Calcular ejecutado a partir de cantidades aprobadas
     with st.spinner("Calculando ejecución presupuestal…"):
         df = _calcular_ejecutado(df_raw.copy())
 
-    # ── Filtros ────────────────────────────────────────────
-    with st.expander("Filtros", expanded=False):
+    # ── Formulario de filtros ──────────────────────────────
+    import re as _re
+
+    # Valores únicos de componente (desde df calculado, no df_raw)
+    comps_opts = []
+    if 'componente' in df.columns:
+        comps_opts = sorted(df['componente'].dropna().astype(str)
+                            .str.strip().replace('', pd.NA).dropna().unique().tolist())
+
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    with st.form("form_presupuesto"):
         ff1, ff2 = st.columns(2)
         with ff1:
-            comps = sorted(df['componente'].dropna().unique().tolist()) if 'componente' in df.columns else []
-            comp_f = st.multiselect("Componente", comps, key="ps_comp")
+            comp_f = st.multiselect(
+                "Componente",
+                comps_opts,
+                key="ps_comp",
+                help="Filtra por componente del presupuesto",
+            )
         with ff2:
             buscar = st.text_input("Buscar ítem / descripción", key="ps_bus")
+        aplicar = st.form_submit_button("Aplicar filtros", type="primary",
+                                        use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     df_filt = df.copy()
     if comp_f:
-        df_filt = df_filt[df_filt['componente'].isin(comp_f)]
+        df_filt = df_filt[df_filt['componente'].astype(str).str.strip().isin(comp_f)]
     if buscar.strip() and not df_filt.empty:
-        import re
-        b = re.escape(buscar.strip())
+        b = _re.escape(buscar.strip())
         mask = pd.Series(False, index=df_filt.index)
         for col in ['item_pago', 'descripcion', 'und']:
             if col in df_filt.columns:
@@ -250,16 +267,20 @@ def page_presupuesto(perfil: dict) -> None:
             hide_index=True,
             use_container_width=True,
             column_config={
-                'valor_total':         st.column_config.NumberColumn(
-                    'V. Total ($)',           format="$%,.0f"),
+                'componente':          st.column_config.TextColumn('Componente'),
+                'item_pago':           st.column_config.TextColumn('Ítem Pago'),
+                'descripcion':         st.column_config.TextColumn('Descripción'),
+                'und':                 st.column_config.TextColumn('Und'),
+                'cantidad_contrato':   st.column_config.NumberColumn(
+                    'Cant. Programada',       format="%.3f"),
                 'valor_unitario':      st.column_config.NumberColumn(
                     'V. Unitario ($)',        format="$%,.0f"),
-                'valor_ejecutado':     st.column_config.NumberColumn(
-                    'V. Ejecutado ($)',       format="$%,.0f"),
-                'cantidad_contrato':   st.column_config.NumberColumn(
-                    'Cant. Contrato',         format="%.3f"),
+                'valor_total':         st.column_config.NumberColumn(
+                    'V. Programado ($)',      format="$%,.0f"),
                 'cantidad_ejecutada':  st.column_config.NumberColumn(
                     'Cant. Ejecutada',        format="%.3f"),
+                'valor_ejecutado':     st.column_config.NumberColumn(
+                    'V. Ejecutado ($)',       format="$%,.0f"),
                 'pct_ejecutado':       st.column_config.ProgressColumn(
                     'Ejecución (%)',          format="%.1f%%",
                     min_value=0, max_value=100),
