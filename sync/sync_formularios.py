@@ -77,11 +77,18 @@ def sync_registros_cantidades(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
+            # [FIX-INM-002] .eq() no es soportado después de .upsert() en supabase-py.
+            # Se hace un SELECT previo para verificar inmutabilidad antes de upsertear.
+            chk = supabase.table('registros_cantidades').select('inmutable')\
+                          .eq('id_unico', id_unico).execute()
+            if chk.data and chk.data[0].get('inmutable'):
+                omitidos += 1
+                print(f"  ⊘ {folio} (inmutable, saltado)")
+                continue
             # [FIX-FK-001] upsert por id_unico para preservar todos los items del mismo folio
-            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados por interventor)
             supabase.table('registros_cantidades').upsert(
                 data, on_conflict='id_unico'
-            ).eq('inmutable', False).execute()
+            ).execute()
             nuevos += 1
             print(f"  ✓ {folio}")
         except Exception as e:
@@ -147,10 +154,15 @@ def sync_registros_componentes(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
-            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados)
+            # [FIX-INM-002] SELECT previo para verificar inmutabilidad
+            chk = supabase.table('registros_componentes').select('inmutable')\
+                          .eq('folio', folio).execute()
+            if chk.data and chk.data[0].get('inmutable'):
+                omitidos += 1
+                continue
             supabase.table('registros_componentes').upsert(
                 data, on_conflict='folio'
-            ).eq('inmutable', False).execute()
+            ).execute()
             count += 1
         except Exception as e:
             errores += 1
@@ -196,10 +208,15 @@ def sync_registros_reporte_diario(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
-            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados)
+            # [FIX-INM-002] SELECT previo para verificar inmutabilidad
+            chk = supabase.table('registros_reporte_diario').select('inmutable')\
+                          .eq('folio', folio).execute()
+            if chk.data and chk.data[0].get('inmutable'):
+                omitidos += 1
+                continue
             supabase.table('registros_reporte_diario').upsert(
                 data, on_conflict='folio'
-            ).eq('inmutable', False).execute()
+            ).execute()
             count += 1
         except Exception as e:
             errores += 1

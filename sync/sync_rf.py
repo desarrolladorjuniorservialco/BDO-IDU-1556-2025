@@ -1,6 +1,33 @@
+"""
+sync_rf.py — Sincronización de registros fotográficos (RF)
+
+Estrategia por registro:
+  - Si id_unico ya existe en la tabla RF → se salta (no re-sube la foto).
+  - Si no existe → se sube la foto y se inserta la fila.
+
+Esto evita re-subir fotos de registros ya aprobados/inmutables
+y elimina la necesidad de delete_all() previo.
+"""
+
 from .utils import safe
-from .gpkg import download_gpkg, read_layer, delete_all
+from .gpkg import download_gpkg, read_layer
 from .photos import upload_photo
+
+
+def _upsert_rf(supabase, tabla: str, id_unico: str, row_data: dict) -> str:
+    """
+    Inserta fila si id_unico no existe; la salta si ya existe.
+    Devuelve 'insertado' | 'saltado' | 'error'.
+    """
+    try:
+        chk = supabase.table(tabla).select('id_unico')\
+                      .eq('id_unico', id_unico).execute()
+        if chk.data:
+            return 'saltado'
+        supabase.table(tabla).insert(row_data).execute()
+        return 'insertado'
+    except Exception as e:
+        return f'error: {e}'
 
 
 def sync_rf_cantidades(supabase, token, project_id):
@@ -11,20 +38,17 @@ def sync_rf_cantidades(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    delete_all(supabase, 'rf_cantidades')
-
-    rows = []
+    insertados = saltados = errores = 0
     for _, row in gdf.iterrows():
         folio    = safe(row.get('folio'))
         id_unico = safe(row.get('id_unico'))
         if not id_unico:
             continue
 
-        ruta = safe(row.get('ruta_destino_foto'))
+        ruta     = safe(row.get('ruta_destino_foto'))
         foto_url = upload_photo(supabase, token, project_id, ruta, folio) if ruta else None
 
-        # Todas las filas deben tener las mismas claves para evitar PGRST102
-        rows.append({
+        resultado = _upsert_rf(supabase, 'rf_cantidades', id_unico, {
             'folio':             folio,
             'id_unico':          id_unico,
             'observacion':       safe(row.get('observacion')),
@@ -33,9 +57,15 @@ def sync_rf_cantidades(supabase, token, project_id):
             'foto_url':          foto_url,
         })
 
-    if rows:
-        supabase.table('rf_cantidades').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+        if resultado == 'insertado':
+            insertados += 1
+        elif resultado == 'saltado':
+            saltados += 1
+        else:
+            errores += 1
+            print(f"  ✗ {id_unico}: {resultado}")
+
+    print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")
 
 
 def sync_rf_componentes(supabase, token, project_id):
@@ -46,20 +76,17 @@ def sync_rf_componentes(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    delete_all(supabase, 'rf_componentes')
-
-    rows = []
+    insertados = saltados = errores = 0
     for _, row in gdf.iterrows():
-        folio    = safe(row.get('folio'))
-        id_unico = safe(row.get('id_unico'))
+        folio     = safe(row.get('folio'))
+        id_unico  = safe(row.get('id_unico'))
         if not id_unico:
             continue
 
         foto_path = safe(row.get('foto'))
         foto_url  = upload_photo(supabase, token, project_id, foto_path, folio) if foto_path else None
 
-        # Todas las filas deben tener las mismas claves para evitar PGRST102
-        rows.append({
+        resultado = _upsert_rf(supabase, 'rf_componentes', id_unico, {
             'folio':         folio,
             'id_unico':      id_unico,
             'observaciones': safe(row.get('observaciones')),
@@ -67,9 +94,15 @@ def sync_rf_componentes(supabase, token, project_id):
             'foto_url':      foto_url,
         })
 
-    if rows:
-        supabase.table('rf_componentes').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+        if resultado == 'insertado':
+            insertados += 1
+        elif resultado == 'saltado':
+            saltados += 1
+        else:
+            errores += 1
+            print(f"  ✗ {id_unico}: {resultado}")
+
+    print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")
 
 
 def sync_rf_reporte_diario(supabase, token, project_id):
@@ -80,20 +113,17 @@ def sync_rf_reporte_diario(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    delete_all(supabase, 'rf_reporte_diario')
-
-    rows = []
+    insertados = saltados = errores = 0
     for _, row in gdf.iterrows():
-        folio    = safe(row.get('folio'))
-        id_unico = safe(row.get('id_unico'))
+        folio     = safe(row.get('folio'))
+        id_unico  = safe(row.get('id_unico'))
         if not id_unico:
             continue
 
         foto_path = safe(row.get('foto'))
         foto_url  = upload_photo(supabase, token, project_id, foto_path, folio) if foto_path else None
 
-        # Todas las filas deben tener las mismas claves para evitar PGRST102
-        rows.append({
+        resultado = _upsert_rf(supabase, 'rf_reporte_diario', id_unico, {
             'folio':         folio,
             'id_unico':      id_unico,
             'observaciones': safe(row.get('observaciones')),
@@ -101,6 +131,12 @@ def sync_rf_reporte_diario(supabase, token, project_id):
             'foto_url':      foto_url,
         })
 
-    if rows:
-        supabase.table('rf_reporte_diario').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+        if resultado == 'insertado':
+            insertados += 1
+        elif resultado == 'saltado':
+            saltados += 1
+        else:
+            errores += 1
+            print(f"  ✗ {id_unico}: {resultado}")
+
+    print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")
