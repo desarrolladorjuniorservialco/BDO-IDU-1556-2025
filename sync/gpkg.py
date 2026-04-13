@@ -4,21 +4,27 @@ from .config import BASE_URL
 from .connections import qfield_headers
 
 
-def download_gpkg(token, project_id, gpkg_file, tmp_path):
+def download_file(token, project_id, filename, tmp_path):
+    """Descarga cualquier archivo del proyecto QFieldCloud (GPKG, XLSX, etc.)."""
     urls = [
-        f'{BASE_URL}/files/{project_id}/{gpkg_file}/',
-        f'{BASE_URL}/files/{project_id}/files/{gpkg_file}/',
+        f'{BASE_URL}/files/{project_id}/{filename}/',
+        f'{BASE_URL}/files/{project_id}/files/{filename}/',
     ]
     for url in urls:
         r = requests.get(url, headers=qfield_headers(token), timeout=120)
         if r.status_code == 200:
             with open(tmp_path, 'wb') as f:
                 f.write(r.content)
-            print(f"  ✓ Descargado {gpkg_file} ({len(r.content)/1024:.1f} KB)")
+            print(f"  ✓ Descargado {filename} ({len(r.content)/1024:.1f} KB)")
             return True
         print(f"  ⚠ {r.status_code} en {url}")
-    print(f"  ✗ No se pudo descargar {gpkg_file} — tabla omitida")
+    print(f"  ✗ No se pudo descargar {filename} — omitido")
     return False
+
+
+def download_gpkg(token, project_id, gpkg_file, tmp_path):
+    """Alias de download_file para retrocompatibilidad."""
+    return download_file(token, project_id, gpkg_file, tmp_path)
 
 
 def read_layer(tmp_path, layer_name=None):

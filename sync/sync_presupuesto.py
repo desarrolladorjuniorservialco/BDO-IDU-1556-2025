@@ -59,3 +59,38 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
             supabase.table('presupuesto_componentes_bd').upsert(data, on_conflict='codigo_idu').execute()
             count += 1
     print(f"  → {count} upserted")
+
+
+def sync_presupuesto_componentes_aux(supabase, token, project_id):
+    """
+    Sincroniza presupuesto_componentes_aux desde
+    ppto_componentes__aux_pptcomponentes.gpkg.
+    Sin clave única: se hace delete+insert para mantener consistencia.
+    """
+    print("\n── presupuesto_componentes_aux ──")
+    tmp = '/tmp/ppto_comp_aux.gpkg'
+    if not download_gpkg(token, project_id, 'ppto_componentes__aux_pptcomponentes.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    # delete + insert (sin UNIQUE en la tabla)
+    supabase.table('presupuesto_componentes_aux').delete().neq('id', 0).execute()
+
+    rows = []
+    for _, row in gdf.iterrows():
+        data = {
+            'codigo_idu':     safe(row.get('codigo_idu')),
+            # [D-09] mismo typo posible: 'compenente'
+            'componente':     safe(row.get('compenente') or row.get('componente')),
+            'tipo_actividad': safe(row.get('tipo_actividad')),
+            'capitulo':       safe(row.get('capitulo')),
+        }
+        data = {k: v for k, v in data.items() if v is not None}
+        if data:
+            rows.append(data)
+
+    if rows:
+        supabase.table('presupuesto_componentes_aux').insert(rows).execute()
+    print(f"  → {len(rows)} insertados")

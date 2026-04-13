@@ -50,6 +50,33 @@ def sync_tramos_aux_infra(supabase, token, project_id):
     print(f"  → {count} upserted")
 
 
+def sync_tramos_aux_tramos(supabase, token, project_id):
+    """Sincroniza el catálogo de tramos desde TramosIDU15562025AUXTRAMOS.gpkg."""
+    print("\n── tramos_aux_tramos ──")
+    tmp = '/tmp/tramos_aux_tramos.gpkg'
+    if not download_gpkg(token, project_id, 'TramosIDU15562025AUXTRAMOS.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    count = errores = 0
+    for _, row in gdf.iterrows():
+        codigo = safe(row.get('codigo'))
+        descripcion = safe(row.get('descripcion'))
+        if not codigo or not descripcion:
+            continue
+        try:
+            supabase.table('tramos_aux_tramos').upsert(
+                {'codigo': codigo, 'descripcion': descripcion}, on_conflict='codigo'
+            ).execute()
+            count += 1
+        except Exception as e:
+            errores += 1
+            print(f"  ⚠ '{codigo}': {e}")
+    print(f"  → {count} upserted · {errores} errores")
+
+
 def sync_presupuesto_aux_actividad(supabase, token, project_id):
     print("\n── presupuesto_aux_actividad ──")
     tmp = '/tmp/presupuesto_bd.gpkg'
@@ -70,3 +97,32 @@ def sync_presupuesto_aux_actividad(supabase, token, project_id):
         except Exception as e:
             print(f"  ⚠ '{v}': {e}")
     print(f"  → {count} upserted: {sorted(valores)}")
+
+
+def sync_presupuesto_aux_capitulos(supabase, token, project_id):
+    """Sincroniza el catálogo de capítulos desde PresupuestoIDU15562025AUXCAPITULOS.gpkg."""
+    print("\n── presupuesto_aux_capitulos ──")
+    tmp = '/tmp/presupuesto_aux_cap.gpkg'
+    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025AUXCAPITULOS.gpkg', tmp):
+        return
+    gdf = read_layer(tmp)
+    if gdf is None or gdf.empty:
+        return
+
+    count = errores = 0
+    for _, row in gdf.iterrows():
+        tipo = safe(row.get('tipo_actividad'))
+        cap_num = safe(row.get('capitulo_num'))
+        capitulo = safe(row.get('capitulo'))
+        if not tipo or not cap_num:
+            continue
+        try:
+            supabase.table('presupuesto_aux_capitulos').upsert(
+                {'tipo_actividad': tipo, 'capitulo_num': cap_num, 'capitulo': capitulo},
+                on_conflict='tipo_actividad,capitulo_num'
+            ).execute()
+            count += 1
+        except Exception as e:
+            errores += 1
+            print(f"  ⚠ ({tipo}, {cap_num}): {e}")
+    print(f"  → {count} upserted · {errores} errores")
