@@ -14,6 +14,7 @@ Fuentes:
 SEGURIDAD:
   · re.escape() previene ReDoS en búsqueda libre.
   · Escrituras via get_user_client() → RLS activo.
+  · max_chars en text_area limita payloads de observación.
 """
 
 import logging
@@ -29,9 +30,59 @@ from database import (
     load_bd_personal, load_bd_clima, load_bd_maquinaria, load_bd_sst,
     load_fotos_reporte,
 )
-from ui import badge, section_badge, safe_float
+from ui import badge, kpi, section_badge, safe_float
 
 _log = logging.getLogger(__name__)
+
+# Tipo de reporte → label visible y color
+_TIPO_META: dict[str, tuple[str, str]] = {
+    'general':   ('General',    'blue'),
+    'clima':     ('Clima',      'teal'),
+    'maquinaria':('Maquinaria', 'orange'),
+    'personal':  ('Personal',   'green'),
+    'sst':       ('SST',        'purple'),
+}
+
+
+def _pill(label: str, valor, color: str = "") -> str:
+    if valor is None or str(valor).strip() in ('', 'nan', 'None', '—'):
+        return ""
+    cls = f"info-pill {color}" if color else "info-pill"
+    return f'<span class="{cls}">{label}: {valor}</span>'
+
+
+def _historial_aprobacion_html(reg: pd.Series) -> str:
+    items = []
+    if reg.get('aprobado_residente'):
+        est = str(reg.get('estado_residente', '')).capitalize()
+        fec = str(reg.get('fecha_residente', ''))[:10]
+        obs = reg.get('obs_residente', '')
+        items.append(f"""
+        <div class="approval-history-item">
+            <span class="approval-history-role">Residente · {est} · {fec}</span>
+            <span style="font-size:0.78rem;">{reg['aprobado_residente']}</span>
+            {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
+        </div>""")
+    if reg.get('aprobado_interventor'):
+        est = str(reg.get('estado_interventor', '')).capitalize()
+        fec = str(reg.get('fecha_interventor', ''))[:10]
+        obs = reg.get('obs_interventor', '')
+        items.append(f"""
+        <div class="approval-history-item">
+            <span class="approval-history-role">Interventor · {est} · {fec}</span>
+            <span style="font-size:0.78rem;">{reg['aprobado_interventor']}</span>
+            {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
+        </div>""")
+    if not items:
+        return ""
+    return (
+        '<div class="approval-history">'
+        '<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.62rem;'
+        'text-transform:uppercase;letter-spacing:0.10em;color:var(--text-muted);'
+        'margin-bottom:0.4rem;">Trazabilidad</div>'
+        + "".join(items)
+        + '</div>'
+    )
 
 
 def page_anotaciones_diario(perfil: dict) -> None:
@@ -45,28 +96,35 @@ def page_anotaciones_diario(perfil: dict) -> None:
     # ── Filtros ────────────────────────────────────────────
     fc1, fc2, fc3, fc4 = st.columns(4)
     with fc1:
-        fi = st.date_input("Desde", value=date.today() - timedelta(days=15),
+        fi = st.date_input("Desde",
+                           value=date.today() - timedelta(days=15),
                            key="rd_fi")
     with fc2:
         ff = st.date_input("Hasta", value=date.today(), key="rd_ff")
     with fc3:
-        opts = (["Todos"] + estados_vis) if estados_vis else (
+        opts_est = (["Todos"] + estados_vis) if estados_vis else (
             ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
         )
-        estado_f = st.selectbox("Estado", opts, key="rd_est")
+        estado_f = st.selectbox("Estado", opts_est, key="rd_est")
     with fc4:
-        buscar = st.text_input("🔍 Folio / Usuario / Observación", key="rd_bus")
+        buscar = st.text_input(
+            "Buscar: folio / usuario / observación",
+            key="rd_bus",
+        )
 
+    # ── Carga de datos ─────────────────────────────────────
     estados_q = None if estado_f == "Todos" else [estado_f]
     if estados_vis and estado_f == "Todos":
         estados_q = estados_vis
 
-    df = load_reporte_diario(estados=estados_q,
-                             fecha_ini=fi.isoformat(),
-                             fecha_fin=ff.isoformat())
+    df = load_reporte_diario(
+        estados=estados_q,
+        fecha_ini=fi.isoformat(),
+        fecha_fin=ff.isoformat(),
+    )
 
-    if buscar and not df.empty:
-        b = re.escape(buscar)
+    if buscar.strip() and not df.empty:
+        b = re.escape(buscar.strip())
         mask = pd.Series(False, index=df.index)
         for col in ['folio', 'usuario_qfield', 'observaciones']:
             if col in df.columns:
@@ -78,12 +136,20 @@ def page_anotaciones_diario(perfil: dict) -> None:
         return
 
     # ── Indicadores acumulados ─────────────────────────────
-    m1, m2, m3, m4, m5 = st.columns(5)
-    with m1: st.metric("Total reportes", len(df))
-    with m2: st.metric("Aprobados",  len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0)
-    with m3: st.metric("Revisados",  len(df[df['estado'] == 'REVISADO'])  if 'estado' in df else 0)
-    with m4: st.metric("Borradores", len(df[df['estado'] == 'BORRADOR'])  if 'estado' in df else 0)
-    with m5: st.metric("Devueltos",  len(df[df['estado'] == 'DEVUELTO'])  if 'estado' in df else 0)
+    n_total = len(df)
+    n_apr   = len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0
+    n_rev   = len(df[df['estado'] == 'REVISADO'])  if 'estado' in df else 0
+    n_bor   = len(df[df['estado'] == 'BORRADOR'])  if 'estado' in df else 0
+    n_dev   = len(df[df['estado'] == 'DEVUELTO'])  if 'estado' in df else 0
+
+    ki1, ki2, ki3, ki4, ki5 = st.columns(5)
+    with ki1: kpi("Total reportes", str(n_total), card_accent="accent-blue")
+    with ki2: kpi("Aprobados",  str(n_apr),  accent="kpi-green",  card_accent="accent-green")
+    with ki3: kpi("Revisados",  str(n_rev),  accent="kpi-blue",   card_accent="accent-blue")
+    with ki4: kpi("Borradores", str(n_bor),  accent="kpi-orange" if n_bor else "")
+    with ki5: kpi("Devueltos",  str(n_dev),
+                  accent="kpi-red" if n_dev else "",
+                  card_accent="accent-red" if n_dev else "")
 
     # Carga en batch de todos los sub-datos
     folios = tuple(df['folio'].dropna().tolist()) if 'folio' in df.columns else ()
@@ -96,20 +162,30 @@ def page_anotaciones_diario(perfil: dict) -> None:
     else:
         df_pers = df_clim = df_maq = df_sst = df_fot = pd.DataFrame()
 
-    # KPIs personal acumulado
+    # KPIs de personal acumulado en el período
     if not df_pers.empty:
-        num_cols = [c for c in ['inspectores','personal_operativo','personal_boal','personal_transito']
-                    if c in df_pers.columns]
-        if num_cols:
-            st.markdown("**Personal acumulado en el período:**")
-            p_cols = st.columns(len(num_cols))
-            for i, col in enumerate(num_cols):
-                total = int(pd.to_numeric(df_pers[col], errors='coerce').fillna(0).sum())
-                with p_cols[i]:
-                    st.metric(col.replace('_', ' ').title(), total)
+        num_cols_pers = [c for c in [
+            'inspectores', 'personal_operativo',
+            'personal_boal', 'personal_transito',
+        ] if c in df_pers.columns]
+        if num_cols_pers:
+            st.markdown(
+                '<div class="acum-panel">'
+                '<div class="acum-panel-title">Personal acumulado en el período</div>'
+                + "".join([
+                    f'<div class="acum-item">'
+                    f'<div class="acum-item-label">{c.replace("_"," ").title()}</div>'
+                    f'<div class="acum-item-value">'
+                    f'{int(pd.to_numeric(df_pers[c], errors="coerce").fillna(0).sum())}'
+                    f'</div></div>'
+                    for c in num_cols_pers
+                ])
+                + '</div>',
+                unsafe_allow_html=True,
+            )
 
     st.divider()
-    st.markdown(f"**{len(df)} reporte(s)**")
+    st.markdown(f"**{n_total} reporte(s)**")
 
     # ── Lista de reportes ──────────────────────────────────
     for _, reg in df.iterrows():
@@ -118,18 +194,29 @@ def page_anotaciones_diario(perfil: dict) -> None:
         fecha_rep  = str(reg.get('fecha_reporte', reg.get('fecha', '')))[:10]
         usuario    = str(reg.get('usuario_qfield', '—'))
 
-        with st.expander(f"**{folio}** · {fecha_rep} · {usuario}", expanded=False):
+        with st.expander(
+            f"**{folio}** · {fecha_rep} · {usuario}",
+            expanded=False,
+        ):
             # Determinar tabs disponibles
-            has_clim = not df_clim.empty and folio in df_clim.get('folio', pd.Series()).tolist()
-            has_maq  = not df_maq.empty  and folio in df_maq.get('folio',  pd.Series()).tolist()
-            has_pers = not df_pers.empty and folio in df_pers.get('folio', pd.Series()).tolist()
-            has_sst  = not df_sst.empty  and folio in df_sst.get('folio',  pd.Series()).tolist()
+            has_clim = (not df_clim.empty and
+                        'folio' in df_clim.columns and
+                        folio in df_clim['folio'].tolist())
+            has_maq  = (not df_maq.empty and
+                        'folio' in df_maq.columns and
+                        folio in df_maq['folio'].tolist())
+            has_pers = (not df_pers.empty and
+                        'folio' in df_pers.columns and
+                        folio in df_pers['folio'].tolist())
+            has_sst  = (not df_sst.empty and
+                        'folio' in df_sst.columns and
+                        folio in df_sst['folio'].tolist())
 
-            tab_labels = ["📋 General"]
-            if has_clim: tab_labels.append("🌤️ Clima")
-            if has_maq:  tab_labels.append("🚜 Maquinaria")
-            if has_pers: tab_labels.append("👷 Personal")
-            if has_sst:  tab_labels.append("⚠️ SST")
+            tab_labels = ["General"]
+            if has_clim: tab_labels.append("Clima")
+            if has_maq:  tab_labels.append("Maquinaria")
+            if has_pers: tab_labels.append("Personal")
+            if has_sst:  tab_labels.append("SST")
 
             tabs = st.tabs(tab_labels)
             t = 0
@@ -138,30 +225,36 @@ def page_anotaciones_diario(perfil: dict) -> None:
             with tabs[t]:
                 cg1, cg2 = st.columns([2.5, 1.2])
                 with cg1:
-                    st.markdown(f"""
-                    <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-                        {badge(est_actual)}
-                        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.70rem;
-                                     color:var(--text-muted);">{fecha_rep}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div class="record-meta-row">'
+                        f'{badge(est_actual)}'
+                        f'<span class="info-pill">{fecha_rep}</span>'
+                        f'{_pill("Inspector", usuario, "blue")}'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
 
-                    st.markdown(f"**Inspector/Usuario:** {usuario}")
                     if reg.get('observaciones'):
                         st.info(str(reg['observaciones']))
 
-                    # Observaciones de revisión previas
-                    if reg.get('obs_residente') and rol in ('interventor', 'admin'):
-                        st.warning(f"Obs. residente: {reg['obs_residente']}")
+                    # Observaciones de revisión previas (visibles según rol)
+                    if reg.get('obs_residente') and rol in ('interventor', 'supervisor', 'admin'):
+                        st.warning(f"Obs. Residente: {reg['obs_residente']}")
                     if reg.get('obs_interventor') and rol in ('supervisor', 'admin'):
-                        st.warning(f"Obs. interventor: {reg['obs_interventor']}")
+                        st.warning(f"Obs. Interventor: {reg['obs_interventor']}")
 
-                    # Fotos
+                    # Registro fotográfico
                     if not df_fot.empty and 'folio' in df_fot.columns:
                         fotos_r = df_fot[df_fot['folio'] == folio]
                         urls = fotos_r['foto_url'].dropna().tolist() if not fotos_r.empty else []
                         if urls:
-                            st.markdown("**📷 Registro fotográfico**")
+                            st.markdown(
+                                '<div style="font-family:\'JetBrains Mono\',monospace;'
+                                'font-size:0.63rem;text-transform:uppercase;'
+                                'letter-spacing:0.1em;color:var(--text-muted);'
+                                'margin:0.6rem 0 0.35rem;">Registro fotográfico</div>',
+                                unsafe_allow_html=True,
+                            )
                             f_cols = st.columns(min(len(urls), 4))
                             for i, url in enumerate(urls[:4]):
                                 with f_cols[i]:
@@ -170,6 +263,11 @@ def page_anotaciones_diario(perfil: dict) -> None:
                             st.caption("Sin fotos registradas")
 
                 with cg2:
+                    # Historial de aprobación
+                    hist = _historial_aprobacion_html(reg)
+                    if hist:
+                        st.markdown(hist, unsafe_allow_html=True)
+
                     _panel_aprobacion_rd(reg, perfil, campos, estado_apr)
             t += 1
 
@@ -178,12 +276,17 @@ def page_anotaciones_diario(perfil: dict) -> None:
                 with tabs[t]:
                     sub = df_clim[df_clim['folio'] == folio]
                     for _, r in sub.iterrows():
-                        st.markdown(
-                            f"**Estado clima:** {r.get('estado_clima','—')} &nbsp;|&nbsp; "
-                            f"**Hora:** {str(r.get('hora','—'))[:5]}"
-                        )
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.metric(
+                                "Estado climático",
+                                str(r.get('estado_clima', '—')),
+                            )
+                        with col_b:
+                            st.metric("Hora", str(r.get('hora', '—'))[:5])
                         if r.get('observaciones'):
                             st.caption(str(r['observaciones']))
+                        st.divider()
                 t += 1
 
             # ── Tab Maquinaria ─────────────────────────────
@@ -191,42 +294,50 @@ def page_anotaciones_diario(perfil: dict) -> None:
                 with tabs[t]:
                     sub = df_maq[df_maq['folio'] == folio]
                     maq_cols = [c for c in [
-                        'operarios','volquetas','vibrocompactador','equipos_especiales',
-                        'minicargador','ruteadora','compresor','retrocargador',
-                        'extendedora_asfalto','compactador_neumatico','observaciones',
+                        'operarios', 'volquetas', 'vibrocompactador',
+                        'equipos_especiales', 'minicargador', 'ruteadora',
+                        'compresor', 'retrocargador', 'extendedora_asfalto',
+                        'compactador_neumatico', 'observaciones',
                     ] if c in sub.columns]
                     if maq_cols:
-                        st.dataframe(sub[maq_cols], hide_index=True, use_container_width=True)
+                        st.dataframe(sub[maq_cols],
+                                     hide_index=True, use_container_width=True)
                 t += 1
 
             # ── Tab Personal ───────────────────────────────
             if has_pers:
                 with tabs[t]:
                     sub = df_pers[df_pers['folio'] == folio]
-                    num_c = [c for c in ['inspectores','personal_operativo',
-                                         'personal_boal','personal_transito']
-                             if c in sub.columns]
+                    num_c = [c for c in [
+                        'inspectores', 'personal_operativo',
+                        'personal_boal', 'personal_transito',
+                    ] if c in sub.columns]
                     for _, r in sub.iterrows():
                         p_cols = st.columns(max(len(num_c), 1))
                         for i, col in enumerate(num_c):
                             with p_cols[i]:
-                                st.metric(col.replace('_',' ').title(),
-                                          int(r.get(col, 0) or 0))
+                                st.metric(
+                                    col.replace('_', ' ').title(),
+                                    int(r.get(col, 0) or 0),
+                                )
                 t += 1
 
             # ── Tab SST ────────────────────────────────────
             if has_sst:
                 with tabs[t]:
                     sub = df_sst[df_sst['folio'] == folio]
-                    sst_num = [c for c in ['botiquin','kit_antiderrames',
-                                           'punto_hidratacion','punto_ecologico','extintor']
-                               if c in sub.columns]
+                    sst_num = [c for c in [
+                        'botiquin', 'kit_antiderrames',
+                        'punto_hidratacion', 'punto_ecologico', 'extintor',
+                    ] if c in sub.columns]
                     for _, r in sub.iterrows():
                         s_cols = st.columns(max(len(sst_num), 1))
                         for i, col in enumerate(sst_num):
                             with s_cols[i]:
-                                st.metric(col.replace('_',' ').title(),
-                                          int(r.get(col, 0) or 0))
+                                st.metric(
+                                    col.replace('_', ' ').title(),
+                                    int(r.get(col, 0) or 0),
+                                )
                         if r.get('observaciones'):
                             st.warning(str(r['observaciones']))
                 t += 1
@@ -234,15 +345,18 @@ def page_anotaciones_diario(perfil: dict) -> None:
 
 def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                           campos: dict | None, estado_apr: str | None) -> None:
-    """Panel de aprobación/devolución para reporte diario (sin campo cantidad)."""
+    """Panel de aprobación/devolución para reporte diario."""
     if not campos:
-        st.caption(f"Estado: {reg.get('estado','—')}")
+        st.caption(f"Estado: {reg.get('estado', '—')}")
         return
 
-    estado_actual = str(reg.get('estado', '')).upper()
     reg_id = str(reg.get('id', ''))
 
-    st.markdown("**Validación**")
+    st.markdown(
+        '<div class="approval-panel-title">Validación</div>',
+        unsafe_allow_html=True,
+    )
+
     obs_val = st.text_area(
         "Observación",
         key=f"obs_rd_{reg_id}",
@@ -264,9 +378,10 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                     campos['campo_apr']:    perfil['id'],
                     campos['campo_fecha']:  datetime.now().isoformat(),
                 }
-                if obs_val:
-                    upd[campos['campo_obs']] = obs_val
-                sb.table('registros_reporte_diario').update(upd).eq('id', reg_id).execute()
+                if obs_val.strip():
+                    upd[campos['campo_obs']] = obs_val.strip()
+                sb.table('registros_reporte_diario').update(upd)\
+                  .eq('id', reg_id).execute()
                 clear_cache()
                 st.success("Aprobado")
                 st.rerun()
@@ -277,7 +392,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
     with b2:
         if st.button("Devolver", key=f"dev_rd_{reg_id}",
                      use_container_width=True):
-            if not obs_val or not obs_val.strip():
+            if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:
                 try:
@@ -285,7 +400,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                     sb.table('registros_reporte_diario').update({
                         'estado':               'DEVUELTO',
                         campos['campo_estado']: 'devuelto',
-                        campos['campo_obs']:    obs_val,
+                        campos['campo_obs']:    obs_val.strip(),
                         campos['campo_fecha']:  datetime.now().isoformat(),
                     }).eq('id', reg_id).execute()
                     clear_cache()
