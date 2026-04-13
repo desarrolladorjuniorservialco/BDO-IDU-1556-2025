@@ -186,24 +186,28 @@ def page_anotaciones(perfil: dict) -> None:
                 if reg.get('aprobado_residente'):
                     fec = str(reg.get('fecha_residente', ''))[:10]
                     obs = reg.get('obs_residente', '')
+                    obs_html = ('<span style="color:var(--accent-orange);font-size:0.76rem;">'
+                                f'\u21a9 {obs}</span>') if obs else ''
                     st.markdown(
                         f'<div class="approval-history">'
                         f'<div class="approval-history-item">'
                         f'<span class="approval-history-role">Residente · {fec}</span>'
                         f'<span style="font-size:0.78rem;">{reg["aprobado_residente"]}</span>'
-                        f'{f"<span style=\'color:var(--accent-orange);font-size:0.76rem;\'>↩ {obs}</span>" if obs else ""}'
+                        f'{obs_html}'
                         f'</div></div>',
                         unsafe_allow_html=True,
                     )
                 if reg.get('aprobado_interventor'):
                     fec = str(reg.get('fecha_interventor', ''))[:10]
                     obs = reg.get('obs_interventor', '')
+                    obs_html = ('<span style="color:var(--accent-orange);font-size:0.76rem;">'
+                                f'\u21a9 {obs}</span>') if obs else ''
                     st.markdown(
                         f'<div class="approval-history">'
                         f'<div class="approval-history-item">'
                         f'<span class="approval-history-role">Interventor · {fec}</span>'
                         f'<span style="font-size:0.78rem;">{reg["aprobado_interventor"]}</span>'
-                        f'{f"<span style=\'color:var(--accent-orange);font-size:0.76rem;\'>↩ {obs}</span>" if obs else ""}'
+                        f'{obs_html}'
                         f'</div></div>',
                         unsafe_allow_html=True,
                     )
