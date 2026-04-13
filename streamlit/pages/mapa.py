@@ -1,15 +1,20 @@
 """
-pages/mapa.py — Página: Mapa de Ejecución
-Distribución geográfica interactiva con 3 capas de datos:
-  · Cantidades de Obra      (registros_cantidades)
-  · Componentes Transv.     (registros_componentes)
-  · Reporte Diario          (registros_reporte_diario)
+pages/mapa.py — Pagina: Mapa de Ejecucion
+Distribucion geografica interactiva con 4 capas de datos geoespaciales:
+  . Cantidades de Obra      (registros_cantidades — .gpkg punto)
+  . Componentes Transv.     (registros_componentes — .gpkg punto)
+  . Reporte Diario          (registros_reporte_diario — .gpkg punto)
+  . Formularios PMT         (formulario_pmt — .gpkg punto)
+
+Todos los registros provienen de bases de datos GeoPackage (.gpkg)
+con geometria tipo punto. Las coordenadas (lat/lon) se extraen
+de la geometria durante la sincronizacion QFieldCloud -> Supabase.
 
 Filtros disponibles:
-  · Rango de fechas
-  · Estado de registro
-  · Tramo, CIV, ítem de pago, componente/capítulo
-  · Búsqueda libre por texto
+  . Rango de fechas
+  . Estado de registro
+  . Tramo, CIV, item de pago, componente/capitulo
+  . Busqueda libre por texto
 
 Indicadores acumulados de acuerdo a los filtros activos.
 """
@@ -21,29 +26,32 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from database import load_cantidades, load_componentes, load_reporte_diario
+from database import (
+    load_cantidades, load_componentes, load_reporte_diario, load_formulario_pmt,
+)
 from ui import kpi, section_badge
 
-# Paleta de colores por estado
+# Paleta de colores por estado (Bogota institucional)
 _ESTADO_COLOR = {
-    'BORRADOR': '#637090',
-    'REVISADO': '#005c4e',
-    'APROBADO': '#1a3a6e',
-    'DEVUELTO': '#aa1b1b',
+    'BORRADOR': '#ADB5BD',   # En Planeacion (gris neutro)
+    'REVISADO': '#0D6EFD',   # En Progreso (azul vibrante)
+    'APROBADO': '#198754',   # Completado (verde bosque)
+    'DEVUELTO': '#B02A37',   # Critico (rojo oscuro)
 }
 
 # Color base de cada capa
 _LAYER_COLOR = {
-    'cantidades':  '#1a3a6e',
-    'componentes': '#c97a00',
-    'diario':      '#5b21b6',
+    'cantidades':  '#002D57',   # Bogota Blue Deep
+    'componentes': '#FD7E14',   # Naranja industrial
+    'diario':      '#6f42c1',   # Purpura
+    'pmt':         '#0D6EFD',   # Azul vibrante
 }
 
 _ESTADO_OPTS = ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
 
 
 def _latlon_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Filtra y convierte lat/lon a numérico."""
+    """Filtra y convierte lat/lon a numerico."""
     if df.empty or 'latitud' not in df.columns or 'longitud' not in df.columns:
         return pd.DataFrame()
     d = df.dropna(subset=['latitud', 'longitud']).copy()
@@ -83,10 +91,10 @@ def _text_filter(df: pd.DataFrame, cols: list[str], val: str) -> pd.DataFrame:
 
 
 def page_mapa(perfil: dict) -> None:
-    section_badge("Mapa de Ejecución", "teal")
-    st.markdown("### Distribución Geográfica de Registros")
+    section_badge("Mapa de Ejecucion", "teal")
+    st.markdown("### Distribucion Geografica de Registros")
 
-    # ── Formulario de filtros ──────────────────────────────
+    # -- Formulario de filtros --
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros y capas</div>', unsafe_allow_html=True)
     with st.form("form_mapa"):
         fc1, fc2, fc3, fc4 = st.columns(4)
@@ -99,7 +107,7 @@ def page_mapa(perfil: dict) -> None:
         with fc3:
             estado_f = st.selectbox("Estado", _ESTADO_OPTS, key="map_est")
         with fc4:
-            buscar = st.text_input("Búsqueda libre (folio, CIV, tramo…)", key="map_bus")
+            buscar = st.text_input("Busqueda libre (folio, CIV, tramo...)", key="map_bus")
 
         fa1, fa2, fa3, fa4 = st.columns(4)
         with fa1:
@@ -107,17 +115,19 @@ def page_mapa(perfil: dict) -> None:
         with fa2:
             civ_f   = st.text_input("CIV",   key="map_civ")
         with fa3:
-            item_f  = st.text_input("Ítem de pago", key="map_item")
+            item_f  = st.text_input("Item de pago", key="map_item")
         with fa4:
             comp_f  = st.text_input("Componente / Cap.", key="map_comp")
 
-        lc1, lc2, lc3 = st.columns(3)
+        lc1, lc2, lc3, lc4 = st.columns(4)
         with lc1:
             show_cant   = st.checkbox("Cantidades de Obra",  value=True, key="map_cant")
         with lc2:
             show_comp   = st.checkbox("Componentes Transv.", value=True, key="map_comp_tog")
         with lc3:
             show_diario = st.checkbox("Reporte Diario",      value=True, key="map_diario")
+        with lc4:
+            show_pmt    = st.checkbox("Formularios PMT",     value=True, key="map_pmt")
 
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
                                         use_container_width=True)
@@ -130,7 +140,7 @@ def page_mapa(perfil: dict) -> None:
 
     estados_q = None if estado_f == "Todos" else [estado_f]
 
-    # ── Carga de datos ─────────────────────────────────────
+    # -- Carga de datos --
     df_cant   = (load_cantidades(estados=estados_q,
                                  fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
                  if show_cant else pd.DataFrame())
@@ -140,12 +150,14 @@ def page_mapa(perfil: dict) -> None:
     df_diario = (load_reporte_diario(estados=estados_q,
                                      fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
                  if show_diario else pd.DataFrame())
+    df_pmt    = load_formulario_pmt() if show_pmt else pd.DataFrame()
 
-    # ── Filtros de texto ───────────────────────────────────
+    # -- Filtros de texto --
     base_cols = ['folio', 'id_tramo', 'civ', 'usuario_qfield']
     df_cant   = _text_filter(df_cant,   base_cols + ['tipo_actividad','item_pago'],   buscar)
     df_comp   = _text_filter(df_comp,   base_cols + ['tipo_componente','tipo_actividad'], buscar)
     df_diario = _text_filter(df_diario, base_cols + ['observaciones'],                buscar)
+    df_pmt    = _text_filter(df_pmt,    ['folio', 'civ', 'descripcion', 'usuario'],   buscar)
 
     def _adv_filter(df, col, val):
         if val.strip() and not df.empty and col in df.columns:
@@ -161,13 +173,15 @@ def page_mapa(perfil: dict) -> None:
     df_comp = _adv_filter(df_comp, 'id_tramo',        tramo_f)
     df_comp = _adv_filter(df_comp, 'civ',             civ_f)
     df_comp = _adv_filter(df_comp, 'tipo_componente', comp_f)
+    df_pmt  = _adv_filter(df_pmt,  'civ',             civ_f)
 
-    # ── Geolocalizar ───────────────────────────────────────
+    # -- Geolocalizar --
     geo_cant   = _latlon_df(df_cant)
     geo_comp   = _latlon_df(df_comp)
     geo_diario = _latlon_df(df_diario)
+    geo_pmt    = _latlon_df(df_pmt)
 
-    # ── Indicadores acumulados ─────────────────────────────
+    # -- Indicadores acumulados --
     ki1, ki2, ki3, ki4 = st.columns(4)
     with ki1:
         kpi("Cantidades (coord.)",  str(len(geo_cant)),   card_accent="accent-blue")
@@ -176,28 +190,34 @@ def page_mapa(perfil: dict) -> None:
     with ki3:
         kpi("Diario (coord.)",      str(len(geo_diario)), card_accent="accent-purple")
     with ki4:
-        total_geo = len(geo_cant) + len(geo_comp) + len(geo_diario)
-        # Suma cantidades aprobadas en el filtro actual
+        total_geo = len(geo_cant) + len(geo_comp) + len(geo_diario) + len(geo_pmt)
         if not df_cant.empty and 'estado' in df_cant.columns:
             apr_cant = df_cant[df_cant['estado'] == 'APROBADO']
             cant_col = 'cant_interventor' if 'cant_interventor' in apr_cant.columns else 'cantidad'
             if cant_col in apr_cant.columns:
                 import pandas as _pd
                 suma_apr = _pd.to_numeric(apr_cant[cant_col], errors='coerce').fillna(0).sum()
-                kpi("Σ Cant. aprobadas",
+                kpi("Cant. aprobadas",
                     f"{suma_apr:,.2f}",
-                    sub="registros_cantidades · APROBADO",
+                    sub="registros_cantidades . APROBADO",
                     card_accent="accent-green")
             else:
-                kpi("Total en mapa", str(total_geo))
+                kpi("Total en mapa", str(total_geo), card_accent="accent-teal")
         else:
-            kpi("Total en mapa", str(total_geo))
+            kpi("Total en mapa", str(total_geo), card_accent="accent-teal")
 
-    all_empty = geo_cant.empty and geo_comp.empty and geo_diario.empty
+    # Mostrar indicador de PMT si hay datos
+    if not geo_pmt.empty:
+        st.markdown(
+            f'<div class="info-pill teal">PMT con coordenadas: {len(geo_pmt)}</div>',
+            unsafe_allow_html=True,
+        )
+
+    all_empty = geo_cant.empty and geo_comp.empty and geo_diario.empty and geo_pmt.empty
     if all_empty:
         st.info("No hay registros con coordenadas para los filtros seleccionados.")
     else:
-        # ── Mapa ───────────────────────────────────────────
+        # -- Mapa --
         traces: list[go.BaseTraceType] = []
 
         if not geo_cant.empty:
@@ -205,7 +225,7 @@ def page_mapa(perfil: dict) -> None:
             for estado, grp in by_est:
                 color = _ESTADO_COLOR.get(str(estado), _LAYER_COLOR['cantidades'])
                 traces.append(_scatter(
-                    grp, f"Cantidades — {estado}", color,
+                    grp, f"Cantidades -- {estado}", color,
                     ['folio', 'id_tramo', 'civ', 'tipo_actividad',
                      'cantidad', 'unidad', 'item_pago', 'estado'],
                 ))
@@ -215,7 +235,7 @@ def page_mapa(perfil: dict) -> None:
             for estado, grp in by_est:
                 color = _ESTADO_COLOR.get(str(estado), _LAYER_COLOR['componentes'])
                 traces.append(_scatter(
-                    grp, f"Componentes — {estado}", color,
+                    grp, f"Componentes -- {estado}", color,
                     ['folio', 'id_tramo', 'tipo_componente', 'tipo_actividad',
                      'cantidad', 'unidad', 'estado'],
                     symbol='square',
@@ -226,14 +246,22 @@ def page_mapa(perfil: dict) -> None:
             for estado, grp in by_est:
                 color = _ESTADO_COLOR.get(str(estado), _LAYER_COLOR['diario'])
                 traces.append(_scatter(
-                    grp, f"Reporte Diario — {estado}", color,
+                    grp, f"Reporte Diario -- {estado}", color,
                     ['folio', 'usuario_qfield', 'observaciones', 'estado'],
                     symbol='star',
                 ))
 
-        # Centro automático
+        if not geo_pmt.empty:
+            traces.append(_scatter(
+                geo_pmt, "Formularios PMT", _LAYER_COLOR['pmt'],
+                ['folio', 'descripcion', 'civ', 'inicio_vigencia',
+                 'fin_vigencia', 'usuario'],
+                symbol='circle',
+            ))
+
+        # Centro automatico
         all_lats, all_lons = [], []
-        for gdf in [geo_cant, geo_comp, geo_diario]:
+        for gdf in [geo_cant, geo_comp, geo_diario, geo_pmt]:
             if not gdf.empty:
                 all_lats.extend(gdf['latitud'].tolist())
                 all_lons.extend(gdf['longitud'].tolist())
@@ -253,7 +281,7 @@ def page_mapa(perfil: dict) -> None:
                 orientation="v",
                 x=0.01, y=0.99,
                 bgcolor='rgba(255,255,255,0.88)',
-                bordercolor='#d0d9e8',
+                bordercolor='#DEE2E6',
                 borderwidth=1,
                 font=dict(size=10, family='Barlow'),
             ),
@@ -263,10 +291,10 @@ def page_mapa(perfil: dict) -> None:
 
     st.divider()
 
-    # ── Tablas de registros con coordenadas ────────────────
+    # -- Tablas de registros con coordenadas --
     with st.expander("Tablas de registros con coordenadas", expanded=False):
-        tab_c, tab_comp, tab_d = st.tabs([
-            "Cantidades", "Componentes", "Reporte Diario",
+        tab_c, tab_comp, tab_d, tab_pmt = st.tabs([
+            "Cantidades", "Componentes", "Reporte Diario", "PMT",
         ])
 
         with tab_c:
@@ -300,3 +328,14 @@ def page_mapa(perfil: dict) -> None:
                     'observaciones', 'estado', 'latitud', 'longitud',
                 ] if c in geo_diario.columns]
                 st.dataframe(geo_diario[cols], hide_index=True, use_container_width=True)
+
+        with tab_pmt:
+            if geo_pmt.empty:
+                st.info("Sin formularios PMT con coordenadas.")
+            else:
+                cols = [c for c in [
+                    'folio', 'descripcion', 'civ',
+                    'inicio_vigencia', 'fin_vigencia',
+                    'usuario', 'latitud', 'longitud',
+                ] if c in geo_pmt.columns]
+                st.dataframe(geo_pmt[cols], hide_index=True, use_container_width=True)

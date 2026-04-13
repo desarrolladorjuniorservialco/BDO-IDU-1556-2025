@@ -1,6 +1,6 @@
 """
-styles.py — CSS global de la aplicación BDO IDU-1556-2025
-Paleta institucional IDU Bogotá · Modo claro y oscuro con variables CSS.
+styles.py — CSS global de la aplicacion BDO IDU-1556-2025
+Paleta institucional Bogota / IDU · Modo claro y oscuro con variables CSS.
 Sidebar siempre oscuro (estilo panel IDU).
 """
 
@@ -10,134 +10,171 @@ CSS = """
 
 /* ════════════════════════════════════════════
    VARIABLES — MODO CLARO (por defecto)
+   Paleta institucional Bogota IDU
    ════════════════════════════════════════════ */
 :root {
-    /* ─── Paleta IDU Bogotá ─── */
-    --idu-navy:        #1a3a6e;
-    --idu-navy-deep:   #0d2152;
-    --idu-navy-lt:     #d6e4f7;
-    --idu-teal:        #005c4e;
-    --idu-teal-lt:     #ccf0ea;
-    --idu-amber:       #c97a00;
-    --idu-amber-lt:    #ffefd0;
+    /* --- Identidad Central (Primarios) --- */
+    --bogota-blue-deep:  #002D57;
+    --bogota-blue-active:#004B8D;
+    --bogota-yellow:     #FFD200;
+    --bogota-gold:       #E6BC00;
+
+    /* --- Paleta IDU mapeada --- */
+    --idu-navy:        #002D57;
+    --idu-navy-deep:   #002D57;
+    --idu-navy-lt:     #cce0f5;
+    --idu-teal:        #198754;
+    --idu-teal-lt:     #d1f2dc;
+    --idu-amber:       #FFD200;
+    --idu-amber-lt:    #fff8d6;
 
     /* Fondos */
-    --bg-app:          #eef1f6;
-    --bg-card:         #ffffff;
-    --bg-card-hover:   #f5f8ff;
-    --bg-sidebar:      #0d1e3d;
+    --bg-app:          #F8F9FA;
+    --bg-card:         #FFFFFF;
+    --bg-card-hover:   #f0f4ff;
+    --bg-sidebar:      #002D57;
     --bg-sidebar-item: rgba(255,255,255,0.06);
-    --bg-inset:        #f0f3f9;
+    --bg-inset:        #F0F2F5;
 
     /* Bordes */
-    --border:          #d0d9e8;
-    --border-strong:   #a8b8d0;
+    --border:          #DEE2E6;
+    --border-strong:   #ADB5BD;
 
     /* Texto */
-    --text-primary:    #0d1e3d;
-    --text-secondary:  #2a3f6b;
-    --text-muted:      #637090;
-    --text-sidebar:    #c8d4e6;
-    --text-sidebar-muted: #6a7d9b;
+    --text-primary:    #212529;
+    --text-secondary:  #495057;
+    --text-muted:      #6C757D;
+    --text-sidebar:    #E6EDF3;
+    --text-sidebar-muted: #8B949E;
 
-    /* Acentos semánticos */
-    --accent-blue:     #1a3a6e;
-    --accent-blue-lt:  #d6e4f7;
-    --accent-green:    #005c4e;
-    --accent-green-lt: #ccf0ea;
-    --accent-red:      #aa1b1b;
-    --accent-red-lt:   #fde5e5;
-    --accent-orange:   #c97a00;
-    --accent-orange-lt:#ffefd0;
-    --accent-purple:   #5b21b6;
-    --accent-purple-lt:#ede9fe;
-    --accent-teal:     #0e7490;
-    --accent-teal-lt:  #cff1fb;
+    /* Acentos semanticos */
+    --accent-blue:     #002D57;
+    --accent-blue-lt:  #cce0f5;
+    --accent-green:    #198754;
+    --accent-green-lt: #d1f2dc;
+    --accent-red:      #B02A37;
+    --accent-red-lt:   #f5d0d3;
+    --accent-orange:   #FD7E14;
+    --accent-orange-lt:#ffe8cc;
+    --accent-purple:   #6f42c1;
+    --accent-purple-lt:#e8dcf8;
+    --accent-teal:     #0D6EFD;
+    --accent-teal-lt:  #cfe2ff;
+
+    /* Semantica de ejecucion */
+    --exec-completado: #198754;
+    --exec-progreso:   #0D6EFD;
+    --exec-atrasado:   #FD7E14;
+    --exec-critico:    #B02A37;
+    --exec-planeacion: #ADB5BD;
 
     /* Nav */
-    --nav-cat-color:    #6a7d9b;
-    --nav-cat-hi-color: #60a8e8;
-    --nav-active-bg:    rgba(255,255,255,0.13);
-    --nav-active-border:#60a8e8;
+    --nav-cat-color:    #8B949E;
+    --nav-cat-hi-color: #FFD200;
+    --nav-active-bg:    rgba(255,210,0,0.12);
+    --nav-active-border:#FFD200;
     --nav-active-text:  #ffffff;
-    --nav-idle-text:    #99b2cc;
+    --nav-idle-text:    #8B949E;
 
     /* Badges de estado */
-    --badge-borrador-bg:  #edf0f5; --badge-borrador-fg: #4a5e80;
-    --badge-revisado-bg:  #ccf0ea; --badge-revisado-fg: #003e33;
-    --badge-aprobado-bg:  #d6e4f7; --badge-aprobado-fg: #0d2152;
-    --badge-devuelto-bg:  #fde5e5; --badge-devuelto-fg: #7a1010;
+    --badge-borrador-bg:  #e9ecef; --badge-borrador-fg: #495057;
+    --badge-revisado-bg:  #cfe2ff; --badge-revisado-fg: #084298;
+    --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
+    --badge-devuelto-bg:  #f5d0d3; --badge-devuelto-fg: #842029;
 
     /* KPI */
-    --kpi-value-color:  #0d1e3d;
+    --kpi-value-color:  #212529;
 
-    /* Botones de acción */
-    --btn-approve-bg:   #005c4e;
+    /* Botones de accion */
+    --btn-approve-bg:   #198754;
     --btn-approve-fg:   #ffffff;
-    --btn-return-bg:    #aa1b1b;
+    --btn-return-bg:    #B02A37;
     --btn-return-fg:    #ffffff;
+
+    /* CTA (Bogota Yellow) */
+    --btn-cta-bg:       #FFD200;
+    --btn-cta-fg:       #212529;
+    --btn-cta-border:   #E6BC00;
 }
 
 /* ════════════════════════════════════════════
    VARIABLES — MODO OSCURO
+   Superficies por elevacion, texto sin glare
    ════════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
     :root {
-        --idu-navy:        #3d6ec5;
-        --idu-navy-deep:   #5585d8;
-        --idu-navy-lt:     #162d5c;
-        --idu-teal:        #00b89a;
-        --idu-teal-lt:     #003d34;
-        --idu-amber:       #f5a623;
+        --idu-navy:        #1F6FEB;
+        --idu-navy-deep:   #58A6FF;
+        --idu-navy-lt:     #1a2744;
+        --idu-teal:        #3fb950;
+        --idu-teal-lt:     #0d2818;
+        --idu-amber:       #FFD200;
         --idu-amber-lt:    #3d2800;
 
-        --bg-app:          #0a1020;
-        --bg-card:         #111827;
-        --bg-card-hover:   #1a2540;
-        --bg-sidebar:      #060d1a;
+        /* Superficies por elevacion */
+        --bg-app:          #0B1117;
+        --bg-card:         #161B22;
+        --bg-card-hover:   #1c2330;
+        --bg-sidebar:      #0B1117;
         --bg-sidebar-item: rgba(255,255,255,0.05);
-        --bg-inset:        #0d1629;
+        --bg-inset:        #161B22;
 
-        --border:          #1e2d4d;
-        --border-strong:   #2d4070;
+        /* Bordes */
+        --border:          #30363D;
+        --border-strong:   #484f58;
 
-        --text-primary:    #dce8f8;
-        --text-secondary:  #b0c4df;
-        --text-muted:      #6b84a6;
-        --text-sidebar:    #b0c4df;
-        --text-sidebar-muted: #4d6585;
+        /* Texto sin glare */
+        --text-primary:    #E6EDF3;
+        --text-secondary:  #c9d1d9;
+        --text-muted:      #8B949E;
+        --text-sidebar:    #E6EDF3;
+        --text-sidebar-muted: #8B949E;
 
-        --accent-blue:     #5585d8;
-        --accent-blue-lt:  #162d5c;
-        --accent-green:    #00b89a;
-        --accent-green-lt: #003d34;
-        --accent-red:      #f26868;
+        /* Acentos oscuros */
+        --accent-blue:     #1F6FEB;
+        --accent-blue-lt:  #1a2744;
+        --accent-green:    #3fb950;
+        --accent-green-lt: #0d2818;
+        --accent-red:      #f85149;
         --accent-red-lt:   #3d1010;
-        --accent-orange:   #f5a623;
-        --accent-orange-lt:#3d2800;
-        --accent-purple:   #c4a3ff;
+        --accent-orange:   #FD7E14;
+        --accent-orange-lt:#3d2200;
+        --accent-purple:   #bc8cff;
         --accent-purple-lt:#2d1f60;
-        --accent-teal:     #38d4f5;
-        --accent-teal-lt:  #0d3040;
+        --accent-teal:     #58A6FF;
+        --accent-teal-lt:  #0d3050;
 
-        --nav-cat-color:    #4d6585;
-        --nav-cat-hi-color: #5585d8;
-        --nav-active-bg:    rgba(85,133,216,0.16);
-        --nav-active-border:#5585d8;
-        --nav-active-text:  #dce8f8;
-        --nav-idle-text:    #6b84a6;
+        /* Semantica de ejecucion oscura */
+        --exec-completado: #3fb950;
+        --exec-progreso:   #58A6FF;
+        --exec-atrasado:   #FD7E14;
+        --exec-critico:    #f85149;
+        --exec-planeacion: #484f58;
 
-        --badge-borrador-bg:  #1a2540; --badge-borrador-fg: #6b84a6;
-        --badge-revisado-bg:  #003d34; --badge-revisado-fg: #00b89a;
-        --badge-aprobado-bg:  #162d5c; --badge-aprobado-fg: #5585d8;
-        --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #f26868;
+        /* Nav */
+        --nav-cat-color:    #8B949E;
+        --nav-cat-hi-color: #FFD200;
+        --nav-active-bg:    rgba(255,210,0,0.10);
+        --nav-active-border:#FFD200;
+        --nav-active-text:  #E6EDF3;
+        --nav-idle-text:    #8B949E;
 
-        --kpi-value-color:  #dce8f8;
+        /* Badges */
+        --badge-borrador-bg:  #21262D; --badge-borrador-fg: #8B949E;
+        --badge-revisado-bg:  #0d3050; --badge-revisado-fg: #58A6FF;
+        --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
+        --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #f85149;
 
-        --btn-approve-bg:   #00b89a;
-        --btn-approve-fg:   #001a16;
-        --btn-return-bg:    #f26868;
-        --btn-return-fg:    #1a0000;
+        --kpi-value-color:  #E6EDF3;
+
+        --btn-approve-bg:   #3fb950;
+        --btn-approve-fg:   #0d1117;
+        --btn-return-bg:    #f85149;
+        --btn-return-fg:    #0d1117;
+
+        --btn-cta-bg:       #FFD200;
+        --btn-cta-fg:       #0B1117;
+        --btn-cta-border:   #E6BC00;
     }
 }
 
@@ -150,11 +187,23 @@ html, body, [class*="css"] {
 .stApp { background: var(--bg-app); color: var(--text-primary); }
 
 /* ════════════════════════════════════════════
+   OCULTAR NAVEGACION AUTOMATICA DE STREAMLIT
+   (lista de paginas auto-detectadas del sidebar)
+   ════════════════════════════════════════════ */
+[data-testid="stSidebarNav"],
+section[data-testid="stSidebar"] nav,
+section[data-testid="stSidebar"] ul {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* ════════════════════════════════════════════
    SIDEBAR — siempre oscuro (estilo panel IDU)
    ════════════════════════════════════════════ */
 section[data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
-    border-right: 1px solid rgba(85,133,216,0.12);
+    border-right: 1px solid rgba(31,111,235,0.12);
 }
 section[data-testid="stSidebar"] * {
     color: var(--text-sidebar) !important;
@@ -176,9 +225,9 @@ section[data-testid="stSidebar"] .stButton > button {
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(85,133,216,0.15) !important;
+    background: rgba(0,75,141,0.35) !important;
     color: #ffffff !important;
-    border-color: rgba(85,133,216,0.3) !important;
+    border-color: rgba(0,75,141,0.5) !important;
 }
 
 /* Nav item activo */
@@ -197,7 +246,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     box-sizing: border-box;
 }
 
-/* Categoría normal */
+/* Categoria normal */
 .nav-cat {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.60rem;
@@ -211,7 +260,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 .nav-cat:first-of-type { border-top: none; margin-top: 0; }
 
-/* Categoría destacada */
+/* Categoria destacada */
 .nav-cat-hi {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.60rem;
@@ -220,7 +269,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     text-transform: uppercase;
     color: var(--nav-cat-hi-color) !important;
     padding: 0.65rem 0 0.2rem 0;
-    border-top: 1px solid rgba(85,133,216,0.18);
+    border-top: 1px solid rgba(255,210,0,0.18);
     margin-top: 0.6rem;
 }
 
@@ -323,11 +372,78 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color: var(--text-muted);
     margin-bottom: 0.75rem;
 }
-/* Tags del multiselect */
+
+/* ════════════════════════════════════════════
+   INPUTS — Oscurecer al enfocar / tener contenido
+   ════════════════════════════════════════════ */
+.stTextInput input,
+.stSelectbox [data-baseweb="select"] > div,
+.stMultiSelect [data-baseweb="select"] > div,
+.stDateInput input {
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Estado focus: borde azul activo + fondo ligeramente mas oscuro */
+.stTextInput input:focus,
+.stDateInput input:focus {
+    background-color: #edf2f9 !important;
+    border-color: var(--bogota-blue-active, #004B8D) !important;
+    box-shadow: 0 0 0 2px rgba(0,75,141,0.18) !important;
+}
+
+/* Selectbox / multiselect al abrir (estado activo) */
+.stSelectbox [data-baseweb="select"] > div[aria-expanded="true"],
+.stSelectbox [data-baseweb="select"]:focus-within > div,
+.stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
+.stMultiSelect [data-baseweb="select"]:focus-within > div {
+    background-color: #edf2f9 !important;
+    border-color: var(--bogota-blue-active, #004B8D) !important;
+    box-shadow: 0 0 0 2px rgba(0,75,141,0.18) !important;
+}
+
+/* Multiselect con tags (tiene contenido seleccionado) */
 .stMultiSelect [data-baseweb="tag"] {
     background-color: var(--accent-blue-lt) !important;
     color: var(--accent-blue) !important;
     font-weight: 700 !important;
+}
+.stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
+    background-color: #edf2f9 !important;
+    border-color: var(--bogota-blue-active, #004B8D) !important;
+}
+
+/* Input con contenido (no placeholder) */
+.stTextInput input:not(:placeholder-shown),
+.stDateInput input:not(:placeholder-shown) {
+    background-color: #edf2f9 !important;
+    border-color: #ADB5BD !important;
+}
+
+/* Dark mode overrides para inputs */
+@media (prefers-color-scheme: dark) {
+    .stTextInput input:focus,
+    .stDateInput input:focus {
+        background-color: #21262D !important;
+        border-color: #58A6FF !important;
+        box-shadow: 0 0 0 2px rgba(88,166,255,0.15) !important;
+    }
+    .stSelectbox [data-baseweb="select"] > div[aria-expanded="true"],
+    .stSelectbox [data-baseweb="select"]:focus-within > div,
+    .stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
+    .stMultiSelect [data-baseweb="select"]:focus-within > div {
+        background-color: #21262D !important;
+        border-color: #58A6FF !important;
+        box-shadow: 0 0 0 2px rgba(88,166,255,0.15) !important;
+    }
+    .stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
+        background-color: #21262D !important;
+        border-color: #58A6FF !important;
+    }
+    .stTextInput input:not(:placeholder-shown),
+    .stDateInput input:not(:placeholder-shown) {
+        background-color: #21262D !important;
+        border-color: #484f58 !important;
+    }
 }
 
 /* ════════════════════════════════════════════
@@ -374,7 +490,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
    CONTRATO — HEADER Y FICHAS
    ════════════════════════════════════════════ */
 .contract-header {
-    background: linear-gradient(135deg, var(--idu-navy-deep) 0%, var(--idu-navy) 100%);
+    background: linear-gradient(135deg, #002D57 0%, #004B8D 100%);
     border-radius: 12px;
     padding: 1.4rem 1.8rem;
     margin-bottom: 1.2rem;
@@ -382,7 +498,6 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     position: relative;
     overflow: hidden;
 }
-/* watermark removido */
 .contract-id {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
@@ -486,7 +601,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 
 /* ════════════════════════════════════════════
-   PANEL DE APROBACIÓN
+   PANEL DE APROBACION
    ════════════════════════════════════════════ */
 .approval-panel {
     background: var(--bg-inset);
@@ -551,7 +666,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 
 /* ════════════════════════════════════════════
-   TABLA DE SEGUIMIENTO (adiciones / prórrogas)
+   TABLA DE SEGUIMIENTO (adiciones / prorrogas)
    ════════════════════════════════════════════ */
 .tracking-table-wrap {
     background: var(--bg-card);
@@ -586,7 +701,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 
 /* ════════════════════════════════════════════
-   INFO PILLS (indicadores pequeños en filas)
+   INFO PILLS (indicadores pequenos en filas)
    ════════════════════════════════════════════ */
 .info-pill {
     display: inline-flex;
@@ -609,7 +724,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .info-pill.teal   { background: var(--accent-teal-lt);   color: var(--accent-teal);   border-color: var(--accent-teal-lt); }
 
 /* ════════════════════════════════════════════
-   BARRA DE EJECUCIÓN PRESUPUESTAL
+   BARRA DE EJECUCION PRESUPUESTAL
    ════════════════════════════════════════════ */
 .presup-bar-wrap {
     background: var(--border);
@@ -620,14 +735,30 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .presup-bar-fill {
     height: 100%;
     border-radius: 4px;
-    background: var(--accent-green);
+    background: var(--exec-completado);
     transition: width 0.5s ease;
 }
-.presup-bar-fill.warn   { background: var(--accent-orange); }
-.presup-bar-fill.danger { background: var(--accent-red); }
+.presup-bar-fill.warn   { background: var(--exec-atrasado); }
+.presup-bar-fill.danger { background: var(--exec-critico); }
 
 /* ════════════════════════════════════════════
-   TIPOGRAFÍA Y CONTENEDORES
+   BOTON CTA (Bogota Yellow)
+   ════════════════════════════════════════════ */
+.stApp .stButton > button[kind="primary"],
+.stApp .stFormSubmitButton > button {
+    background-color: var(--btn-cta-bg) !important;
+    color: var(--btn-cta-fg) !important;
+    border: 1px solid var(--btn-cta-border) !important;
+    font-weight: 700 !important;
+}
+.stApp .stButton > button[kind="primary"]:hover,
+.stApp .stFormSubmitButton > button:hover {
+    background-color: var(--bogota-gold, #E6BC00) !important;
+    border-color: var(--bogota-gold, #E6BC00) !important;
+}
+
+/* ════════════════════════════════════════════
+   TIPOGRAFIA Y CONTENEDORES
    ════════════════════════════════════════════ */
 .stDataFrame { border-radius: 8px; overflow: hidden; }
 

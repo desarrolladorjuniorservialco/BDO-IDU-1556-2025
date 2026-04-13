@@ -60,15 +60,15 @@ def sidebar(perfil: dict) -> str:
                         {total} total
                     </span>
                     <span class="stat-chip"
-                          style="background:#1a3255;color:#58a6ff;">
+                          style="background:#0d2818;color:#3fb950;">
                         {apr} aprobados
                     </span>
                     <span class="stat-chip"
-                          style="background:#0d2d1f;color:#56d364;">
+                          style="background:#0d3050;color:#58a6ff;">
                         {rev} revisados
                     </span>
                     <span class="stat-chip"
-                          style="background:#3d1e1e;color:#f85149;">
+                          style="background:#3d1010;color:#f85149;">
                         {dev} devueltos
                     </span>
                 </div>

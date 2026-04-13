@@ -123,6 +123,18 @@ def page_presupuesto(perfil: dict) -> None:
             df_raw = df_raw.rename(columns={_old: 'componente'})
             break
 
+    # Normalizar columna de cantidad programada (cantidad_ppto -> cantidad_contrato)
+    if 'cantidad_contrato' not in df_raw.columns:
+        for _old in ('cantidad_ppto', 'cantidad_presupuesto', 'cant_contrato',
+                     'Cantidad', 'cantidad'):
+            if _old in df_raw.columns:
+                df_raw = df_raw.rename(columns={_old: 'cantidad_contrato'})
+                break
+
+    # Normalizar unidad (unidad -> und si falta)
+    if 'und' not in df_raw.columns and 'unidad' in df_raw.columns:
+        df_raw = df_raw.rename(columns={'unidad': 'und'})
+
     # Calcular ejecutado a partir de cantidades aprobadas
     with st.spinner("Calculando ejecución presupuestal…"):
         df = _calcular_ejecutado(df_raw.copy())
@@ -198,7 +210,7 @@ def page_presupuesto(perfil: dict) -> None:
             f'</div>'
             f'<div class="timeline-bar-wrap">'
             f'<div class="timeline-bar-fill" '
-            f'style="width:{min(pct_e,100):.1f}%; background:{"#005c4e" if pct_e>=70 else "#c97a00" if pct_e>=40 else "#aa1b1b"};">'
+            f'style="width:{min(pct_e,100):.1f}%; background:{"#198754" if pct_e>=70 else "#FD7E14" if pct_e>=40 else "#B02A37"};">'
             f'<span class="timeline-bar-text">{pct_e}%</span>'
             f'</div></div>'
             f'<div class="timeline-dates">'
@@ -226,14 +238,14 @@ def page_presupuesto(perfil: dict) -> None:
             name='Presupuestado',
             x=df_grp['componente'],
             y=df_grp['valor_total'],
-            marker_color='#1a3a6e',
+            marker_color='#002D57',
         ))
         if 'valor_ejecutado' in df_grp.columns:
             fig.add_trace(go.Bar(
                 name='Ejecutado',
                 x=df_grp['componente'],
                 y=df_grp['valor_ejecutado'],
-                marker_color='#005c4e',
+                marker_color='#198754',
             ))
         fig.update_layout(
             barmode='group',
