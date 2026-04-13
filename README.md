@@ -1,7 +1,15 @@
 # BDO · IDU-1556-2025
 
 Sistema de sincronización **QFieldCloud → Supabase** para el seguimiento de obra del contrato IDU-1556-2025.
-Consorcio Obras Peatonales 2025 · Contratista: SERVIALCO S.A.S.
+
+| | |
+|---|---|
+| **Contrato** | IDU-1556-2025 Grupo 4 |
+| **Contratista** | URBACON SAS |
+| **Interventoría** | CONSORCIO INTERCONSERVACION |
+| **Supervisión** | IDU |
+| **Vigencia** | 2025-12-26 → 2028-02-26 |
+| **Valor** | $ 40.704.606.199 COP |
 
 ---
 
@@ -13,13 +21,13 @@ Inspector / Residente (campo)
         │  captura en QField (Android / iOS / Desktop)
         ▼
 QFieldCloud
-        │  archivos GeoPackage (*.gpkg) + fotos adjuntas
+        │  GeoPackages (*.gpkg) + Excel contrato (*.xlsx) + fotos
         ▼
 GitHub Actions  ──── cron: cada 20 min · lun–sáb · 11:00–23:00
 sync/sync_qfield.py
         │
         ├─▶  PostgreSQL (Supabase)   ← tablas, registros, estados
-        └─▶  Storage (Supabase)      ← fotos, bucket: Registro_Obra
+        └─▶  Storage (Supabase)      ← fotos comprimidas · bucket: Registro_Obra
                 │
                 ├─▶  Streamlit          dashboards y aprobaciones
                 └─▶  QGIS               SIG_IDU-1556-2025_cloud.qgs
@@ -31,28 +39,27 @@ sync/sync_qfield.py
 
 ```
 BDO-IDU-1556-2025/
-├── sync/                       Paquete Python principal
-│   ├── sync_qfield.py          Orquestador (punto de entrada)
-│   ├── config.py               Variables de entorno y constantes
-│   ├── connections.py          Login QFieldCloud + cliente Supabase
-│   ├── gpkg.py                 Descarga y lectura de GeoPackages
-│   ├── photos.py               Descarga fotos y las sube a Storage
-│   ├── utils.py                Funciones auxiliares (safe, safe_num, coords)
-│   ├── sync_lookup.py          Tablas catálogo (infra, actividad)
-│   ├── sync_geo.py             Referencia geográfica (localidades, tramos)
-│   ├── sync_presupuesto.py     Presupuesto (ítems y componentes)
-│   ├── sync_formularios.py     Formularios principales (cantidades, reporte…)
-│   ├── sync_bd.py              Tablas secundarias del reporte diario
-│   ├── sync_rf.py              Registros fotográficos (rf_*)
+├── sync/                          Paquete Python principal
+│   ├── sync_qfield.py             Orquestador (punto de entrada)
+│   ├── config.py                  Variables de entorno y constantes
+│   ├── connections.py             Login QFieldCloud + cliente Supabase
+│   ├── gpkg.py                    Descarga archivos y lee GeoPackages
+│   ├── photos.py                  Descarga, comprime y sube fotos a Storage
+│   ├── utils.py                   Funciones auxiliares (safe, safe_num, coords)
+│   ├── sync_contrato.py           Contrato: Excel → contratos / prorrogas / adiciones
+│   ├── sync_lookup.py             Tablas catálogo (infra, tramos, actividad, capítulos)
+│   ├── sync_geo.py                Referencia geográfica (localidades, tramos)
+│   ├── sync_presupuesto.py        Presupuesto (ítems, componentes, auxiliar)
+│   ├── sync_formularios.py        Formularios principales (cantidades, reporte…)
+│   ├── sync_bd.py                 Tablas secundarias del reporte diario
+│   ├── sync_rf.py                 Registros fotográficos (rf_*)
 │   └── __init__.py
-├── migrations/                 Parches SQL incrementales (si aplican)
+├── migrations/                    Parches SQL incrementales (si aplican)
 ├── .github/workflows/
-│   └── sync.yml                Workflow de automatización
-├── requirements.txt            Dependencias Python
-├── packages.txt                Paquetes del sistema (GDAL/Fiona)
-├── .devcontainer/              Configuración Codespaces
-├── .gitignore
-└── README.md                   Este archivo
+│   └── sync.yml                   Workflow de automatización
+├── requirements.txt               Dependencias Python
+├── packages.txt                   Paquetes del sistema (GDAL/Fiona)
+└── README.md                      Este archivo
 ```
 
 ---
@@ -63,23 +70,42 @@ BDO-IDU-1556-2025/
 
 Punto de entrada único. Autentica los servicios y llama a cada módulo en el orden correcto respetando las dependencias del esquema de base de datos.
 
-```python
-# Orden de ejecución
-0. Tablas catálogo    sync_tramos_aux_infra, sync_presupuesto_aux_actividad
-1. Referencia geo     sync_localidades, sync_tramos_bd
-2. Presupuesto        sync_presupuesto_bd, sync_presupuesto_componentes_bd
-3. Formularios        sync_registros_cantidades, sync_registros_componentes,
-                      sync_registros_reporte_diario, sync_formulario_pmt
-4. Tablas secundarias sync_bd_personal, sync_bd_climatica,
-                      sync_bd_maquinaria, sync_bd_sst
-5. Fotos              sync_rf_cantidades, sync_rf_componentes,
-                      sync_rf_reporte_diario
+```
+Paso 0 · Contrato         sync_contrato_excel
+           └─ contratos, contratos_prorrogas, contratos_adiciones
+              (debe ir primero: otras tablas referencian contratos.id)
+
+Paso 1 · Tablas catálogo  sync_tramos_aux_infra
+                          sync_tramos_aux_tramos
+                          sync_presupuesto_aux_actividad
+                          sync_presupuesto_aux_capitulos
+
+Paso 2 · Referencia geo   sync_localidades
+                          sync_tramos_bd
+
+Paso 3 · Presupuesto      sync_presupuesto_bd
+                          sync_presupuesto_componentes_bd
+                          sync_presupuesto_componentes_aux
+
+Paso 4 · Formularios      sync_registros_cantidades
+                          sync_registros_componentes
+                          sync_registros_reporte_diario
+                          sync_formulario_pmt
+
+Paso 5 · Secundarias      sync_bd_personal
+                          sync_bd_climatica
+                          sync_bd_maquinaria
+                          sync_bd_sst
+
+Paso 6 · Fotos            sync_rf_cantidades
+                          sync_rf_componentes
+                          sync_rf_reporte_diario
 ```
 
-> El orden no es arbitrario: las tablas secundarias (paso 4) tienen FK a
+> El orden no es arbitrario: las tablas secundarias (paso 5) tienen FK a
 > `registros_reporte_diario.folio`, que debe existir antes de insertar.
-> Las fotos (paso 5) van al final porque la subida a Storage es la
-> operación más lenta.
+> Las fotos (paso 6) van al final porque son la operación más lenta
+> (descarga + compresión Pillow + subida a Storage por cada registro).
 
 ---
 
@@ -111,22 +137,38 @@ Lee variables de entorno. En local las carga desde `sync/.env`; en GitHub Action
 
 ---
 
-### `gpkg.py` — GeoPackages
+### `gpkg.py` — Archivos y GeoPackages
 
 | Función | Descripción |
 |---|---|
-| `download_gpkg(token, project_id, gpkg_file, tmp_path)` | Descarga un GPKG de QFieldCloud a `/tmp/` |
+| `download_file(token, project_id, filename, tmp_path)` | Descarga **cualquier archivo** del proyecto QFieldCloud (GPKG, XLSX, etc.) a `/tmp/` |
+| `download_gpkg(token, project_id, gpkg_file, tmp_path)` | Alias de `download_file` para retrocompatibilidad |
 | `read_layer(tmp_path, layer_name)` | Lee una capa con geopandas; normaliza columnas a minúsculas; reproyecta a WGS84 si es necesario |
 | `delete_all(supabase, table)` | Borra todos los registros de una tabla (para tablas que se reconstruyen en cada sync) |
 
 ---
 
-### `photos.py` — Fotos
+### `photos.py` — Fotos con compresión automática
 
-Descarga fotos adjuntas desde QFieldCloud y las sube al bucket `Registro_Obra` de Supabase Storage. Retorna la URL pública que se guarda en la columna `foto_url` de cada tabla `rf_*`.
+Descarga fotos adjuntas desde QFieldCloud, las **comprime con Pillow** y las sube al bucket `Registro_Obra` de Supabase Storage. Retorna la URL pública que se guarda en la columna `foto_url` de cada tabla `rf_*`.
 
-**Ruta en Storage:** `{folio}/{nombre_archivo}`
-**URL pública:** `{SUPABASE_URL}/storage/v1/object/public/Registro_Obra/{folio}/{nombre_archivo}`
+**Parámetros de compresión:**
+
+| Parámetro | Valor | Descripción |
+|---|---|---|
+| `MAX_DIMENSION` | 2048 px | Lado mayor máximo; escala proporcional con LANCZOS |
+| `JPEG_QUALITY` | 82 | Calidad JPEG (0–95); buena relación calidad/peso para fotos de obra |
+| EXIF | descartado | Pillow no copia metadata al guardar → ahorro extra de 30-80 KB |
+| Formato | JPEG | PNG y otros formatos se convierten a RGB JPEG |
+| Extensión | `.jpg` | El archivo en Storage siempre queda con extensión `.jpg` |
+
+> En la práctica una foto de 5 MB tomada con celular queda entre 400–900 KB
+> (reducción de ~80-85%) sin diferencia visual perceptible para fotos de obra.
+
+> Si Pillow falla por cualquier razón, el original se sube sin comprimir.
+
+**Ruta en Storage:** `{folio}/{nombre}.jpg`
+**URL pública:** `{SUPABASE_URL}/storage/v1/object/public/Registro_Obra/{folio}/{nombre}.jpg`
 
 > Si la ruta almacenada en el GPKG apunta a un archivo fuera del proyecto
 > QField (por ejemplo `../../../Pictures/imagen.jpg`), la foto no existe
@@ -146,12 +188,31 @@ Descarga fotos adjuntas desde QFieldCloud y las sube al bucket `Registro_Obra` d
 
 ---
 
+### `sync_contrato.py` — Seguimiento contractual (Excel)
+
+Descarga `Contrato_IDU_1556_2025.xlsx` **una sola vez** desde QFieldCloud y sincroniza las tres hojas contractuales.
+
+| Función interna | Hoja Excel | Tabla Supabase | Estrategia |
+|---|---|---|---|
+| `_sync_ini` | `BD_CTO_INI` | `contratos` | upsert por `id` |
+| `_sync_pro` | `BD_CTO_PRO` | `contratos_prorrogas` | upsert por `(contrato_id, numero)` |
+| `_sync_adi` | `BD_CTO_ADI` | `contratos_adiciones` | upsert por `(contrato_id, numero)` |
+
+> Los campos `contratos.prorrogas`, `contratos.plazo_actual`, `contratos.adiciones`
+> y `contratos.valor_actual` **no se escriben desde aquí** — los actualiza
+> automáticamente el trigger `trg_sync_prorrogas` / `trg_sync_adiciones`
+> en PostgreSQL cada vez que se inserta o modifica una fila en las tablas de detalle.
+
+---
+
 ### `sync_lookup.py` — Tablas catálogo
 
 | Función | GPKG origen | Tabla Supabase | Estrategia |
 |---|---|---|---|
 | `sync_tramos_aux_infra` | `TramosIDU15562025BDTRAMOS.gpkg` | `tramos_aux_infra` | upsert por `codigo` |
+| `sync_tramos_aux_tramos` | `TramosIDU15562025AUXTRAMOS.gpkg` | `tramos_aux_tramos` | upsert por `codigo` |
 | `sync_presupuesto_aux_actividad` | `PresupuestoIDU15562025BDPRESUPUESTO.gpkg` | `presupuesto_aux_actividad` | upsert por `tipo_actividad` |
+| `sync_presupuesto_aux_capitulos` | `PresupuestoIDU15562025AUXCAPITULOS.gpkg` | `presupuesto_aux_capitulos` | upsert por `(tipo_actividad, capitulo_num)` |
 
 Incluye mapeo de nombres a códigos de infraestructura (`Espacio Público → EP`, `Ciclorruta → CI`, `Malla Vial → MV`).
 
@@ -164,7 +225,7 @@ Incluye mapeo de nombres a códigos de infraestructura (`Espacio Público → EP
 | `sync_localidades` | `loca.gpkg` (capa `Loca`) | `localidades` | upsert por `loc_codigo` |
 | `sync_tramos_bd` | `TramosIDU15562025BDTRAMOS.gpkg` | `tramos_bd` | upsert por `id_tramo` |
 
-> Quirk [D-08]: la columna en el GPKG es `ciclorruta_km` (doble r),
+> Quirk [D-08]: la columna en el GPKG es `ciclorruta_km` (doble r);
 > el código lee ambas variantes para tolerar correcciones futuras.
 
 ---
@@ -175,11 +236,10 @@ Incluye mapeo de nombres a códigos de infraestructura (`Espacio Público → EP
 |---|---|---|---|
 | `sync_presupuesto_bd` | `PresupuestoIDU15562025BDPRESUPUESTO.gpkg` | `presupuesto_bd` | upsert por `codigo_idu` |
 | `sync_presupuesto_componentes_bd` | `Presupuesto_Componentes.gpkg` (capa `ppto_componentes`) | `presupuesto_componentes_bd` | upsert por `codigo_idu` |
-
-En adiciones al contrato (nuevos ítems o ajuste de cantidades/precios), el upsert actualiza automáticamente los registros existentes e inserta los nuevos. Los ítems eliminados del GPKG permanecen en Supabase; si se requiere limpieza ejecutar `TRUNCATE presupuesto_bd CASCADE` antes del siguiente sync.
+| `sync_presupuesto_componentes_aux` | `ppto_componentes__aux_pptcomponentes.gpkg` | `presupuesto_componentes_aux` | delete + insert |
 
 > Quirk [D-09]: columna `compenente` (typo) en lugar de `componente` en
-> `Presupuesto_Componentes.gpkg`. El código lee ambas.
+> varios GPKGs de presupuesto. El código lee ambas variantes.
 
 ---
 
@@ -201,7 +261,7 @@ En adiciones al contrato (nuevos ítems o ajuste de cantidades/precios), el upse
 
 ### `sync_bd.py` — Tablas secundarias del reporte diario
 
-Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`). Todas tienen FK a `registros_reporte_diario.folio`, por eso se ejecutan **después** del paso 3.
+Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`). Todas tienen FK a `registros_reporte_diario.folio`, por eso se ejecutan **después** del paso 4.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -218,7 +278,7 @@ Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`
 
 ### `sync_rf.py` — Registros fotográficos
 
-Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada registro descarga la foto de QFieldCloud, la sube al bucket `Registro_Obra` y guarda la URL pública en `foto_url`.
+Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada registro descarga la foto de QFieldCloud, la **comprime via `photos.py`** y sube al bucket `Registro_Obra`, guardando la URL pública en `foto_url`.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -232,6 +292,36 @@ Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada regi
 
 ---
 
+## Estrategias de actualización por tabla
+
+| Tabla | Estrategia | Motivo |
+|---|---|---|
+| `contratos` | upsert por `id` | dato maestro del Excel |
+| `contratos_prorrogas` | upsert por `(contrato_id, numero)` | acumulativo |
+| `contratos_adiciones` | upsert por `(contrato_id, numero)` | acumulativo |
+| `tramos_aux_infra` | upsert | catálogo estable |
+| `tramos_aux_tramos` | upsert | catálogo estable |
+| `presupuesto_aux_actividad` | upsert | catálogo estable |
+| `presupuesto_aux_capitulos` | upsert | catálogo estable |
+| `localidades` | upsert | referencia geográfica |
+| `tramos_bd` | upsert | puede crecer con adiciones |
+| `presupuesto_bd` | upsert | puede crecer con adiciones |
+| `presupuesto_componentes_bd` | upsert | puede crecer con adiciones |
+| `presupuesto_componentes_aux` | delete + insert | sin clave única |
+| `registros_cantidades` | upsert por `id_unico` | preserva estado de aprobación |
+| `registros_componentes` | upsert por `folio` | preserva estado de aprobación |
+| `registros_reporte_diario` | upsert por `folio` | preserva estado de aprobación |
+| `formulario_pmt` | upsert por `folio` | preserva historial |
+| `bd_personal_obra` | delete + insert | observación diaria, se reemplaza |
+| `bd_condicion_climatica` | delete + insert | observación diaria, se reemplaza |
+| `bd_maquinaria_obra` | delete + insert | observación diaria, se reemplaza |
+| `bd_sst_ambiental` | delete + insert | observación diaria, se reemplaza |
+| `rf_cantidades` | delete + insert | fotos se re-suben con URL fresca |
+| `rf_componentes` | delete + insert | fotos se re-suben con URL fresca |
+| `rf_reporte_diario` | delete + insert | fotos se re-suben con URL fresca |
+
+---
+
 ## Ejecución local (desarrollo y pruebas)
 
 **1. Instalar dependencias del sistema** (Linux/Codespaces — GDAL para geopandas):
@@ -242,12 +332,12 @@ sudo apt-get install -y $(cat packages.txt)
 **2. Instalar dependencias Python:**
 ```bash
 pip install -r requirements.txt
+# supabase · geopandas · requests · python-dotenv · openpyxl · Pillow
 ```
 
 **3. Crear archivo de credenciales:**
-```
-sync/.env
-```
+
+`sync/.env` (está en `.gitignore` — nunca se sube al repositorio)
 ```env
 SUPABASE_URL=https://<proyecto>.supabase.co
 SUPABASE_KEY=<service_role_key>
@@ -264,8 +354,6 @@ python -m sync.sync_qfield
 python sync/sync_qfield.py
 ```
 
-> `sync/.env` está en `.gitignore` — nunca se sube al repositorio.
-
 ---
 
 ## Ejecución automática — GitHub Actions
@@ -278,43 +366,38 @@ Archivo: [`.github/workflows/sync.yml`](.github/workflows/sync.yml)
 | Frecuencia | Cada 20 minutos |
 | Días | Lunes a sábado |
 | Horario | 11:00 – 23:00 UTC (06:00 – 18:00 Colombia) |
-| Timeout | 15 minutos por ejecución |
 | Runner | `ubuntu-latest` |
 
 También puede ejecutarse manualmente desde **Actions → Sync QFieldCloud → Supabase → Run workflow**.
 
 ---
 
-## Estrategias de actualización por tabla
+## Repositorio del esquema SQL
 
-| Tabla | Estrategia | Motivo |
-|---|---|---|
-| `tramos_aux_infra` | upsert | catálogo estable |
-| `presupuesto_aux_actividad` | upsert | catálogo estable |
-| `localidades` | upsert | referencia geográfica |
-| `tramos_bd` | upsert | puede crecer con adiciones |
-| `presupuesto_bd` | upsert | puede crecer con adiciones |
-| `presupuesto_componentes_bd` | upsert | puede crecer con adiciones |
-| `registros_cantidades` | upsert por `id_unico` | preserva estado de aprobación |
-| `registros_componentes` | upsert por `folio` | preserva estado de aprobación |
-| `registros_reporte_diario` | upsert por `folio` | preserva estado de aprobación |
-| `formulario_pmt` | upsert por `folio` | preserva historial |
-| `bd_personal_obra` | delete + insert | observación diaria, se reemplaza |
-| `bd_condicion_climatica` | delete + insert | observación diaria, se reemplaza |
-| `bd_maquinaria_obra` | delete + insert | observación diaria, se reemplaza |
-| `bd_sst_ambiental` | delete + insert | observación diaria, se reemplaza |
-| `rf_cantidades` | delete + insert | fotos se re-suben con URL fresca |
-| `rf_componentes` | delete + insert | fotos se re-suben con URL fresca |
-| `rf_reporte_diario` | delete + insert | fotos se re-suben con URL fresca |
+El DDL de la base de datos (tablas, RLS, triggers, índices) se mantiene en el repositorio separado **SupaBaseSQLEditor**. Para inicializar el esquema desde cero, ejecutar en el SQL Editor de Supabase en este orden:
+
+1. `000_DROP_ALL.sql` — elimina todas las tablas y funciones
+2. `001_TABLAS.sql` — crea tablas, seed data y triggers contractuales
+3. `002_RLS.sql` — políticas de seguridad por rol (todas las tablas)
+4. `003_FUNCIONES_TRIGGERS.sql` — lógica de negocio en BD
+5. `004_INDICES.sql` — índices de rendimiento
+6. `005_USUARIOS.sql` — solo en desarrollo
 
 ---
 
-## Repositorio del esquema SQL
+## Decisiones de diseño relevantes
 
-El DDL de la base de datos (tablas, RLS, triggers, índices) se mantiene en el repositorio separado **SupaBaseSQLEditor**. Para inicializar el esquema desde cero ejecutar en el SQL Editor de Supabase en este orden:
+**`folio` vs `id_unico`**
+`folio` identifica el formulario completo; `id_unico` identifica cada fila dentro del GPKG. `registros_cantidades` puede tener múltiples filas con el mismo `folio` (una por ítem de pago). El sync hace upsert por `id_unico`, no por `folio`.
 
-1. `000_DROP_ALL.sql` — elimina todas las tablas
-2. `001_TABLAS.sql` — crea tablas y seed data
-3. `002_RLS.sql` — políticas de seguridad por rol
-4. `003_FUNCIONES_TRIGGERS.sql` — lógica de negocio en BD
-5. `004_INDICES.sql` — índices de rendimiento
+**FK ausentes en columnas de sync**
+`id_tramo`, `codigo_elemento`, `tipo_infra` y `tipo_actividad` en `registros_*` son `TEXT` sin `REFERENCES`. El sync puede insertar formularios antes de que las tablas de referencia estén completamente sincronizadas, lo que causaría error 23503. La integridad se garantiza por el orden de sync, no por FK.
+
+**`rf_*` sin FK en `id_unico`**
+`id_unico` en las tablas de fotos es el identificador propio de cada foto, no una referencia al formulario padre. La relación foto↔formulario se navega por `folio`.
+
+**`historial_estados` y `notificaciones` sin FK en `registro_id`**
+Estas tablas auditan las tres tablas de formularios. Una FK a una sola tabla haría imposible auditar las otras dos. Se usa `tabla_origen TEXT CHECK(...)` para identificar la procedencia.
+
+**Contadores contractuales mantenidos por trigger**
+`contratos.prorrogas`, `.plazo_actual`, `.adiciones` y `.valor_actual` son mantenidos por `trg_sync_prorrogas` y `trg_sync_adiciones`. El sync de Excel solo escribe los campos base del contrato y el detalle de cada hoja.
