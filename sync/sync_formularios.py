@@ -78,7 +78,10 @@ def sync_registros_cantidades(supabase, token, project_id):
         data = {k: v for k, v in data.items() if v is not None}
         try:
             # [FIX-FK-001] upsert por id_unico para preservar todos los items del mismo folio
-            supabase.table('registros_cantidades').upsert(data, on_conflict='id_unico').execute()
+            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados por interventor)
+            supabase.table('registros_cantidades').upsert(
+                data, on_conflict='id_unico'
+            ).eq('inmutable', False).execute()
             nuevos += 1
             print(f"  ✓ {folio}")
         except Exception as e:
@@ -144,7 +147,10 @@ def sync_registros_componentes(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
-            supabase.table('registros_componentes').upsert(data, on_conflict='folio').execute()
+            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados)
+            supabase.table('registros_componentes').upsert(
+                data, on_conflict='folio'
+            ).eq('inmutable', False).execute()
             count += 1
         except Exception as e:
             errores += 1
@@ -190,7 +196,10 @@ def sync_registros_reporte_diario(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
-            supabase.table('registros_reporte_diario').upsert(data, on_conflict='folio').execute()
+            # [FIX-INM-001] No sobreescribir registros inmutables (aprobados)
+            supabase.table('registros_reporte_diario').upsert(
+                data, on_conflict='folio'
+            ).eq('inmutable', False).execute()
             count += 1
         except Exception as e:
             errores += 1
