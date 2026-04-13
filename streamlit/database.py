@@ -219,11 +219,123 @@ def load_presupuesto() -> pd.DataFrame:
     return _safe_query(_q, context='load_presupuesto')
 
 
-@st.cache_data(ttl=120)
-def load_pmts() -> pd.DataFrame:
-    """Tabla de Planes de Manejo de Tránsito."""
+@st.cache_data(ttl=300)
+def load_prorrogas() -> pd.DataFrame:
+    """Prórrogas del contrato IDU-1556-2025."""
     def _q():
         sb = get_supabase()
-        return sb.table('pmts').select('*').execute()
+        return (sb.table('contratos_prorrogas')
+                  .select('*')
+                  .eq('contrato_id', 'IDU-1556-2025')
+                  .order('numero')
+                  .execute())
+    return _safe_query(_q, context='load_prorrogas')
 
-    return _safe_query(_q, context='load_pmts')
+
+@st.cache_data(ttl=300)
+def load_adiciones() -> pd.DataFrame:
+    """Adiciones presupuestales del contrato IDU-1556-2025."""
+    def _q():
+        sb = get_supabase()
+        return (sb.table('contratos_adiciones')
+                  .select('*')
+                  .eq('contrato_id', 'IDU-1556-2025')
+                  .order('numero')
+                  .execute())
+    return _safe_query(_q, context='load_adiciones')
+
+
+@st.cache_data(ttl=120)
+def load_bd_personal(folios: tuple) -> pd.DataFrame:
+    """Personal de obra vinculado a folios de reporte diario."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('bd_personal_obra').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_bd_personal')
+
+
+@st.cache_data(ttl=120)
+def load_bd_clima(folios: tuple) -> pd.DataFrame:
+    """Condición climática vinculada a folios de reporte diario."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('bd_condicion_climatica').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_bd_clima')
+
+
+@st.cache_data(ttl=120)
+def load_bd_maquinaria(folios: tuple) -> pd.DataFrame:
+    """Maquinaria en obra vinculada a folios de reporte diario."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('bd_maquinaria_obra').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_bd_maquinaria')
+
+
+@st.cache_data(ttl=120)
+def load_bd_sst(folios: tuple) -> pd.DataFrame:
+    """Datos SST/Ambiental vinculados a folios de reporte diario."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('bd_sst_ambiental').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_bd_sst')
+
+
+@st.cache_data(ttl=120)
+def load_fotos_cantidades(folios: tuple) -> pd.DataFrame:
+    """Fotos de registros de cantidades."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('rf_cantidades').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_fotos_cantidades')
+
+
+@st.cache_data(ttl=120)
+def load_fotos_componentes(folios: tuple) -> pd.DataFrame:
+    """Fotos de registros de componentes."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('rf_componentes').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_fotos_componentes')
+
+
+@st.cache_data(ttl=120)
+def load_fotos_reporte(folios: tuple) -> pd.DataFrame:
+    """Fotos del reporte diario."""
+    if not folios:
+        return pd.DataFrame()
+    def _q():
+        return get_supabase().table('rf_reporte_diario').select('*').in_('folio', list(folios)).execute()
+    return _safe_query(_q, context='load_fotos_reporte')
+
+
+@st.cache_data(ttl=300)
+def load_formulario_pmt() -> pd.DataFrame:
+    """Formularios PMT registrados en campo."""
+    def _q():
+        sb = get_supabase()
+        return (sb.table('formulario_pmt')
+                  .select('*')
+                  .eq('contrato_id', 'IDU-1556-2025')
+                  .execute())
+    return _safe_query(_q, context='load_formulario_pmt')
+
+
+@st.cache_data(ttl=300)
+def load_presupuesto_componentes() -> pd.DataFrame:
+    """Presupuesto de componentes transversales (con precio_unitario)."""
+    def _q():
+        return get_supabase().table('presupuesto_componentes_bd').select('*').execute()
+    return _safe_query(_q, context='load_presupuesto_componentes')
+
+
+@st.cache_data(ttl=120)
+def load_pmts() -> pd.DataFrame:
+    """Alias de load_formulario_pmt() — compatibilidad."""
+    return load_formulario_pmt()

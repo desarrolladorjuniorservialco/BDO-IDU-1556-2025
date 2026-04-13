@@ -28,6 +28,7 @@ from config  import NAV_ACCESS
 # ── Páginas ────────────────────────────────────────────────
 from pages.estado_actual        import page_estado_actual
 from pages.anotaciones          import page_anotaciones
+from pages.anotaciones_diario   import page_anotaciones_diario
 from pages.generar_pdf          import page_generar_pdf
 from pages.mapa                 import page_mapa
 from pages.presupuesto          import page_presupuesto
@@ -61,8 +62,9 @@ st.markdown(CSS, unsafe_allow_html=True)
 PAGE_MAP: dict = {
     "Estado Actual":              page_estado_actual,
     "Anotaciones":                page_anotaciones,
-    "Generar PDF":                page_generar_pdf,
-    "Mapa de Obra":               page_mapa,
+    "Anotaciones Diario":         page_anotaciones_diario,
+    "Generar Informe":            page_generar_pdf,
+    "Mapa Ejecución":             page_mapa,
     "Seguimiento Presupuesto":    page_presupuesto,
     "Reporte Cantidades":         page_reporte_cantidades,
     "Componente Ambiental - SST": page_ambiental,

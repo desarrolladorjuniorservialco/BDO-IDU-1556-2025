@@ -29,8 +29,9 @@ NAV_ACCESS: dict[str, list[str]] = {
     # ── General ──────────────────────────────────────────────
     "Estado Actual":              _TODOS,
     "Anotaciones":                _TODOS,
-    "Generar PDF":                _GESTION,
-    "Mapa de Obra":               _GESTION,
+    "Anotaciones Diario":         _TODOS,
+    "Generar Informe":            _GESTION,
+    "Mapa Ejecución":             _GESTION,
     "Seguimiento Presupuesto":    _GESTION,
     # ── Reportes de Cantidades ────────────────────────────────
     "Reporte Cantidades":         _GESTION,
@@ -50,25 +51,27 @@ NAV_CATEGORIES: list[dict] = [
     {
         "label":     "General",
         "highlight": False,
-        "pages":     ["Estado Actual", "Anotaciones", "Generar PDF",
-                      "Mapa de Obra", "Seguimiento Presupuesto"],
+        "pages":     ["Estado Actual", "Mapa Ejecución",
+                      "Seguimiento Presupuesto"],
     },
     {
-        "label":     "Reportes de Cantidades",
+        "label":     "Reportes",
         "highlight": True,
-        "pages":     ["Reporte Cantidades"],
+        "pages":     ["Anotaciones", "Anotaciones Diario",
+                      "Reporte Cantidades"],
     },
     {
         "label":     "Componentes Transversales",
         "highlight": True,
         "pages":     ["Componente Ambiental - SST",
                       "Componente Social",
-                      "Componente PMT"],
+                      "Componente PMT",
+                      "Seguimiento PMTs"],
     },
     {
-        "label":     "Seguimiento de PMTs",
+        "label":     "Informe",
         "highlight": True,
-        "pages":     ["Seguimiento PMTs"],
+        "pages":     ["Generar Informe"],
     },
 ]
 
@@ -76,8 +79,9 @@ NAV_CATEGORIES: list[dict] = [
 PAGE_COLOR: dict[str, str] = {
     "Estado Actual":              "blue",
     "Anotaciones":                "purple",
-    "Generar PDF":                "teal",
-    "Mapa de Obra":               "teal",
+    "Anotaciones Diario":         "purple",
+    "Generar Informe":            "teal",
+    "Mapa Ejecución":             "teal",
     "Seguimiento Presupuesto":    "orange",
     "Reporte Cantidades":         "blue",
     "Componente Ambiental - SST": "green",
