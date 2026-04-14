@@ -657,7 +657,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .contract-header {
     background: linear-gradient(180deg, #6D8E2D 0%, #465b1d 100%);
     border-radius: 12px;
-    padding: 1.4rem 1.8rem;
+    padding: 1.6rem 2rem; /* Un poco más de espacio interno para enmarcar el texto grande */
     margin-bottom: 1.2rem;
     color: #fff;
     position: relative;
@@ -667,40 +667,41 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 .contract-id {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.78rem;
+    font-size: 0.85rem; /* Aumentado de 0.78rem */
     font-weight: 600;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.80); /* Contraste mejorado (antes 0.55) */
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
 }
 .contract-name {
     font-family: 'Montserrat', sans-serif;
-    font-size: 1.05rem;
+    font-size: 1.5rem; /* Aumentado drásticamente de 1.05rem. Es el título principal. */
     font-weight: 700;
     color: #fff;
-    line-height: 1.35;
-    margin-bottom: 0.9rem;
+    line-height: 1.3;
+    margin-bottom: 1.2rem; /* Más "aire" antes de la grilla de datos */
 }
 .contract-meta-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.7rem 1.2rem;
+    /* Columna mínima más ancha (180px) para evitar saltos de línea feos en pantallas grandes */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.2rem 1.5rem; /* Aumentada la separación vertical y horizontal */
 }
 .contract-meta-item { }
 .contract-meta-label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.60rem;
-    letter-spacing: 0.12em;
+    font-size: 0.75rem; /* Aumentado de 0.60rem. Ya no se sentirá perdido. */
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.48);
-    margin-bottom: 0.18rem;
+    color: rgba(255,255,255,0.75); /* Contraste mejorado (antes 0.48) para no cansar la vista */
+    margin-bottom: 0.25rem;
 }
 .contract-meta-value {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: rgba(255,255,255,0.92);
+    font-size: 1.1rem; /* Aumentado de 0.88rem para dar peso al dato */
+    font-weight: 700; /* Ahora es 700 (Bold) para que el dato destaque sobre la etiqueta */
+    color: #ffffff; /* Blanco puro para máximo impacto visual */
     line-height: 1.3;
 }
 
