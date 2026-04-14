@@ -28,9 +28,8 @@ import html as _html
 import io
 import logging
 import math
-import urllib.request
 from datetime import datetime, date
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 
@@ -49,9 +48,8 @@ def generate_pdf_bitacora(
     frente_obra: str = "",
     clima_am: str = "",
     clima_pm: str = "",
-    fotos_urls: Optional[List[str]] = None,
     alerta: bool = False,
-) -> Optional[bytes]:
+) -> bytes | None:
     """
     Genera el PDF de Bitácora Diaria de Obra.
 
@@ -60,7 +58,6 @@ def generate_pdf_bitacora(
       frente_obra   — frente/tramo del reporte
       clima_am      — condición climática AM
       clima_pm      — condición climática PM
-      fotos_urls    — lista de URLs de fotos del registro fotográfico
       alerta        — si True, el borde del cuadro de observaciones es Rojo Bogotá
 
     Retorna bytes del PDF, o None si reportlab no está instalado.
@@ -73,12 +70,10 @@ def generate_pdf_bitacora(
         from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
         from reportlab.platypus import (
             SimpleDocTemplate, Table, TableStyle,
-            Paragraph, Spacer, HRFlowable, Image, KeepTogether,
+            Paragraph, Spacer, HRFlowable,
         )
     except ImportError:
         return None
-
-    fotos_urls = fotos_urls or []
 
     # ── Configuración del documento ────────────────────────
     buf    = io.BytesIO()
@@ -161,9 +156,6 @@ def generate_pdf_bitacora(
             textColor=C_MUTED, alignment=TA_CENTER),
         'small': ParagraphStyle('small', parent=base['Normal'],
             fontName='Helvetica', fontSize=6.5, textColor=C_MUTED),
-        'foto_cap': ParagraphStyle('foto_cap', parent=base['Normal'],
-            fontName='Helvetica', fontSize=6.5,
-            textColor=C_MUTED, alignment=TA_CENTER),
     }
 
     story = []
@@ -285,18 +277,7 @@ def generate_pdf_bitacora(
         story.append(Spacer(1, 0.3 * cm))
 
     # ══════════════════════════════════════════════════════
-    # 5. REGISTRO FOTOGRÁFICO
-    # ══════════════════════════════════════════════════════
-    if fotos_urls:
-        story.append(Paragraph('REGISTRO FOTOGRÁFICO', S['section']))
-        foto_elements = _build_photo_grid(fotos_urls, S, W, cm)
-        if foto_elements:
-            for el in foto_elements:
-                story.append(el)
-            story.append(Spacer(1, 0.3 * cm))
-
-    # ══════════════════════════════════════════════════════
-    # 6. RESUMEN ESTADÍSTICO (opcional)
+    # 5. RESUMEN ESTADÍSTICO (opcional)
     # ══════════════════════════════════════════════════════
     if not df.empty and 'estado' in df.columns:
         total = len(df)
@@ -494,85 +475,3 @@ def _build_records_table(
     story.append(tbl)
 
 
-def _build_photo_grid(
-    fotos_urls: List[str],
-    S: dict,
-    W: float,
-    cm,
-) -> list:
-    """
-    Descarga imágenes desde URLs y las dispone en una grilla de hasta 3 columnas.
-    Retorna lista de elementos Platypus (tablas de fotos).
-    """
-    try:
-        from reportlab.platypus import Table, TableStyle, Image as _Img, Paragraph as _P
-        from reportlab.lib import colors as rl_colors
-    except ImportError:
-        return []
-
-    IMG_W = (W - 0.4 * cm) / 3   # tres columnas con separación
-    IMG_H = IMG_W * 0.75
-
-    elements  = []
-    row_cells = []
-    row_capts = []
-
-    for i, url in enumerate(fotos_urls[:12]):   # máx 12 fotos
-        try:
-            img_buf = io.BytesIO()
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                img_buf.write(resp.read())
-            img_buf.seek(0)
-            img = _Img(img_buf, width=IMG_W, height=IMG_H)
-            row_cells.append(img)
-            row_capts.append(_P(f"Foto {i + 1}", S['foto_cap']))
-        except Exception as exc:
-            _log.warning("No se pudo cargar foto %s: %s", url, exc)
-            row_cells.append(_P('', S['foto_cap']))
-            row_capts.append(_P('', S['foto_cap']))
-
-        # Emitir fila cada 3 fotos
-        if len(row_cells) == 3:
-            col_w = [IMG_W, IMG_W, IMG_W]
-            # Imágenes
-            img_row = Table([row_cells], colWidths=col_w)
-            img_row.setStyle(TableStyle([
-                ('ALIGN',  (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING',  (0, 0), (-1, -1), 2),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-            ]))
-            cap_row = Table([row_capts], colWidths=col_w)
-            cap_row.setStyle(TableStyle([
-                ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
-                ('TOPPADDING',   (0, 0), (-1, -1), 2),
-                ('BOTTOMPADDING',(0, 0), (-1, -1), 4),
-            ]))
-            elements.extend([img_row, cap_row])
-            row_cells = []
-            row_capts = []
-
-    # Fila final (< 3 fotos)
-    if row_cells:
-        # Completar con celdas vacías
-        while len(row_cells) < 3:
-            row_cells.append(_P('', S['foto_cap']))
-            row_capts.append(_P('', S['foto_cap']))
-        col_w = [IMG_W, IMG_W, IMG_W]
-        img_row = Table([row_cells], colWidths=col_w)
-        img_row.setStyle(TableStyle([
-            ('ALIGN',  (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING',  (0, 0), (-1, -1), 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-        ]))
-        cap_row = Table([row_capts], colWidths=col_w)
-        cap_row.setStyle(TableStyle([
-            ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
-            ('TOPPADDING',   (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 4),
-        ]))
-        elements.extend([img_row, cap_row])
-
-    return elements
