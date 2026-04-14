@@ -1277,7 +1277,7 @@ _LIGHT_ROOT_VARS = """
     --idu-teal:#198754; --idu-teal-lt:#d1f2dc;
     --idu-amber:#FFC425; --idu-amber-lt:#fff5d6;
     --bg-app:#EDF1F6; --bg-card:#FFFFFF; --bg-card-hover:#f0f7fc;
-    --bg-sidebar:#0076B0; --bg-sidebar-item:rgba(255,255,255,0.08); --bg-inset:#EDF1F6;
+    --bg-sidebar:#002D57; --bg-sidebar-item:rgba(255,255,255,0.08); --bg-inset:#EDF1F6;
     --border:#D8E3ED; --border-strong:#B0BEC5;
     --text-primary:#4D4D4D; --text-secondary:#4D4D4D; --text-muted:#7A8A99;
     --text-sidebar:#FFFFFF; --text-sidebar-muted:#c8dff0;

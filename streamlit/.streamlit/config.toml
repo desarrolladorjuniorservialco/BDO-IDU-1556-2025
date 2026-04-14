@@ -8,7 +8,7 @@ hideSidebarNav = true
 # Sincroniza los componentes nativos de Streamlit (dataframes, inputs, etc.)
 # con el CSS personalizado del dashboard BDO.
 base                     = "light"
-primaryColor             = "#00A6E1"   # Azul IDU — botones, sliders, checkboxes
+primaryColor             = "#0d93c4"   # Azul IDU — botones, sliders, checkboxes
 backgroundColor          = "#EDF1F6"   # Gris Neutro — fondo general
 secondaryBackgroundColor = "#ffffff"   # Blanco — tarjetas, sidebar inputs
 textColor                = "#4D4D4D"   # Gris Texto — lectura larga
