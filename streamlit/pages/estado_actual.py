@@ -24,7 +24,7 @@ def _fmt_cop(val) -> str:
     if v is None:
         return "—"
     if abs(v) >= 1_000_000_000:
-        return f"${v / 1_000_000_000:.2f} B"
+        return f"${v / 1_000_000_000:.2f} milM"
     if abs(v) >= 1_000_000:
         return f"${v / 1_000_000:.1f} M"
     return f"${v:,.0f}"
