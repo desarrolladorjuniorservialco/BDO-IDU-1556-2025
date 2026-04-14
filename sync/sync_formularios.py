@@ -200,6 +200,11 @@ def sync_registros_reporte_diario(supabase, token, project_id):
             'latitud':        lat,
             'longitud':       lon,
             'fecha':          safe(row.get('fecha')),
+            'id_tramo':       safe(row.get('id_tramo')),
+            'civ':            safe(row.get('civ')),
+            'pk_id':          safe(row.get('pk_id')),
+            'cantidad':       safe(row.get('cantidad')),
+            'unidad':         safe(row.get('unidad')),        
             # [D-03] typo real en GPKG: 'feca_reporte'; OR cubre corrección futura
             'fecha_reporte':  safe(row.get('feca_reporte') or row.get('fecha_reporte')),
             'observaciones':  safe(row.get('observaciones')),
