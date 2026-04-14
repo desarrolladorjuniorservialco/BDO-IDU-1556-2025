@@ -278,7 +278,9 @@ Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`
 
 ### `sync_rf.py` — Registros fotográficos
 
-Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada registro descarga la foto de QFieldCloud, la **comprime via `photos.py`** y sube al bucket `Registro_Obra`, guardando la URL pública en `foto_url`.
+Usa **inserción incremental**: al inicio de cada función se hace **un solo SELECT** para obtener todos los `id_unico` ya existentes en Supabase. Los registros cuyo `id_unico` ya está en la tabla se saltan sin descargar, comprimir ni intentar subir la foto. Solo los registros **nuevos** pasan por `upload_photo()` + `INSERT`.
+
+Si el archivo ya existe en Storage (error `Duplicate`) la URL se reutiliza directamente sin re-subir — esto permite recuperar registros cuya fila de BD fue eliminada pero cuya foto sigue vigente en el bucket.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -316,9 +318,9 @@ Reconstruye completamente en cada sync (`delete_all` + `insert`). Para cada regi
 | `bd_condicion_climatica` | delete + insert | observación diaria, se reemplaza |
 | `bd_maquinaria_obra` | delete + insert | observación diaria, se reemplaza |
 | `bd_sst_ambiental` | delete + insert | observación diaria, se reemplaza |
-| `rf_cantidades` | delete + insert | fotos se re-suben con URL fresca |
-| `rf_componentes` | delete + insert | fotos se re-suben con URL fresca |
-| `rf_reporte_diario` | delete + insert | fotos se re-suben con URL fresca |
+| `rf_cantidades` | insert incremental (skip by `id_unico`) | evita reprocesar fotos ya sincronizadas |
+| `rf_componentes` | insert incremental (skip by `id_unico`) | evita reprocesar fotos ya sincronizadas |
+| `rf_reporte_diario` | insert incremental (skip by `id_unico`) | evita reprocesar fotos ya sincronizadas |
 
 ---
 
