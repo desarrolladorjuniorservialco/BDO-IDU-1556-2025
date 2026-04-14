@@ -663,7 +663,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     position: relative;
     overflow: hidden;
     /* Franja Amarillo Bogotá en el borde inferior — acento institucional */
-    border-bottom: 5px solid #FFD200;
+    border-bottom: 5px solid #e6bd00;
 }
 .contract-id {
     font-family: 'IBM Plex Mono', monospace;
