@@ -254,22 +254,22 @@ def test_build_group_header_sin_tramo():
     from reportlab.platypus import Paragraph
     p = _build_group_header(date(2026, 4, 14), '', '', '154654')
     assert isinstance(p, Paragraph)
-    assert 'Sin Tramo' in p.text
+    assert 'Sin Tramo' in p.getPlainText()
 
 def test_build_group_header_sin_civ():
     from reportlab.platypus import Paragraph
     p = _build_group_header(date(2026, 4, 14), 'T-01', 'Carrera 26', '')
     assert isinstance(p, Paragraph)
-    assert 'Sin CIV' in p.text
+    assert 'Sin CIV' in p.getPlainText()
 
 def test_build_group_header_with_tramo_and_desc():
     from reportlab.platypus import Paragraph
     p = _build_group_header(date(2026, 4, 14), 'T-01', 'Carrera 26 entre Calle 6 y Calle 13', '154654')
     assert isinstance(p, Paragraph)
-    assert 'T-01' in p.text
-    assert 'Carrera 26' in p.text
-    assert '154654' in p.text
-    assert '14 de abril de 2026' in p.text
+    assert 'T-01' in p.getPlainText()
+    assert 'Carrera 26' in p.getPlainText()
+    assert '154654' in p.getPlainText()
+    assert '14 de abril de 2026' in p.getPlainText()
 
 
 # ── _build_content_paragraphs ─────────────────────────────────

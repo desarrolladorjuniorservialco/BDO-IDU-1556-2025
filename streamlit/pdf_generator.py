@@ -710,9 +710,12 @@ def _build_group_header(
     '14 de abril de 2026 – Tramo T-01 Carrera 26 – CIV 154654'
     Usa estilos internos (no depende de un dict S externo).
     """
-    from reportlab.platypus import Paragraph
-    from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib import colors as rl_colors
+    try:
+        from reportlab.platypus import Paragraph
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib import colors as rl_colors
+    except ImportError:
+        return None
 
     fecha_str = _fecha_es(fecha)
 
@@ -766,6 +769,8 @@ def _build_content_paragraphs(
 
     # Intentar filtrar por fecha_reporte, luego por fecha
     date_col = 'fecha_reporte' if 'fecha_reporte' in df_diario.columns else 'fecha'
+    # NOTE: if id_tramo or civ columns are absent, _filter_by_group degrades gracefully
+    # (omitting that filter condition) but may over-select rows.
     sub = _filter_by_group(df_diario, fecha, date_col, tramo_id, civ)
     if sub.empty:
         return []
