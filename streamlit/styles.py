@@ -655,7 +655,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
    CONTRATO — HEADER Y FICHAS
    ════════════════════════════════════════════ */
 .contract-header {
-    background: linear-gradient(90deg, #6D8E2D 0%, #465b1d 100%);
+    background: linear-gradient(180deg, #6D8E2D 0%, #465b1d 100%);
     border-radius: 12px;
     padding: 1.4rem 1.8rem;
     margin-bottom: 1.2rem;
