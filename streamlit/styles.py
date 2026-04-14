@@ -270,20 +270,37 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     border-color: rgba(0,166,225,0.45) !important;
 }
 
-/* Nav item activo */
+/* Nav item activo — Amarillo Estelar IDU como indicador de selección */
 .nav-item-active {
-    display: block;
-    background: var(--nav-active-bg);
-    border-left: 3px solid var(--nav-active-border);
-    border-radius: 6px;
-    padding: 0.45rem 0.75rem;
-    margin-bottom: 2px;
-    color: var(--nav-active-text) !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Franja izquierda amarilla IDU — 4px sólido, visible sobre el azul oscuro */
+    border-left: 4px solid #FFC425;
+    border-radius: 0 8px 8px 0;
+    /* Fondo: amarillo IDU al 16% de opacidad — crea contraste sin saturar */
+    background: rgba(255, 196, 37, 0.16);
+    padding: 0.55rem 0.85rem 0.55rem 0.8rem;
+    margin-bottom: 3px;
+    color: #ffffff !important;
     font-family: 'Barlow', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.87rem;
+    font-weight: 700;
     width: 100%;
     box-sizing: border-box;
+    letter-spacing: 0.01em;
+    position: relative;
+}
+/* Punto amarillo IDU como indicador gráfico antes del nombre */
+.nav-item-active::before {
+    content: '';
+    display: inline-block;
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #FFC425;
+    box-shadow: 0 0 7px rgba(255,196,37,0.70);
 }
 
 /* Categoria normal */
