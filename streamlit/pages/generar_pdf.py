@@ -17,7 +17,6 @@ import streamlit as st
 
 from database import (
     load_cantidades, load_componentes, load_reporte_diario, load_contrato,
-    load_fotos_cantidades, load_fotos_componentes, load_fotos_reporte,
 )
 from pdf_generator import generate_pdf_bitacora
 from ui import kpi, section_badge
@@ -232,55 +231,29 @@ def page_generar_pdf(perfil: dict) -> None:
                     obs_list = df_d['observaciones'].dropna().astype(str).tolist()
                     observaciones_pdf = " | ".join(o for o in obs_list if o.strip())
 
-            # Cargar fotos desde Supabase por folio para todos los tipos activos
-            fotos_urls_pdf: list[str] = []
-            for tipo_label, df_t in frames.items():
-                if df_t.empty or 'folio' not in df_t.columns:
-                    continue
-                folios_t = tuple(df_t['folio'].dropna().tolist())
-                if not folios_t:
-                    continue
-                tipo_key = _TIPOS.get(tipo_label, "")
-                if tipo_key == "cantidades":
-                    df_fot = load_fotos_cantidades(folios_t)
-                elif tipo_key == "componentes":
-                    df_fot = load_fotos_componentes(folios_t)
-                elif tipo_key == "diario":
-                    df_fot = load_fotos_reporte(folios_t)
-                else:
-                    df_fot = pd.DataFrame()
-                if not df_fot.empty and 'foto_url' in df_fot.columns:
-                    fotos_urls_pdf.extend(
-                        df_fot['foto_url'].dropna().tolist()
-                    )
-
             with st.spinner("Generando Bitácora PDF…"):
                 pdf_bytes = generate_pdf_bitacora(
                     df_pdf, contrato, fi, ff,
                     "Bitácora Consolidada", [],
                     observaciones=observaciones_pdf,
-                    fotos_urls=fotos_urls_pdf[:12],
                 )
             if pdf_bytes:
                 nombre = f"Bitacora_IDU-1556-2025_{fecha_tag}.pdf"
-                st.success(
-                    f"Bitácora PDF generada — {total_registros} registros"
-                    + (f" · {len(fotos_urls_pdf)} foto(s)" if fotos_urls_pdf else "")
-                )
+                st.success(f"Bitácora PDF generada — {total_registros} registros")
                 st.download_button(
                     "Descargar Bitácora PDF",
                     data=pdf_bytes,
                     file_name=nombre,
                     mime="application/pdf",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
             else:
                 st.error(
                     "No se pudo generar el PDF. "
                     "El error detallado queda en los logs del servidor. "
-                    "Causas comunes: registros con datos inconsistentes, "
-                    "fotos con URL no accesible, o error interno de ReportLab."
+                    "Causas comunes: registros con datos inconsistentes "
+                    "o error interno de ReportLab."
                 )
 
         # ── CSV ────────────────────────────────────────────
