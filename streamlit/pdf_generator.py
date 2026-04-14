@@ -22,12 +22,15 @@ SEGURIDAD:
     a Paragraph() para prevenir errores de parseo XML de ReportLab.
 """
 
+from __future__ import annotations
+
 import html as _html
 import io
 import logging
 import math
 import urllib.request
 from datetime import datetime, date
+from typing import List, Optional
 
 import pandas as pd
 
@@ -40,15 +43,15 @@ def generate_pdf_bitacora(
     fi: date,
     ff: date,
     tipo_reporte: str,
-    secciones: list[str],
+    secciones: List[str],
     *,
     observaciones: str = "",
     frente_obra: str = "",
     clima_am: str = "",
     clima_pm: str = "",
-    fotos_urls: list[str] | None = None,
+    fotos_urls: Optional[List[str]] = None,
     alerta: bool = False,
-) -> bytes | None:
+) -> Optional[bytes]:
     """
     Genera el PDF de Bitácora Diaria de Obra.
 
@@ -462,7 +465,6 @@ def _build_records_table(
     tbl_style = [
         # Cabecera — Azul Oscuro IDU
         ('BACKGROUND',    (0, 0), (-1, 0), C_IDU_DARK),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [C_WHITE, C_ROW_ALT]),
         ('GRID',          (0, 0), (-1, -1), 0.3, C_BORDER),
         ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
         ('TOPPADDING',    (0, 0), (-1, -1), 3),
@@ -470,6 +472,11 @@ def _build_records_table(
         ('LEFTPADDING',   (0, 0), (-1, -1), 4),
         ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
     ]
+
+    # Filas alternas (zebra) — compatible con todas las versiones de ReportLab
+    for idx in range(1, len(rows)):
+        bg = C_WHITE if idx % 2 == 1 else C_ROW_ALT
+        tbl_style.append(('BACKGROUND', (0, idx), (-1, idx), bg))
 
     # Color semántico por estado en columna
     if 'estado' in cols:
@@ -484,7 +491,7 @@ def _build_records_table(
 
 
 def _build_photo_grid(
-    fotos_urls: list[str],
+    fotos_urls: List[str],
     S: dict,
     W: float,
     cm,

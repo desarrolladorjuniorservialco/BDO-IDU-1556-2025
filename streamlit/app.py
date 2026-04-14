@@ -18,9 +18,10 @@ import inspect
 import logging
 
 import streamlit as st
+import streamlit.components.v1 as _components
 
 # ── Infraestructura ────────────────────────────────────────
-from styles  import CSS
+from styles  import CSS, THEME_SYNC_JS
 from auth    import login
 from sidebar import sidebar
 from config  import NAV_ACCESS
@@ -53,6 +54,11 @@ st.set_page_config(
 )
 
 st.markdown(CSS, unsafe_allow_html=True)
+
+# Sincronizar tema real de Streamlit con data-bdo-theme en <html>
+# para que el CSS pueda responder al toggle interno (oscuro/claro)
+# independientemente de la configuración del sistema operativo.
+_components.html(THEME_SYNC_JS, height=0, scrolling=False)
 
 
 # ══════════════════════════════════════════════════════════════

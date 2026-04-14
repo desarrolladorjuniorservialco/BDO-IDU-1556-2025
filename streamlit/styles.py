@@ -950,5 +950,239 @@ h3 {
     color: var(--text-primary);
     line-height: 1.2;
 }
+
+/* ════════════════════════════════════════════
+   TEMA — SINCRONIZADO POR JS (data-bdo-theme)
+   Anula @media prefers-color-scheme cuando el
+   usuario cambia el tema dentro de Streamlit,
+   independiente del modo del sistema operativo.
+   ════════════════════════════════════════════ */
+
+/* Forzar modo claro aunque el OS sea oscuro */
+html[data-bdo-theme="light"] {
+    --idu-blue:        #00A6E1;
+    --idu-blue-dark:   #0076B0;
+    --idu-blue-lt:     #d0eef9;
+    --idu-red:         #ED1C24;
+    --idu-red-lt:      #fde8e9;
+    --idu-yellow:      #FFC425;
+    --idu-yellow-lt:   #fff5d6;
+    --idu-green:       #198754;
+    --idu-green-lt:    #d1f2dc;
+    --bogota-blue-deep:  #0076B0;
+    --bogota-blue-active:#00A6E1;
+    --bogota-yellow:     #FFC425;
+    --bogota-gold:       #e6ae20;
+    --idu-navy:        #00A6E1;
+    --idu-navy-deep:   #0076B0;
+    --idu-navy-lt:     #d0eef9;
+    --idu-teal:        #198754;
+    --idu-teal-lt:     #d1f2dc;
+    --idu-amber:       #FFC425;
+    --idu-amber-lt:    #fff5d6;
+    --bg-app:          #EDF1F6;
+    --bg-card:         #FFFFFF;
+    --bg-card-hover:   #f0f7fc;
+    --bg-sidebar:      #0076B0;
+    --bg-sidebar-item: rgba(255,255,255,0.08);
+    --bg-inset:        #EDF1F6;
+    --border:          #D8E3ED;
+    --border-strong:   #B0BEC5;
+    --text-primary:    #4D4D4D;
+    --text-secondary:  #4D4D4D;
+    --text-muted:      #7A8A99;
+    --text-sidebar:    #FFFFFF;
+    --text-sidebar-muted: #c8dff0;
+    --accent-blue:     #00A6E1;
+    --accent-blue-lt:  #d0eef9;
+    --accent-green:    #198754;
+    --accent-green-lt: #d1f2dc;
+    --accent-red:      #ED1C24;
+    --accent-red-lt:   #fde8e9;
+    --accent-orange:   #FFC425;
+    --accent-orange-lt:#fff5d6;
+    --accent-purple:   #6f42c1;
+    --accent-purple-lt:#e8dcf8;
+    --accent-teal:     #0076B0;
+    --accent-teal-lt:  #cce7f5;
+    --exec-completado: #198754;
+    --exec-progreso:   #FFC425;
+    --exec-atrasado:   #FFC425;
+    --exec-critico:    #ED1C24;
+    --exec-planeacion: #B0BEC5;
+    --nav-cat-color:    #c8dff0;
+    --nav-cat-hi-color: #FFC425;
+    --nav-active-bg:    rgba(0,166,225,0.15);
+    --nav-active-border:#00A6E1;
+    --nav-active-text:  #ffffff;
+    --nav-idle-text:    #c8dff0;
+    --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
+    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #0076B0;
+    --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
+    --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
+    --kpi-value-color:  #00A6E1;
+    --btn-approve-bg:   #198754;
+    --btn-approve-fg:   #ffffff;
+    --btn-return-bg:    #ED1C24;
+    --btn-return-fg:    #ffffff;
+    --btn-cta-bg:       #ED1C24;
+    --btn-cta-fg:       #ffffff;
+    --btn-cta-border:   #c01019;
+    --btn-filter-bg:    #00A6E1;
+    --btn-filter-fg:    #ffffff;
+    --btn-filter-border:#0090c3;
+}
+
+/* Forzar modo oscuro aunque el OS sea claro */
+html[data-bdo-theme="dark"] {
+    --idu-blue:        #33B5E5;
+    --idu-blue-dark:   #004B6B;
+    --idu-blue-lt:     #0d2f3f;
+    --idu-red:         #FF5252;
+    --idu-red-lt:      #3d1010;
+    --idu-yellow:      #FFD54F;
+    --idu-yellow-lt:   #3d2800;
+    --idu-green:       #3fb950;
+    --idu-green-lt:    #0d2818;
+    --bogota-blue-deep:  #004B6B;
+    --bogota-blue-active:#33B5E5;
+    --bogota-yellow:     #FFD54F;
+    --bogota-gold:       #e6ae20;
+    --idu-navy:        #33B5E5;
+    --idu-navy-deep:   #004B6B;
+    --idu-navy-lt:     #0d2f3f;
+    --idu-teal:        #3fb950;
+    --idu-teal-lt:     #0d2818;
+    --idu-amber:       #FFD54F;
+    --idu-amber-lt:    #3d2800;
+    --bg-app:          #121212;
+    --bg-card:         #1E1E1E;
+    --bg-card-hover:   #252525;
+    --bg-sidebar:      #0d1a22;
+    --bg-sidebar-item: rgba(255,255,255,0.05);
+    --bg-inset:        #1E1E1E;
+    --border:          #333333;
+    --border-strong:   #444444;
+    --text-primary:    #E0E0E0;
+    --text-secondary:  #A0A0A0;
+    --text-muted:      #A0A0A0;
+    --text-sidebar:    #E0E0E0;
+    --text-sidebar-muted: #A0A0A0;
+    --accent-blue:     #33B5E5;
+    --accent-blue-lt:  #0d2f3f;
+    --accent-green:    #3fb950;
+    --accent-green-lt: #0d2818;
+    --accent-red:      #FF5252;
+    --accent-red-lt:   #3d1010;
+    --accent-orange:   #FFD54F;
+    --accent-orange-lt:#3d2800;
+    --accent-purple:   #bc8cff;
+    --accent-purple-lt:#2d1f60;
+    --accent-teal:     #33B5E5;
+    --accent-teal-lt:  #0d2f3f;
+    --exec-completado: #3fb950;
+    --exec-progreso:   #FFD54F;
+    --exec-atrasado:   #FFD54F;
+    --exec-critico:    #FF5252;
+    --exec-planeacion: #444444;
+    --nav-cat-color:    #A0A0A0;
+    --nav-cat-hi-color: #FFD54F;
+    --nav-active-bg:    rgba(51,181,229,0.12);
+    --nav-active-border:#33B5E5;
+    --nav-active-text:  #E0E0E0;
+    --nav-idle-text:    #A0A0A0;
+    --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
+    --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #33B5E5;
+    --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
+    --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
+    --kpi-value-color:  #33B5E5;
+    --btn-approve-bg:   #3fb950;
+    --btn-approve-fg:   #0d1117;
+    --btn-return-bg:    #FF5252;
+    --btn-return-fg:    #0d1117;
+    --btn-cta-bg:       #FF5252;
+    --btn-cta-fg:       #ffffff;
+    --btn-cta-border:   #e03030;
+    --btn-filter-bg:    #33B5E5;
+    --btn-filter-fg:    #0d1117;
+    --btn-filter-border:#2299c5;
+}
+
+/* Tabs dark override (también por data-bdo-theme) */
+html[data-bdo-theme="dark"] .stTabs [data-baseweb="tab"] {
+    background: #252525 !important;
+    color: #A0A0A0 !important;
+}
+html[data-bdo-theme="dark"] .stTabs [aria-selected="true"] {
+    background: #33B5E5 !important;
+    color: #0d1117 !important;
+}
+html[data-bdo-theme="light"] .stTabs [data-baseweb="tab"] {
+    background: var(--bg-inset) !important;
+    color: var(--text-primary) !important;
+}
+html[data-bdo-theme="light"] .stTabs [aria-selected="true"] {
+    background: #00A6E1 !important;
+    color: #ffffff !important;
+}
 </style>
+"""
+
+# ── JavaScript de sincronización de tema ───────────────────────────────────
+# Se inyecta via st.components.v1.html() (iframe real con JS ejecutable).
+# Lee el color de fondo del stApp de Streamlit para detectar si está en modo
+# oscuro o claro (independiente del OS), y escribe el atributo data-bdo-theme
+# en el <html> del documento padre para que el CSS pueda reaccionar.
+THEME_SYNC_JS = """
+<script>
+(function () {
+    var DARK_THRESHOLD = 128;   // luminance < 128 → dark
+
+    function luminance(rgb) {
+        var m = rgb.match(/\d+/g);
+        if (!m) return 255;
+        return parseInt(m[0]) * 0.299 + parseInt(m[1]) * 0.587 + parseInt(m[2]) * 0.114;
+    }
+
+    function applyTheme() {
+        try {
+            var p   = window.parent;
+            var doc = p.document;
+            var app = doc.querySelector('[data-testid="stApp"]');
+            if (!app) return;
+
+            var bg  = p.getComputedStyle(app).backgroundColor;
+            var lum = luminance(bg);
+
+            // Solo actualiza si cambia para evitar reflows innecesarios
+            var current = doc.documentElement.getAttribute('data-bdo-theme');
+            var next    = lum < DARK_THRESHOLD ? 'dark' : 'light';
+            if (current !== next) {
+                doc.documentElement.setAttribute('data-bdo-theme', next);
+            }
+        } catch (e) {
+            // Acceso cross-origin bloqueado (Streamlit Cloud con sandbox).
+            // En ese caso, @media prefers-color-scheme sirve de fallback.
+        }
+    }
+
+    // Ejecutar inmediatamente y en diferido (espera a que Streamlit hidrate)
+    applyTheme();
+    setTimeout(applyTheme, 400);
+    setTimeout(applyTheme, 1200);
+
+    // Observar cambios en el stApp del padre (detección de toggle de tema)
+    try {
+        var pApp = window.parent.document.querySelector('[data-testid="stApp"]');
+        if (pApp) {
+            new window.parent.MutationObserver(applyTheme).observe(pApp, {
+                attributes: true,
+                attributeFilter: ['style', 'class'],
+                childList: false,
+                subtree: false,
+            });
+        }
+    } catch (e) {}
+})();
+</script>
 """
