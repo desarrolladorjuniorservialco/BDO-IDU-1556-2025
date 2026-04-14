@@ -110,6 +110,10 @@ CSS = """
     --btn-filter-bg:    #00A6E1;
     --btn-filter-fg:    #ffffff;
     --btn-filter-border:#0090c3;
+
+    /* Slider — independiente de primaryColor */
+    --slider-color:     #0076B0;   /* Azul Oscuro IDU — modificar aquí para cambiar solo el slider */
+    --slider-thumb-border: #005a8a;
 }
 
 /* ════════════════════════════════════════════
@@ -214,7 +218,35 @@ CSS = """
         --btn-filter-bg:    #33B5E5;
         --btn-filter-fg:    #0d1117;
         --btn-filter-border:#2299c5;
+
+        /* Slider oscuro */
+        --slider-color:     #33B5E5;
+        --slider-thumb-border: #2299c5;
     }
+}
+
+/* ════════════════════════════════════════════
+   SLIDER — color independiente de primaryColor
+   Modificar --slider-color en :root para ajustar
+   ════════════════════════════════════════════ */
+
+/* Barra activa (llenado izquierdo del thumb) */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="progressbar"] {
+    background-color: var(--slider-color) !important;
+}
+/* Track completo (fondo de la barra) */
+[data-testid="stSlider"] [data-baseweb="slider"] div[class*="Track"] > div:first-child {
+    background-color: color-mix(in srgb, var(--slider-color) 25%, transparent) !important;
+}
+/* Thumb (círculo arrastrable) */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+    background-color: var(--slider-color) !important;
+    border-color: var(--slider-thumb-border) !important;
+}
+/* Hover del thumb */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"]:hover {
+    background-color: var(--slider-thumb-border) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--slider-color) 20%, transparent) !important;
 }
 
 /* ════════════════════════════════════════════
