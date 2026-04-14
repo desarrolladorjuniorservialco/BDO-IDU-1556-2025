@@ -426,77 +426,116 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 
 /* ════════════════════════════════════════════
-   INPUTS — Oscurecer al enfocar / tener contenido
+   INPUTS — base legible en todos los estados
+   Problema raíz: color-scheme:dark del OS hace
+   que el browser pinte los inputs en oscuro aun
+   cuando nuestro CSS dice background:#fff.
+   Solución: forzar color-scheme:light + selectores
+   [data-testid] que superan la especificidad de
+   Streamlit. Se aplica a TODAS las páginas.
    ════════════════════════════════════════════ */
-.stTextInput input,
-.stSelectbox [data-baseweb="select"] > div,
-.stMultiSelect [data-baseweb="select"] > div,
-.stDateInput input {
-    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+/* ── Base: todos los inputs siempre en claro ──── */
+[data-testid="stTextInput"]   input,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"]   input,
+[data-testid="stTimeInput"]   input,
+[data-testid="stTextArea"]    textarea {
+    color-scheme: light !important;   /* evita que el OS oscuro tire el fondo negro */
+    background-color: #ffffff !important;
+    color: #4D4D4D !important;
+    border-color: #D8E3ED !important;
+    transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
-/* Estado focus: borde Azul IDU + fondo ligeramente mas claro */
-.stTextInput input:focus,
-.stDateInput input:focus {
-    background-color: #edf6fb !important;
-    border-color: var(--idu-blue, #00A6E1) !important;
+/* ── Placeholder legible ─────────────────────── */
+[data-testid="stTextInput"]   input::placeholder,
+[data-testid="stNumberInput"] input::placeholder,
+[data-testid="stDateInput"]   input::placeholder,
+[data-testid="stTextArea"]    textarea::placeholder {
+    color: #9aabb8 !important;
+    opacity: 1 !important;
+}
+
+/* ── Focus: borde Azul IDU + halo sutil ───────── */
+[data-testid="stTextInput"]   input:focus,
+[data-testid="stNumberInput"] input:focus,
+[data-testid="stDateInput"]   input:focus,
+[data-testid="stTextArea"]    textarea:focus {
+    background-color: #f0f8fd !important;
+    border-color: #00A6E1 !important;
+    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
+    outline: none !important;
+}
+
+/* ── Selectbox base ───────────────────────────── */
+[data-testid="stSelectbox"]   [data-baseweb="select"] > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+    color-scheme: light !important;
+    background-color: #ffffff !important;
+    color: #4D4D4D !important;
+    border-color: #D8E3ED !important;
+    transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+
+/* ── Selectbox abierto / con foco ─────────────── */
+[data-testid="stSelectbox"]   [data-baseweb="select"] > div[aria-expanded="true"],
+[data-testid="stSelectbox"]   [data-baseweb="select"]:focus-within > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div[aria-expanded="true"],
+[data-testid="stMultiSelect"] [data-baseweb="select"]:focus-within > div {
+    background-color: #f0f8fd !important;
+    border-color: #00A6E1 !important;
     box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
 }
 
-/* Selectbox / multiselect al abrir (estado activo) */
-.stSelectbox [data-baseweb="select"] > div[aria-expanded="true"],
-.stSelectbox [data-baseweb="select"]:focus-within > div,
-.stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
-.stMultiSelect [data-baseweb="select"]:focus-within > div {
-    background-color: #edf6fb !important;
-    border-color: var(--idu-blue, #00A6E1) !important;
-    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
+/* ── Texto dentro del trigger del selectbox ────── */
+[data-testid="stSelectbox"]   [data-baseweb="select"] span,
+[data-testid="stSelectbox"]   [data-baseweb="select"] div[class*="placeholder"],
+[data-testid="stMultiSelect"] [data-baseweb="select"] span {
+    color: #4D4D4D !important;
 }
 
-/* Multiselect con tags (tiene contenido seleccionado) */
-.stMultiSelect [data-baseweb="tag"] {
-    background-color: var(--idu-blue-lt, #d0eef9) !important;
-    color: #004a7c !important;   /* FIXED: era #00A6E1 (ratio 2.2:1) → ahora 7:1 */
+/* ── Dropdown (lista de opciones) ─────────────── */
+[data-baseweb="popover"] [data-baseweb="menu"],
+[data-baseweb="menu"] {
+    background-color: #ffffff !important;
+    border: 1px solid #D8E3ED !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+    border-radius: 8px !important;
+}
+[data-baseweb="menu"] li,
+[data-baseweb="menu"] [role="option"] {
+    color: #4D4D4D !important;
+    background-color: transparent !important;
+    font-family: 'Barlow', sans-serif !important;
+    font-size: 0.88rem !important;
+}
+[data-baseweb="menu"] li:hover,
+[data-baseweb="menu"] [role="option"]:hover {
+    background-color: #d0eef9 !important;
+    color: #004a7c !important;
+}
+[data-baseweb="menu"] [aria-selected="true"] {
+    background-color: #00A6E1 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* ── Multiselect tags (chips) ─────────────────── */
+[data-testid="stMultiSelect"] [data-baseweb="tag"] {
+    background-color: #d0eef9 !important;
+    color: #004a7c !important;
     font-weight: 700 !important;
     border: 1px solid rgba(0,74,124,0.2) !important;
 }
-.stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
-    background-color: #edf6fb !important;
-    border-color: var(--idu-blue, #00A6E1) !important;
+[data-testid="stMultiSelect"] [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
+    background-color: #f0f8fd !important;
+    border-color: #00A6E1 !important;
 }
 
-/* Input con contenido (no placeholder) */
-.stTextInput input:not(:placeholder-shown),
-.stDateInput input:not(:placeholder-shown) {
-    background-color: #edf6fb !important;
-    border-color: #B0BEC5 !important;
-}
-
-/* Dark mode overrides para inputs — Azul IDU #33B5E5 */
-@media (prefers-color-scheme: dark) {
-    .stTextInput input:focus,
-    .stDateInput input:focus {
-        background-color: #1a2a33 !important;
-        border-color: #33B5E5 !important;
-        box-shadow: 0 0 0 2px rgba(51,181,229,0.18) !important;
-    }
-    .stSelectbox [data-baseweb="select"] > div[aria-expanded="true"],
-    .stSelectbox [data-baseweb="select"]:focus-within > div,
-    .stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
-    .stMultiSelect [data-baseweb="select"]:focus-within > div {
-        background-color: #1a2a33 !important;
-        border-color: #33B5E5 !important;
-        box-shadow: 0 0 0 2px rgba(51,181,229,0.18) !important;
-    }
-    .stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
-        background-color: #1a2a33 !important;
-        border-color: #33B5E5 !important;
-    }
-    .stTextInput input:not(:placeholder-shown),
-    .stDateInput input:not(:placeholder-shown) {
-        background-color: #1a2a33 !important;
-        border-color: #444444 !important;
-    }
+/* ── Checkbox ─────────────────────────────────── */
+[data-testid="stCheckbox"] label span:first-child {
+    border-color: #D8E3ED !important;
 }
 
 /* ════════════════════════════════════════════
