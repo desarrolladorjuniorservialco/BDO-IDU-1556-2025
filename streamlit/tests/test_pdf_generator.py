@@ -330,3 +330,52 @@ def test_build_content_paragraphs_includes_clima():
     )
     assert len(result) == 1
     assert 'Soleado' in result[0].text
+
+
+from pdf_generator import _build_quantities_table
+
+
+def test_build_quantities_table_empty_returns_none():
+    result = _build_quantities_table(
+        date(2026, 4, 14), 'T-01', '111',
+        pd.DataFrame(), pd.DataFrame(),
+    )
+    assert result is None
+
+def test_build_quantities_table_with_cant_returns_table():
+    from reportlab.platypus import Table
+    df_cant = pd.DataFrame([{
+        'fecha_creacion': '2026-04-14',
+        'id_tramo': 'T-01',
+        'civ': '111',
+        'pk': '18474',
+        'item_pago': '2.1',
+        'item_descripcion': 'Demolición de pavimento',
+        'cantidad': 150.0,
+        'unidad': 'm2',
+        'observaciones': '',
+    }])
+    result = _build_quantities_table(
+        date(2026, 4, 14), 'T-01', '111',
+        df_cant, pd.DataFrame(),
+    )
+    assert isinstance(result, Table)
+
+def test_build_quantities_table_merges_comp():
+    from reportlab.platypus import Table
+    df_comp = pd.DataFrame([{
+        'fecha_creacion': '2026-04-14',
+        'id_tramo': 'T-01',
+        'civ': '111',
+        'pk': '18474',
+        'tipo_componente': 'PMT',
+        'tipo_actividad': 'Señalización',
+        'cantidad': 5.0,
+        'unidad': 'und',
+        'observaciones': '',
+    }])
+    result = _build_quantities_table(
+        date(2026, 4, 14), 'T-01', '111',
+        pd.DataFrame(), df_comp,
+    )
+    assert isinstance(result, Table)

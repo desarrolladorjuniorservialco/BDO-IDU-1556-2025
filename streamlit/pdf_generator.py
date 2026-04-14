@@ -820,3 +820,117 @@ def _build_content_paragraphs(
 
     return paras
 
+
+def _build_quantities_table(
+    fecha,
+    tramo_id: str,
+    civ: str,
+    df_cant: pd.DataFrame,
+    df_comp: pd.DataFrame,
+) -> object | None:
+    """
+    Construye la tabla de cantidades ejecutadas para un grupo (fecha, tramo, civ).
+    Columnas: PK | Ítem | Descripción | Cantidad | Unidad | Observaciones
+    Retorna Table o None si no hay filas.
+    """
+    try:
+        from reportlab.platypus import Table, TableStyle, Paragraph as _P
+        from reportlab.lib import colors as rl_colors
+        from reportlab.lib.units import cm as _cm
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+    except ImportError:
+        return None
+
+    # ── Estilos locales ────────────────────────────────────────
+    C_DARK   = rl_colors.HexColor('#0076B0')
+    C_WHITE  = rl_colors.white
+    C_TEXT   = rl_colors.HexColor('#4D4D4D')
+    C_BLUE   = rl_colors.HexColor('#00A6E1')
+    C_BORDER = rl_colors.HexColor('#D8E3ED')
+    C_ALT    = rl_colors.HexColor('#F8FBFD')
+
+    s_th = ParagraphStyle('qt_th', fontName='Helvetica-Bold', fontSize=7,
+                          textColor=C_WHITE, alignment=TA_CENTER, leading=9)
+    s_td = ParagraphStyle('qt_td', fontName='Helvetica', fontSize=7.5,
+                          textColor=C_TEXT, leading=10)
+    s_tc = ParagraphStyle('qt_tc', fontName='Helvetica', fontSize=7.5,
+                          textColor=C_TEXT, leading=10, alignment=TA_CENTER)
+    s_tn = ParagraphStyle('qt_tn', fontName='Helvetica-Bold', fontSize=7.5,
+                          textColor=C_BLUE, leading=10, alignment=TA_CENTER)
+
+    # ── Recolectar filas ───────────────────────────────────────
+    rows_data = []
+
+    sub_cant = _filter_by_group(df_cant, fecha, 'fecha_creacion', tramo_id, civ)
+    for _, r in sub_cant.iterrows():
+        rows_data.append({
+            'pk':          _norm_str(r.get('pk', r.get('civ_pk', ''))),
+            'item':        _norm_str(r.get('item_pago', '')),
+            'descripcion': _norm_str(r.get('item_descripcion', r.get('tipo_actividad', ''))),
+            'cantidad':    _safe_float(r.get('cantidad')),
+            'unidad':      _norm_str(r.get('unidad', '')),
+            'obs':         _norm_str(r.get('observaciones', '')),
+        })
+
+    sub_comp = _filter_by_group(df_comp, fecha, 'fecha_creacion', tramo_id, civ)
+    for _, r in sub_comp.iterrows():
+        rows_data.append({
+            'pk':          _norm_str(r.get('pk', r.get('civ_pk', ''))),
+            'item':        _norm_str(r.get('tipo_componente', '')),
+            'descripcion': _norm_str(r.get('tipo_actividad', '')),
+            'cantidad':    _safe_float(r.get('cantidad')),
+            'unidad':      _norm_str(r.get('unidad', '')),
+            'obs':         _norm_str(r.get('observaciones', '')),
+        })
+
+    if not rows_data:
+        return None
+
+    # ── Anchos de columna ──────────────────────────────────────
+    # Total útil ≈ 17.8 cm
+    # PK=1.8 | Ítem=1.5 | Descripción=5.5 | Cantidad=1.8 | Unidad=1.4 | Obs=resto
+    W_TOTAL = 17.8 * _cm
+    col_w = [1.8*_cm, 1.5*_cm, 5.5*_cm, 1.8*_cm, 1.4*_cm,
+             W_TOTAL - 1.8*_cm - 1.5*_cm - 5.5*_cm - 1.8*_cm - 1.4*_cm]
+
+    # ── Construir filas ────────────────────────────────────────
+    header = [
+        _P('PK',          s_th),
+        _P('Ítem',        s_th),
+        _P('Descripción', s_th),
+        _P('Cantidad',    s_th),
+        _P('Unidad',      s_th),
+        _P('Obs.',        s_th),
+    ]
+    table_rows = [header]
+
+    for r in rows_data:
+        cant_str = f"{r['cantidad']:,.2f}" if r['cantidad'] else '—'
+        table_rows.append([
+            _P(_esc(r['pk']),          s_tc),
+            _P(_esc(r['item']),        s_tc),
+            _P(_esc(r['descripcion']), s_td),
+            _P(cant_str,               s_tn),
+            _P(_esc(r['unidad']),      s_tc),
+            _P(_esc(r['obs']),         s_td),
+        ])
+
+    tbl = Table(table_rows, colWidths=col_w, repeatRows=1)
+
+    tbl_style = [
+        ('BACKGROUND',    (0, 0), (-1, 0),  C_DARK),
+        ('GRID',          (0, 0), (-1, -1), 0.3, C_BORDER),
+        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
+    ]
+    for idx in range(1, len(table_rows)):
+        bg = C_WHITE if idx % 2 == 1 else C_ALT
+        tbl_style.append(('BACKGROUND', (0, idx), (-1, idx), bg))
+
+    tbl.setStyle(TableStyle(tbl_style))
+    return tbl
+
