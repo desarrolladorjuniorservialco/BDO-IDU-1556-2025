@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from datetime import date
 import pandas as pd
 
-from pdf_generator import _fecha_es, _collect_groups, _filter_by_group
+from pdf_generator import _fecha_es, _collect_groups, _filter_by_group, _format_personal, _format_maquinaria, _format_sst
 
 
 # ── _fecha_es ─────────────────────────────────────────────────
@@ -212,3 +212,30 @@ def test_format_sst_nonzero():
     assert 'Botiquin: 1' in result
     assert 'Extintor: 2' in result
     assert 'Kit' not in result
+
+
+def test_format_personal_nan_as_zero():
+    df = pd.DataFrame([{
+        'folio': 'F001',
+        'inspectores': float('nan'), 'personal_operativo': 3,
+        'personal_boal': float('nan'), 'personal_transito': 0,
+    }])
+    assert _format_personal('F001', df) == 'Operativo: 3'
+
+
+def test_format_maquinaria_nan_as_zero():
+    df = pd.DataFrame([{
+        'folio': 'F001', 'volquetas': float('nan'), 'minicargador': 2,
+    }])
+    result = _format_maquinaria('F001', df)
+    assert 'Minicargador: 2' in result
+    assert 'nan' not in result.lower()
+
+
+def test_format_sst_nan_as_zero():
+    df = pd.DataFrame([{
+        'folio': 'F001', 'botiquin': float('nan'), 'extintor': 1,
+    }])
+    result = _format_sst('F001', df)
+    assert 'Extintor: 1' in result
+    assert 'nan' not in result.lower()

@@ -580,6 +580,17 @@ def _collect_groups(
     return sorted(tuples)
 
 
+def _to_int(val) -> int:
+    """Coerce None/NaN/falsy numeric to 0, safe for pandas NaN."""
+    if val is None:
+        return 0
+    try:
+        f = float(val)
+    except (TypeError, ValueError):
+        return 0
+    return 0 if math.isnan(f) else int(f)
+
+
 def _format_clima(folio: str, df_clima: pd.DataFrame) -> str:
     """
     Formatea condición climática de un folio.
@@ -619,7 +630,7 @@ def _format_personal(folio: str, df_personal: pd.DataFrame) -> str:
     for row_idx in range(len(sub)):
         r = sub.iloc[row_idx]
         for col, label in CAMPOS:
-            v = int(r.get(col, 0) or 0)
+            v = _to_int(r.get(col))
             if v:
                 parts.append(f"{label}: {v}")
     return ', '.join(parts)
@@ -653,7 +664,7 @@ def _format_maquinaria(folio: str, df_maquinaria: pd.DataFrame) -> str:
         for col, label in CAMPOS:
             if col not in r.index:
                 continue
-            v = int(r.get(col, 0) or 0)
+            v = _to_int(r.get(col))
             if v:
                 parts.append(f"{label}: {v}")
     return ', '.join(parts)
@@ -682,7 +693,7 @@ def _format_sst(folio: str, df_sst: pd.DataFrame) -> str:
         for col, label in CAMPOS:
             if col not in r.index:
                 continue
-            v = int(r.get(col, 0) or 0)
+            v = _to_int(r.get(col))
             if v:
                 parts.append(f"{label}: {v}")
     return ', '.join(parts)
