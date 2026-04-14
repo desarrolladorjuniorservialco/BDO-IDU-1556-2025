@@ -698,3 +698,120 @@ def _format_sst(folio: str, df_sst: pd.DataFrame) -> str:
                 parts.append(f"{label}: {v}")
     return ', '.join(parts)
 
+
+def _build_group_header(
+    fecha,
+    tramo_id: str,
+    tramo_desc: str,
+    civ: str,
+) -> object:
+    """
+    Retorna un Paragraph con el encabezado de sección:
+    '14 de abril de 2026 – Tramo T-01 Carrera 26 – CIV 154654'
+    Usa estilos internos (no depende de un dict S externo).
+    """
+    from reportlab.platypus import Paragraph
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib import colors as rl_colors
+
+    fecha_str = _fecha_es(fecha)
+
+    if tramo_id:
+        tramo_part = f" – Tramo {tramo_id}"
+        if tramo_desc:
+            tramo_part += f" {tramo_desc}"
+    else:
+        tramo_part = " – Sin Tramo"
+
+    civ_part = f" – CIV {civ}" if civ else " – Sin CIV"
+
+    text = f"{fecha_str}{tramo_part}{civ_part}"
+
+    style = ParagraphStyle(
+        'grp_hdr',
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        textColor=rl_colors.HexColor('#0076B0'),
+        spaceBefore=10,
+        spaceAfter=4,
+        leading=12,
+    )
+    return Paragraph(_esc(text), style)
+
+
+def _build_content_paragraphs(
+    fecha,
+    tramo_id: str,
+    civ: str,
+    df_diario: pd.DataFrame,
+    df_clima: pd.DataFrame,
+    df_personal: pd.DataFrame,
+    df_maquinaria: pd.DataFrame,
+    df_sst: pd.DataFrame,
+) -> list:
+    """
+    Retorna lista de Paragraph, uno por folio de reporte_diario
+    que pertenece al grupo (fecha, tramo_id, civ).
+    Formato: 'PK 18474. Clima: … Personal: … Maquinaria: … SST: … Obs'
+    """
+    try:
+        from reportlab.platypus import Paragraph
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib import colors as rl_colors
+    except ImportError:
+        return []
+
+    if df_diario.empty:
+        return []
+
+    # Intentar filtrar por fecha_reporte, luego por fecha
+    date_col = 'fecha_reporte' if 'fecha_reporte' in df_diario.columns else 'fecha'
+    sub = _filter_by_group(df_diario, fecha, date_col, tramo_id, civ)
+    if sub.empty:
+        return []
+
+    style = ParagraphStyle(
+        'cont_para',
+        fontName='Helvetica',
+        fontSize=8,
+        textColor=rl_colors.HexColor('#4D4D4D'),
+        leftIndent=8,
+        spaceAfter=3,
+        leading=11,
+    )
+
+    paras = []
+    for _, r in sub.iterrows():
+        folio = str(r.get('folio', ''))
+        pk    = _norm_str(r.get('pk', r.get('civ_pk', '')))
+        obs   = _norm_str(r.get('observaciones', ''))
+
+        parts = []
+        if pk:
+            parts.append(f"PK {pk}")
+
+        clima_txt = _format_clima(folio, df_clima)
+        if clima_txt:
+            parts.append(f"Estado del clima: {clima_txt}")
+
+        pers_txt = _format_personal(folio, df_personal)
+        if pers_txt:
+            parts.append(f"Personal: {pers_txt}")
+
+        maq_txt = _format_maquinaria(folio, df_maquinaria)
+        if maq_txt:
+            parts.append(f"Maquinaria: {maq_txt}")
+
+        sst_txt = _format_sst(folio, df_sst)
+        if sst_txt:
+            parts.append(f"SST: {sst_txt}")
+
+        if obs:
+            parts.append(obs)
+
+        if parts:
+            text = '. '.join(parts)
+            paras.append(Paragraph(_esc(text), style))
+
+    return paras
+

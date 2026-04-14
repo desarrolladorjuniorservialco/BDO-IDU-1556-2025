@@ -239,3 +239,94 @@ def test_format_sst_nan_as_zero():
     result = _format_sst('F001', df)
     assert 'Extintor: 1' in result
     assert 'nan' not in result.lower()
+
+
+from pdf_generator import _build_group_header, _build_content_paragraphs
+
+
+# ── _build_group_header ───────────────────────────────────────
+def test_build_group_header_returns_paragraph():
+    from reportlab.platypus import Paragraph
+    p = _build_group_header(date(2026, 4, 14), 'T-01', 'Carrera 26', '154654')
+    assert isinstance(p, Paragraph)
+
+def test_build_group_header_sin_tramo():
+    from reportlab.platypus import Paragraph
+    p = _build_group_header(date(2026, 4, 14), '', '', '154654')
+    assert isinstance(p, Paragraph)
+    assert 'Sin Tramo' in p.text
+
+def test_build_group_header_sin_civ():
+    from reportlab.platypus import Paragraph
+    p = _build_group_header(date(2026, 4, 14), 'T-01', 'Carrera 26', '')
+    assert isinstance(p, Paragraph)
+    assert 'Sin CIV' in p.text
+
+def test_build_group_header_with_tramo_and_desc():
+    from reportlab.platypus import Paragraph
+    p = _build_group_header(date(2026, 4, 14), 'T-01', 'Carrera 26 entre Calle 6 y Calle 13', '154654')
+    assert isinstance(p, Paragraph)
+    assert 'T-01' in p.text
+    assert 'Carrera 26' in p.text
+    assert '154654' in p.text
+    assert '14 de abril de 2026' in p.text
+
+
+# ── _build_content_paragraphs ─────────────────────────────────
+def test_build_content_paragraphs_empty_diario():
+    result = _build_content_paragraphs(
+        date(2026, 4, 14), 'T-01', '111',
+        pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+        pd.DataFrame(), pd.DataFrame(),
+    )
+    assert result == []
+
+def test_build_content_paragraphs_returns_paragraphs():
+    from reportlab.platypus import Paragraph
+    df_diario = pd.DataFrame([{
+        'folio': 'F001', 'fecha_reporte': '2026-04-14',
+        'id_tramo': 'T-01', 'civ': '111',
+        'pk': '18474', 'observaciones': 'Todo bien',
+    }])
+    result = _build_content_paragraphs(
+        date(2026, 4, 14), 'T-01', '111',
+        df_diario, pd.DataFrame(), pd.DataFrame(),
+        pd.DataFrame(), pd.DataFrame(),
+    )
+    assert len(result) == 1
+    assert isinstance(result[0], Paragraph)
+
+def test_build_content_paragraphs_includes_pk_and_obs():
+    from reportlab.platypus import Paragraph
+    df_diario = pd.DataFrame([{
+        'folio': 'F001', 'fecha_reporte': '2026-04-14',
+        'id_tramo': 'T-01', 'civ': '111',
+        'pk': '18474', 'observaciones': 'Sin novedad',
+    }])
+    result = _build_content_paragraphs(
+        date(2026, 4, 14), 'T-01', '111',
+        df_diario, pd.DataFrame(), pd.DataFrame(),
+        pd.DataFrame(), pd.DataFrame(),
+    )
+    assert len(result) == 1
+    # text attribute contains the raw text with possible XML escaping
+    assert '18474' in result[0].text
+    assert 'Sin novedad' in result[0].text
+
+def test_build_content_paragraphs_includes_clima():
+    from reportlab.platypus import Paragraph
+    df_diario = pd.DataFrame([{
+        'folio': 'F001', 'fecha_reporte': '2026-04-14',
+        'id_tramo': 'T-01', 'civ': '111',
+        'pk': '18474', 'observaciones': '',
+    }])
+    df_clima = pd.DataFrame([{
+        'folio': 'F001', 'hora': '08:00', 'estado_clima': 'Soleado',
+    }])
+    result = _build_content_paragraphs(
+        date(2026, 4, 14), 'T-01', '111',
+        df_diario, df_clima, pd.DataFrame(),
+        pd.DataFrame(), pd.DataFrame(),
+    )
+    assert len(result) == 1
+    assert 'Soleado' in result[0].text
