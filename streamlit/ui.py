@@ -19,7 +19,7 @@ import streamlit as st
 _ESTADOS_VALIDOS = frozenset({'BORRADOR', 'REVISADO', 'APROBADO', 'DEVUELTO'})
 
 # Colores de section_badge permitidos (whitelist)
-_COLORES_VALIDOS = frozenset({'blue', 'green', 'red', 'orange', 'purple', 'teal'})
+_COLORES_VALIDOS = frozenset({'blue', 'green', 'red', 'orange', 'yellow', 'purple', 'teal'})
 
 
 # ══════════════════════════════════════════════════════════════

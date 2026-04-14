@@ -87,9 +87,10 @@ CSS = """
 
     /* Badges de estado */
     --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
-    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #0076B0;
+    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #003d61;  /* oscurecido: 8:1 vs #d0eef9 */
     --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
     --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
+    --badge-amarillo-bg:  #FFC425; --badge-amarillo-fg: #3d2800;  /* Amarillo Estelar IDU */
 
     /* KPI */
     --kpi-value-color:  #00A6E1;  /* Cifras grandes en Azul IDU */
@@ -192,9 +193,10 @@ CSS = """
 
         /* Badges */
         --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
-        --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #33B5E5;
+        --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #7dd4f5;  /* claro sobre fondo oscuro */
         --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
         --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
+        --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD54F;
 
         --kpi-value-color:  #33B5E5;
 
@@ -344,7 +346,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .kpi-card.accent-blue::before   { background: var(--accent-blue); }
 .kpi-card.accent-green::before  { background: var(--accent-green); }
 .kpi-card.accent-red::before    { background: var(--accent-red); }
-.kpi-card.accent-orange::before { background: var(--accent-orange); }
+.kpi-card.accent-orange::before { background: #FFC425; }  /* Amarillo Estelar IDU */
 .kpi-card.accent-purple::before { background: var(--accent-purple); }
 .kpi-card.accent-teal::before   { background: var(--accent-teal); }
 
@@ -409,6 +411,18 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     letter-spacing: 0.12em;
     color: var(--text-muted);
     margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+/* Bolita amarilla IDU antes del título del formulario */
+.filter-form-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #FFC425;
+    flex-shrink: 0;
 }
 
 /* ════════════════════════════════════════════
@@ -442,8 +456,9 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 /* Multiselect con tags (tiene contenido seleccionado) */
 .stMultiSelect [data-baseweb="tag"] {
     background-color: var(--idu-blue-lt, #d0eef9) !important;
-    color: var(--idu-blue, #00A6E1) !important;
+    color: #004a7c !important;   /* FIXED: era #00A6E1 (ratio 2.2:1) → ahora 7:1 */
     font-weight: 700 !important;
+    border: 1px solid rgba(0,74,124,0.2) !important;
 }
 .stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
     background-color: #edf6fb !important;
@@ -485,6 +500,28 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 
 /* ════════════════════════════════════════════
+   SELECCIÓN DE TEXTO — Amarillo Estelar IDU
+   Texto seleccionado con Ctrl+A o clic-drag
+   queda destacado en amarillo institucional.
+   ════════════════════════════════════════════ */
+.stTextInput input::selection,
+.stTextArea textarea::selection,
+.stNumberInput input::selection {
+    background-color: #FFC425 !important;
+    color: #1a1000 !important;
+}
+/* Chips/tags del multiselect — texto dentro del tag */
+.stMultiSelect [data-baseweb="tag"] span {
+    color: inherit !important;
+}
+/* Dropdown option resaltado (hover en desplegable) */
+[data-baseweb="menu"] [role="option"]:hover,
+[data-baseweb="menu"] [aria-selected="true"] {
+    background-color: var(--idu-blue-lt, #d0eef9) !important;
+    color: #004a7c !important;
+}
+
+/* ════════════════════════════════════════════
    SECTION BADGE (estilo IDU)
    ════════════════════════════════════════════ */
 .section-badge {
@@ -500,12 +537,13 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     text-transform: uppercase;
     margin-bottom: 0.75rem;
 }
-.sb-blue   { background: var(--idu-blue-lt, #d0eef9);   color: var(--idu-blue, #00A6E1);   }
-.sb-green  { background: var(--accent-green-lt);         color: var(--accent-green);         }
-.sb-red    { background: var(--idu-red-lt, #fde8e9);     color: var(--idu-red, #ED1C24);     }
-.sb-orange { background: var(--idu-yellow-lt, #fff5d6);  color: #8a6200;                     }
-.sb-purple { background: var(--accent-purple-lt);        color: var(--accent-purple);        }
-.sb-teal   { background: var(--accent-teal-lt);          color: var(--idu-blue-dark, #0076B0); }
+.sb-blue   { background: var(--idu-blue-lt, #d0eef9);   color: #004a7c;  /* ratio ≈ 7:1 */ }
+.sb-green  { background: var(--accent-green-lt);         color: var(--accent-green);           }
+.sb-red    { background: var(--idu-red-lt, #fde8e9);     color: var(--idu-red, #ED1C24);       }
+.sb-orange { background: var(--idu-yellow-lt, #fff5d6);  color: #8a6200;                       }
+.sb-yellow { background: #FFC425;                        color: #3d2800;  /* Amarillo Estelar — ratio ≈ 9:1 */ }
+.sb-purple { background: var(--accent-purple-lt);        color: var(--accent-purple);           }
+.sb-teal   { background: var(--accent-teal-lt);          color: #003d61;  /* ratio ≈ 8:1 */ }
 
 /* ════════════════════════════════════════════
    STATUS BADGES
@@ -519,10 +557,11 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     border-radius: 4px;
     letter-spacing: 0.05em;
 }
-.badge-borrador { background: var(--badge-borrador-bg); color: var(--badge-borrador-fg); }
-.badge-revisado { background: var(--badge-revisado-bg); color: var(--badge-revisado-fg); }
-.badge-aprobado { background: var(--badge-aprobado-bg); color: var(--badge-aprobado-fg); }
-.badge-devuelto { background: var(--badge-devuelto-bg); color: var(--badge-devuelto-fg); }
+.badge-borrador  { background: var(--badge-borrador-bg);  color: var(--badge-borrador-fg);  }
+.badge-revisado  { background: var(--badge-revisado-bg);  color: var(--badge-revisado-fg);  }
+.badge-aprobado  { background: var(--badge-aprobado-bg);  color: var(--badge-aprobado-fg);  }
+.badge-devuelto  { background: var(--badge-devuelto-bg);  color: var(--badge-devuelto-fg);  }
+.badge-amarillo  { background: var(--badge-amarillo-bg, #FFC425); color: var(--badge-amarillo-fg, #3d2800); }
 
 /* ════════════════════════════════════════════
    CONTRATO — HEADER Y FICHAS
@@ -535,6 +574,8 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color: #fff;
     position: relative;
     overflow: hidden;
+    /* Franja Amarillo Estelar IDU en el borde inferior — acento institucional */
+    border-bottom: 4px solid #FFC425;
 }
 .contract-id {
     font-family: 'JetBrains Mono', monospace;
@@ -1017,9 +1058,10 @@ html[data-bdo-theme="light"] {
     --nav-active-text:  #ffffff;
     --nav-idle-text:    #c8dff0;
     --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
-    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #0076B0;
+    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #003d61;
     --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
     --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
+    --badge-amarillo-bg:  #FFC425; --badge-amarillo-fg: #3d2800;
     --kpi-value-color:  #00A6E1;
     --btn-approve-bg:   #198754;
     --btn-approve-fg:   #ffffff;
@@ -1092,9 +1134,10 @@ html[data-bdo-theme="dark"] {
     --nav-active-text:  #E0E0E0;
     --nav-idle-text:    #A0A0A0;
     --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
-    --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #33B5E5;
+    --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #7dd4f5;  /* claro sobre oscuro */
     --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
     --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
+    --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD54F;  /* amarillo sobre oscuro */
     --kpi-value-color:  #33B5E5;
     --btn-approve-bg:   #3fb950;
     --btn-approve-fg:   #0d1117;
@@ -1162,9 +1205,10 @@ _LIGHT_ROOT_VARS = """
     --nav-active-bg:rgba(0,166,225,0.15); --nav-active-border:#00A6E1;
     --nav-active-text:#ffffff; --nav-idle-text:#c8dff0;
     --badge-borrador-bg:#EDF1F6; --badge-borrador-fg:#4D4D4D;
-    --badge-revisado-bg:#d0eef9; --badge-revisado-fg:#0076B0;
+    --badge-revisado-bg:#d0eef9; --badge-revisado-fg:#003d61;
     --badge-aprobado-bg:#d1f2dc; --badge-aprobado-fg:#0f5132;
     --badge-devuelto-bg:#fde8e9; --badge-devuelto-fg:#ED1C24;
+    --badge-amarillo-bg:#FFC425; --badge-amarillo-fg:#3d2800;
     --kpi-value-color:#00A6E1;
     --btn-approve-bg:#198754; --btn-approve-fg:#ffffff;
     --btn-return-bg:#ED1C24; --btn-return-fg:#ffffff;
@@ -1199,9 +1243,10 @@ _DARK_ROOT_VARS = """
     --nav-active-bg:rgba(51,181,229,0.12); --nav-active-border:#33B5E5;
     --nav-active-text:#E0E0E0; --nav-idle-text:#A0A0A0;
     --badge-borrador-bg:#252525; --badge-borrador-fg:#A0A0A0;
-    --badge-revisado-bg:#0d2f3f; --badge-revisado-fg:#33B5E5;
+    --badge-revisado-bg:#0d2f3f; --badge-revisado-fg:#7dd4f5;
     --badge-aprobado-bg:#0d2818; --badge-aprobado-fg:#3fb950;
     --badge-devuelto-bg:#3d1010; --badge-devuelto-fg:#FF5252;
+    --badge-amarillo-bg:#3d2800; --badge-amarillo-fg:#FFD54F;
     --kpi-value-color:#33B5E5;
     --btn-approve-bg:#3fb950; --btn-approve-fg:#0d1117;
     --btn-return-bg:#FF5252; --btn-return-fg:#0d1117;
