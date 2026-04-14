@@ -10,5 +10,5 @@ hideSidebarNav = true
 base                     = "light"
 primaryColor             = "#00A6E1"   # Azul IDU — botones, sliders, checkboxes
 backgroundColor          = "#EDF1F6"   # Gris Neutro — fondo general
-secondaryBackgroundColor = "#676a72"   # Blanco — tarjetas, sidebar inputs
+secondaryBackgroundColor = "#ffffff"   # Blanco — tarjetas, sidebar inputs
 textColor                = "#4D4D4D"   # Gris Texto — lectura larga
