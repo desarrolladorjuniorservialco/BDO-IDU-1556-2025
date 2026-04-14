@@ -20,13 +20,23 @@ from ui import kpi, section_badge, safe_float
 
 
 def _fmt_cop(val) -> str:
+    """Ajuste de escala monetaria para Colombia (mil MM = 10^9)."""
     v = safe_float(val)
     if v is None:
         return "—"
-    if abs(v) >= 1_000_000_000:
-        return f"${v / 1_000_000_000:.2f} milM"
-    if abs(v) >= 1_000_000:
+    
+    abs_v = abs(v)
+    
+    # Billones reales (10^12)
+    if abs_v >= 1_000_000_000_000:
+        return f"${v / 1_000_000_000_000:.2f} Billones"
+    # Mil millones (10^9) - Antes marcado como "B"
+    if abs_v >= 1_000_000_000:
+        return f"${v / 1_000_000_000:.2f} mil MM"
+    # Millones (10^6)
+    if abs_v >= 1_000_000:
         return f"${v / 1_000_000:.1f} M"
+        
     return f"${v:,.0f}"
 
 
@@ -40,7 +50,7 @@ def _fmt_date(val, fmt: str = '%d/%m/%Y') -> str:
 
 
 def _timeline_html(pct: float, dias_trans: int, dias_rest: int,
-                   fecha_ini: str, fecha_fin: str) -> str:
+                    fecha_ini: str, fecha_fin: str) -> str:
     """Renderiza la barra de ejecución del plazo en HTML puro."""
     p = max(min(pct, 100.0), 0.0)
     if p > 85:
@@ -224,13 +234,13 @@ def page_estado_actual() -> None:
         ] if c in df_pro.columns]
 
         col_cfg = {
-            'numero':        st.column_config.NumberColumn('No.',              format="%d"),
-            'plazo_dias':    st.column_config.NumberColumn('Días adicionados', format="%d"),
-            'fecha_fin':     st.column_config.DateColumn('Nueva fecha fin',    format="DD/MM/YYYY"),
-            'fecha_firma':   st.column_config.DateColumn('Fecha firma',        format="DD/MM/YYYY"),
-            'acta':          st.column_config.TextColumn('Acta'),
-            'objeto':        st.column_config.TextColumn('Objeto'),
-            'observaciones': st.column_config.TextColumn('Observaciones'),
+            'numero':         st.column_config.NumberColumn('No.',               format="%d"),
+            'plazo_dias':     st.column_config.NumberColumn('Días adicionados', format="%d"),
+            'fecha_fin':      st.column_config.DateColumn('Nueva fecha fin',    format="DD/MM/YYYY"),
+            'fecha_firma':    st.column_config.DateColumn('Fecha firma',        format="DD/MM/YYYY"),
+            'acta':           st.column_config.TextColumn('Acta'),
+            'objeto':         st.column_config.TextColumn('Objeto'),
+            'observaciones':  st.column_config.TextColumn('Observaciones'),
         }
 
         st.markdown(
@@ -269,13 +279,13 @@ def page_estado_actual() -> None:
         ] if c in df_adi.columns]
 
         col_cfg_adi = {
-            'numero':        st.column_config.NumberColumn('No.',                format="%d"),
-            'adicion':       st.column_config.NumberColumn('Adición ($)',         format="$%,.0f"),
-            'valor_actual':  st.column_config.NumberColumn('Valor Acumulado ($)', format="$%,.0f"),
-            'fecha_firma':   st.column_config.DateColumn('Fecha firma',           format="DD/MM/YYYY"),
-            'acta':          st.column_config.TextColumn('Acta'),
-            'objeto':        st.column_config.TextColumn('Objeto'),
-            'observaciones': st.column_config.TextColumn('Observaciones'),
+            'numero':         st.column_config.NumberColumn('No.',                format="%d"),
+            'adicion':        st.column_config.NumberColumn('Adición ($)',         format="$%,.0f"),
+            'valor_actual':   st.column_config.NumberColumn('Valor Acumulado ($)', format="$%,.0f"),
+            'fecha_firma':    st.column_config.DateColumn('Fecha firma',           format="DD/MM/YYYY"),
+            'acta':           st.column_config.TextColumn('Acta'),
+            'objeto':         st.column_config.TextColumn('Objeto'),
+            'observaciones':  st.column_config.TextColumn('Observaciones'),
         }
 
         st.markdown(
@@ -296,5 +306,5 @@ def page_estado_actual() -> None:
         # Resumen acumulado de adiciones
         if 'adicion' in df_adi.columns:
             total_adi = pd.to_numeric(df_adi['adicion'], errors='coerce').fillna(0).sum()
-            st.caption(f"Total adicionado al contrato: **{_fmt_cop(total_adi)}**  "
+            st.caption(f"Total adicionado al contrato: **{_fmt_cop(total_adi)}** "
                        f"(valor inicial {_fmt_cop(val_ini)} → actualizado {_fmt_cop(val_act)})")
