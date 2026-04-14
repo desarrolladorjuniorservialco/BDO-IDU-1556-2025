@@ -1276,11 +1276,11 @@ _LIGHT_ROOT_VARS = """
     --idu-navy:#00A6E1; --idu-navy-deep:#0076B0; --idu-navy-lt:#d0eef9;
     --idu-teal:#198754; --idu-teal-lt:#d1f2dc;
     --idu-amber:#FFC425; --idu-amber-lt:#fff5d6;
-    --bg-app:#EDF1F6; --bg-card:#FFFFFF; --bg-card-hover:#f0f7fc;
-    --bg-sidebar:#002D57; --bg-sidebar-item:rgba(255,255,255,0.08); --bg-inset:#EDF1F6;
+    --bg-app:#F0F2F5; --bg-card:#FFFFFF; --bg-card-hover:#f0f7fc;
+    --bg-sidebar:#272B33; --bg-sidebar-item:rgba(255,255,255,0.05); --bg-inset:#EDF1F6;
     --border:#D8E3ED; --border-strong:#B0BEC5;
     --text-primary:#4D4D4D; --text-secondary:#4D4D4D; --text-muted:#7A8A99;
-    --text-sidebar:#FFFFFF; --text-sidebar-muted:#c8dff0;
+    --text-sidebar:#E6EDF3; --text-sidebar-muted:#c8dff0;
     --accent-blue:#00A6E1; --accent-blue-lt:#d0eef9;
     --accent-green:#198754; --accent-green-lt:#d1f2dc;
     --accent-red:#ED1C24; --accent-red-lt:#fde8e9;
