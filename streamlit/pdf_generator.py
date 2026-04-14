@@ -478,3 +478,103 @@ def _build_records_table(
     story.append(tbl)
 
 
+# ── Meses en español (sin locale para portabilidad) ────────────
+_MESES_ES = {
+    1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+    5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+    9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre',
+}
+
+
+def _fecha_es(d) -> str:
+    """Formatea un objeto date como '14 de abril de 2026'."""
+    from datetime import date as _date
+    if not isinstance(d, _date):
+        d = pd.to_datetime(d).date()
+    return f"{d.day} de {_MESES_ES[d.month]} de {d.year}"
+
+
+def _to_date(val):
+    """Convierte string/datetime/date a objeto date. Retorna None si falla."""
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return None
+    try:
+        return pd.to_datetime(val).date()
+    except Exception:
+        return None
+
+
+def _norm_str(val) -> str:
+    """Normaliza un valor a string, convierte None/NaN a ''."""
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return ''
+    s = str(val).strip()
+    return '' if s.lower() in ('none', 'nan', 'nat') else s
+
+
+def _filter_by_group(
+    df: pd.DataFrame,
+    fecha,
+    date_col: str,
+    tramo_id: str,
+    civ: str,
+) -> pd.DataFrame:
+    """
+    Filtra df por (fecha, id_tramo, civ).
+    - Si date_col no existe en df, retorna DataFrame vacío.
+    - Si id_tramo no existe en df, se omite ese filtro.
+    - Si civ no existe en df, se omite ese filtro.
+    """
+    if df.empty or date_col not in df.columns:
+        return pd.DataFrame()
+
+    from datetime import date as _date
+    if not isinstance(fecha, _date):
+        fecha = pd.to_datetime(fecha).date()
+
+    dates = df[date_col].apply(_to_date)
+    mask = dates == fecha
+
+    if 'id_tramo' in df.columns:
+        mask &= df['id_tramo'].apply(_norm_str) == tramo_id
+
+    if 'civ' in df.columns:
+        mask &= df['civ'].apply(_norm_str) == civ
+
+    return df[mask].copy()
+
+
+def _collect_groups(
+    df_cant: pd.DataFrame,
+    df_comp: pd.DataFrame,
+    df_diario: pd.DataFrame,
+) -> list:
+    """
+    Devuelve lista ordenada de tuplas únicas (date, tramo_id, civ)
+    presentes en cualquiera de las tres tablas.
+    """
+    tuples: set = set()
+
+    sources = [
+        (df_cant,   'fecha_creacion'),
+        (df_comp,   'fecha_creacion'),
+        (df_diario, 'fecha_reporte'),
+    ]
+
+    for df, date_col in sources:
+        if df.empty:
+            continue
+        # Soporte para columna alternativa en reporte_diario
+        col = date_col if date_col in df.columns else ('fecha' if 'fecha' in df.columns else None)
+        if col is None:
+            continue
+        for _, r in df.iterrows():
+            d = _to_date(r.get(col))
+            if d is None:
+                continue
+            tramo = _norm_str(r.get('id_tramo', ''))
+            civ   = _norm_str(r.get('civ', ''))
+            tuples.add((d, tramo, civ))
+
+    return sorted(tuples)
+
