@@ -301,8 +301,10 @@ def page_reporte_cantidades(perfil: dict) -> None:
         fig_e = px.bar(
             cnt, x='Estado', y='Registros', color='Estado',
             color_discrete_map={
-                'APROBADO': '#005c4e', 'REVISADO': '#1a3a6e',
-                'DEVUELTO': '#aa1b1b', 'BORRADOR': '#637090',
+                'APROBADO': '#198754',   # Verde — cumplido
+                'REVISADO': '#FFC425',   # Amarillo Estelar — en proceso
+                'DEVUELTO': '#ED1C24',   # Rojo Bogotá — alerta
+                'BORRADOR': '#B0BEC5',   # Gris Neutro — planeación
             },
             height=200,
         )

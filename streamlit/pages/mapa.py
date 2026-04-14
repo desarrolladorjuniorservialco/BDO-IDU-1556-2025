@@ -31,20 +31,20 @@ from database import (
 )
 from ui import kpi, section_badge
 
-# Paleta de colores por estado (Bogota institucional)
+# Paleta de colores por estado — Guía IDU 2025
 _ESTADO_COLOR = {
-    'BORRADOR': '#ADB5BD',   # En Planeacion (gris neutro)
-    'REVISADO': '#0D6EFD',   # En Progreso (azul vibrante)
-    'APROBADO': '#198754',   # Completado (verde bosque)
-    'DEVUELTO': '#B02A37',   # Critico (rojo oscuro)
+    'BORRADOR': '#B0BEC5',   # Gris Neutro — en planeación
+    'REVISADO': '#FFC425',   # Amarillo Estelar — en proceso
+    'APROBADO': '#198754',   # Verde — cumplido
+    'DEVUELTO': '#ED1C24',   # Rojo Bogotá — alerta
 }
 
-# Color base de cada capa
+# Color base de cada capa — tonos IDU
 _LAYER_COLOR = {
-    'cantidades':  '#002D57',   # Bogota Blue Deep
-    'componentes': '#FD7E14',   # Naranja industrial
-    'diario':      '#6f42c1',   # Purpura
-    'pmt':         '#0D6EFD',   # Azul vibrante
+    'cantidades':  '#00A6E1',   # Azul IDU primario
+    'componentes': '#FFC425',   # Amarillo Estelar
+    'diario':      '#0076B0',   # Azul Oscuro IDU
+    'pmt':         '#ED1C24',   # Rojo Bogotá
 }
 
 _ESTADO_OPTS = ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
@@ -280,10 +280,10 @@ def page_mapa(perfil: dict) -> None:
             legend=dict(
                 orientation="v",
                 x=0.01, y=0.99,
-                bgcolor='rgba(255,255,255,0.88)',
-                bordercolor='#DEE2E6',
+                bgcolor='rgba(237,241,246,0.92)',
+                bordercolor='#00A6E1',
                 borderwidth=1,
-                font=dict(size=10, family='Barlow'),
+                font=dict(size=10, family='Barlow', color='#4D4D4D'),
             ),
         )
         st.plotly_chart(fig, use_container_width=True,

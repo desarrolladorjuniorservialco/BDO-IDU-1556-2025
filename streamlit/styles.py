@@ -6,175 +6,212 @@ Sidebar siempre oscuro (estilo panel IDU).
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ════════════════════════════════════════════
    VARIABLES — MODO CLARO (por defecto)
-   Paleta institucional Bogota IDU
+   Guía de Identidad Visual IDU 2025
    ════════════════════════════════════════════ */
 :root {
-    /* --- Identidad Central (Primarios) --- */
-    --bogota-blue-deep:  #002D57;
-    --bogota-blue-active:#004B8D;
-    --bogota-yellow:     #FFD200;
-    --bogota-gold:       #E6BC00;
+    /* --- Identidad Central IDU --- */
+    --idu-blue:        #00A6E1;   /* Azul IDU primario — logo, titulos, tabs activas */
+    --idu-blue-dark:   #0076B0;   /* Azul Oscuro — cabeceras de tabla, fondos panel */
+    --idu-blue-lt:     #d0eef9;   /* Azul IDU claro — fondos de badge */
+    --idu-red:         #ED1C24;   /* Rojo Bogota — botones de accion, alertas */
+    --idu-red-lt:      #fde8e9;   /* Rojo claro — fondos de alerta */
+    --idu-yellow:      #FFC425;   /* Amarillo Estelar — advertencias, iconos soporte */
+    --idu-yellow-lt:   #fff5d6;   /* Amarillo claro */
+    --idu-green:       #198754;   /* Verde cumplido — semaforo */
+    --idu-green-lt:    #d1f2dc;
 
-    /* --- Paleta IDU mapeada --- */
-    --idu-navy:        #002D57;
-    --idu-navy-deep:   #002D57;
-    --idu-navy-lt:     #cce0f5;
+    /* --- Backward-compat aliases --- */
+    --bogota-blue-deep:  #0076B0;
+    --bogota-blue-active:#00A6E1;
+    --bogota-yellow:     #FFC425;
+    --bogota-gold:       #e6ae20;
+    --idu-navy:        #00A6E1;
+    --idu-navy-deep:   #0076B0;
+    --idu-navy-lt:     #d0eef9;
     --idu-teal:        #198754;
     --idu-teal-lt:     #d1f2dc;
-    --idu-amber:       #FFD200;
-    --idu-amber-lt:    #fff8d6;
+    --idu-amber:       #FFC425;
+    --idu-amber-lt:    #fff5d6;
 
     /* Fondos */
-    --bg-app:          #F8F9FA;
-    --bg-card:         #FFFFFF;
-    --bg-card-hover:   #f0f4ff;
-    --bg-sidebar:      #002D57;
-    --bg-sidebar-item: rgba(255,255,255,0.06);
-    --bg-inset:        #F0F2F5;
+    --bg-app:          #EDF1F6;   /* Gris Neutro — fondo general */
+    --bg-card:         #FFFFFF;   /* Blanco puro — tarjetas de contenido */
+    --bg-card-hover:   #f0f7fc;
+    --bg-sidebar:      #0076B0;   /* Azul Oscuro — sidebar institucional */
+    --bg-sidebar-item: rgba(255,255,255,0.08);
+    --bg-inset:        #EDF1F6;
 
     /* Bordes */
-    --border:          #DEE2E6;
-    --border-strong:   #ADB5BD;
+    --border:          #D8E3ED;
+    --border-strong:   #B0BEC5;
 
     /* Texto */
-    --text-primary:    #212529;
-    --text-secondary:  #495057;
-    --text-muted:      #6C757D;
-    --text-sidebar:    #E6EDF3;
-    --text-sidebar-muted: #8B949E;
+    --text-primary:    #4D4D4D;   /* Gris Texto — lectura larga */
+    --text-secondary:  #4D4D4D;
+    --text-muted:      #7A8A99;
+    --text-sidebar:    #FFFFFF;
+    --text-sidebar-muted: #c8dff0;
 
-    /* Acentos semanticos */
-    --accent-blue:     #002D57;
-    --accent-blue-lt:  #cce0f5;
+    /* Acentos semanticos — mapeados a paleta IDU */
+    --accent-blue:     #00A6E1;
+    --accent-blue-lt:  #d0eef9;
     --accent-green:    #198754;
     --accent-green-lt: #d1f2dc;
-    --accent-red:      #B02A37;
-    --accent-red-lt:   #f5d0d3;
-    --accent-orange:   #FD7E14;
-    --accent-orange-lt:#ffe8cc;
+    --accent-red:      #ED1C24;
+    --accent-red-lt:   #fde8e9;
+    --accent-orange:   #FFC425;
+    --accent-orange-lt:#fff5d6;
     --accent-purple:   #6f42c1;
     --accent-purple-lt:#e8dcf8;
-    --accent-teal:     #0D6EFD;
-    --accent-teal-lt:  #cfe2ff;
+    --accent-teal:     #0076B0;
+    --accent-teal-lt:  #cce7f5;
 
-    /* Semantica de ejecucion */
-    --exec-completado: #198754;
-    --exec-progreso:   #0D6EFD;
-    --exec-atrasado:   #FD7E14;
-    --exec-critico:    #B02A37;
-    --exec-planeacion: #ADB5BD;
+    /* Semáforo de ejecución */
+    --exec-completado: #198754;   /* Verde — cumplido */
+    --exec-progreso:   #FFC425;   /* Amarillo Estelar — en proceso */
+    --exec-atrasado:   #FFC425;
+    --exec-critico:    #ED1C24;   /* Rojo Bogotá — retraso/alerta */
+    --exec-planeacion: #B0BEC5;
 
     /* Nav */
-    --nav-cat-color:    #8B949E;
-    --nav-cat-hi-color: #FFD200;
-    --nav-active-bg:    rgba(255,210,0,0.12);
-    --nav-active-border:#FFD200;
+    --nav-cat-color:    #c8dff0;
+    --nav-cat-hi-color: #FFC425;
+    --nav-active-bg:    rgba(0,166,225,0.15);
+    --nav-active-border:#00A6E1;
     --nav-active-text:  #ffffff;
-    --nav-idle-text:    #8B949E;
+    --nav-idle-text:    #c8dff0;
 
     /* Badges de estado */
-    --badge-borrador-bg:  #e9ecef; --badge-borrador-fg: #495057;
-    --badge-revisado-bg:  #cfe2ff; --badge-revisado-fg: #084298;
+    --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
+    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #0076B0;
     --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
-    --badge-devuelto-bg:  #f5d0d3; --badge-devuelto-fg: #842029;
+    --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
 
     /* KPI */
-    --kpi-value-color:  #212529;
+    --kpi-value-color:  #00A6E1;  /* Cifras grandes en Azul IDU */
 
-    /* Botones de accion */
+    /* Botones */
     --btn-approve-bg:   #198754;
     --btn-approve-fg:   #ffffff;
-    --btn-return-bg:    #B02A37;
+    --btn-return-bg:    #ED1C24;
     --btn-return-fg:    #ffffff;
 
-    /* CTA (Bogota Yellow) */
-    --btn-cta-bg:       #FFD200;
-    --btn-cta-fg:       #212529;
-    --btn-cta-border:   #E6BC00;
+    /* CTA principal (guardar, generar PDF) → Rojo Bogotá */
+    --btn-cta-bg:       #ED1C24;
+    --btn-cta-fg:       #ffffff;
+    --btn-cta-border:   #c01019;
+
+    /* CTA filtros / navegación → Azul IDU */
+    --btn-filter-bg:    #00A6E1;
+    --btn-filter-fg:    #ffffff;
+    --btn-filter-border:#0090c3;
 }
 
 /* ════════════════════════════════════════════
    VARIABLES — MODO OSCURO
-   Superficies por elevacion, texto sin glare
+   Paleta institucional IDU adaptada al oscuro
+   Superficies por elevación, contraste AA
    ════════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
     :root {
-        --idu-navy:        #1F6FEB;
-        --idu-navy-deep:   #58A6FF;
-        --idu-navy-lt:     #1a2744;
+        /* IDU en oscuro — versiones encendidas para buen contraste */
+        --idu-blue:        #33B5E5;   /* Azul IDU suavizado — titulos, tabs activas */
+        --idu-blue-dark:   #004B6B;   /* Cabeceras de tabla en oscuro */
+        --idu-blue-lt:     #0d2f3f;
+        --idu-red:         #FF5252;   /* Rojo Bogotá vibrante — botones, alertas */
+        --idu-red-lt:      #3d1010;
+        --idu-yellow:      #FFD54F;   /* Amarillo Estelar — advertencias */
+        --idu-yellow-lt:   #3d2800;
+        --idu-green:       #3fb950;
+        --idu-green-lt:    #0d2818;
+
+        /* Backward-compat aliases */
+        --bogota-blue-deep:  #004B6B;
+        --bogota-blue-active:#33B5E5;
+        --bogota-yellow:     #FFD54F;
+        --bogota-gold:       #e6ae20;
+        --idu-navy:        #33B5E5;
+        --idu-navy-deep:   #004B6B;
+        --idu-navy-lt:     #0d2f3f;
         --idu-teal:        #3fb950;
         --idu-teal-lt:     #0d2818;
-        --idu-amber:       #FFD200;
+        --idu-amber:       #FFD54F;
         --idu-amber-lt:    #3d2800;
 
-        /* Superficies por elevacion */
-        --bg-app:          #0B1117;
-        --bg-card:         #161B22;
-        --bg-card-hover:   #1c2330;
-        --bg-sidebar:      #0B1117;
+        /* Superficies por elevación */
+        --bg-app:          #121212;   /* Fondo aplicación */
+        --bg-card:         #1E1E1E;   /* Tarjetas/paneles */
+        --bg-card-hover:   #252525;
+        --bg-sidebar:      #0d1a22;   /* Panel lateral oscuro */
         --bg-sidebar-item: rgba(255,255,255,0.05);
-        --bg-inset:        #161B22;
+        --bg-inset:        #1E1E1E;
 
-        /* Bordes */
-        --border:          #30363D;
-        --border-strong:   #484f58;
+        /* Bordes sutiles */
+        --border:          #333333;
+        --border-strong:   #444444;
 
-        /* Texto sin glare */
-        --text-primary:    #E6EDF3;
-        --text-secondary:  #c9d1d9;
-        --text-muted:      #8B949E;
-        --text-sidebar:    #E6EDF3;
-        --text-sidebar-muted: #8B949E;
+        /* Texto sin deslumbramiento */
+        --text-primary:    #E0E0E0;   /* Blanco roto — texto principal */
+        --text-secondary:  #A0A0A0;   /* Gris medio — etiquetas, unidades */
+        --text-muted:      #A0A0A0;
+        --text-sidebar:    #E0E0E0;
+        --text-sidebar-muted: #A0A0A0;
 
         /* Acentos oscuros */
-        --accent-blue:     #1F6FEB;
-        --accent-blue-lt:  #1a2744;
+        --accent-blue:     #33B5E5;
+        --accent-blue-lt:  #0d2f3f;
         --accent-green:    #3fb950;
         --accent-green-lt: #0d2818;
-        --accent-red:      #f85149;
+        --accent-red:      #FF5252;
         --accent-red-lt:   #3d1010;
-        --accent-orange:   #FD7E14;
-        --accent-orange-lt:#3d2200;
+        --accent-orange:   #FFD54F;
+        --accent-orange-lt:#3d2800;
         --accent-purple:   #bc8cff;
         --accent-purple-lt:#2d1f60;
-        --accent-teal:     #58A6FF;
-        --accent-teal-lt:  #0d3050;
+        --accent-teal:     #33B5E5;
+        --accent-teal-lt:  #0d2f3f;
 
-        /* Semantica de ejecucion oscura */
+        /* Semáforo oscuro */
         --exec-completado: #3fb950;
-        --exec-progreso:   #58A6FF;
-        --exec-atrasado:   #FD7E14;
-        --exec-critico:    #f85149;
-        --exec-planeacion: #484f58;
+        --exec-progreso:   #FFD54F;
+        --exec-atrasado:   #FFD54F;
+        --exec-critico:    #FF5252;
+        --exec-planeacion: #444444;
 
         /* Nav */
-        --nav-cat-color:    #8B949E;
-        --nav-cat-hi-color: #FFD200;
-        --nav-active-bg:    rgba(255,210,0,0.10);
-        --nav-active-border:#FFD200;
-        --nav-active-text:  #E6EDF3;
-        --nav-idle-text:    #8B949E;
+        --nav-cat-color:    #A0A0A0;
+        --nav-cat-hi-color: #FFD54F;
+        --nav-active-bg:    rgba(51,181,229,0.12);
+        --nav-active-border:#33B5E5;
+        --nav-active-text:  #E0E0E0;
+        --nav-idle-text:    #A0A0A0;
 
         /* Badges */
-        --badge-borrador-bg:  #21262D; --badge-borrador-fg: #8B949E;
-        --badge-revisado-bg:  #0d3050; --badge-revisado-fg: #58A6FF;
+        --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
+        --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #33B5E5;
         --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
-        --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #f85149;
+        --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
 
-        --kpi-value-color:  #E6EDF3;
+        --kpi-value-color:  #33B5E5;
 
         --btn-approve-bg:   #3fb950;
         --btn-approve-fg:   #0d1117;
-        --btn-return-bg:    #f85149;
+        --btn-return-bg:    #FF5252;
         --btn-return-fg:    #0d1117;
 
-        --btn-cta-bg:       #FFD200;
-        --btn-cta-fg:       #0B1117;
-        --btn-cta-border:   #E6BC00;
+        /* CTA principal oscuro → Rojo Bogotá */
+        --btn-cta-bg:       #FF5252;
+        --btn-cta-fg:       #ffffff;
+        --btn-cta-border:   #e03030;
+
+        /* CTA filtros oscuro → Azul IDU */
+        --btn-filter-bg:    #33B5E5;
+        --btn-filter-fg:    #0d1117;
+        --btn-filter-border:#2299c5;
     }
 }
 
@@ -183,6 +220,7 @@ CSS = """
    ════════════════════════════════════════════ */
 html, body, [class*="css"] {
     font-family: 'Barlow', 'IBM Plex Sans', sans-serif;
+    color: var(--text-primary);
 }
 .stApp { background: var(--bg-app); color: var(--text-primary); }
 
@@ -225,9 +263,9 @@ section[data-testid="stSidebar"] .stButton > button {
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(0,75,141,0.35) !important;
+    background: rgba(0,166,225,0.25) !important;
     color: #ffffff !important;
-    border-color: rgba(0,75,141,0.5) !important;
+    border-color: rgba(0,166,225,0.45) !important;
 }
 
 /* Nav item activo */
@@ -383,12 +421,12 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Estado focus: borde azul activo + fondo ligeramente mas oscuro */
+/* Estado focus: borde Azul IDU + fondo ligeramente mas claro */
 .stTextInput input:focus,
 .stDateInput input:focus {
-    background-color: #edf2f9 !important;
-    border-color: var(--bogota-blue-active, #004B8D) !important;
-    box-shadow: 0 0 0 2px rgba(0,75,141,0.18) !important;
+    background-color: #edf6fb !important;
+    border-color: var(--idu-blue, #00A6E1) !important;
+    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
 }
 
 /* Selectbox / multiselect al abrir (estado activo) */
@@ -396,53 +434,53 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .stSelectbox [data-baseweb="select"]:focus-within > div,
 .stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
 .stMultiSelect [data-baseweb="select"]:focus-within > div {
-    background-color: #edf2f9 !important;
-    border-color: var(--bogota-blue-active, #004B8D) !important;
-    box-shadow: 0 0 0 2px rgba(0,75,141,0.18) !important;
+    background-color: #edf6fb !important;
+    border-color: var(--idu-blue, #00A6E1) !important;
+    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
 }
 
 /* Multiselect con tags (tiene contenido seleccionado) */
 .stMultiSelect [data-baseweb="tag"] {
-    background-color: var(--accent-blue-lt) !important;
-    color: var(--accent-blue) !important;
+    background-color: var(--idu-blue-lt, #d0eef9) !important;
+    color: var(--idu-blue, #00A6E1) !important;
     font-weight: 700 !important;
 }
 .stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
-    background-color: #edf2f9 !important;
-    border-color: var(--bogota-blue-active, #004B8D) !important;
+    background-color: #edf6fb !important;
+    border-color: var(--idu-blue, #00A6E1) !important;
 }
 
 /* Input con contenido (no placeholder) */
 .stTextInput input:not(:placeholder-shown),
 .stDateInput input:not(:placeholder-shown) {
-    background-color: #edf2f9 !important;
-    border-color: #ADB5BD !important;
+    background-color: #edf6fb !important;
+    border-color: #B0BEC5 !important;
 }
 
-/* Dark mode overrides para inputs */
+/* Dark mode overrides para inputs — Azul IDU #33B5E5 */
 @media (prefers-color-scheme: dark) {
     .stTextInput input:focus,
     .stDateInput input:focus {
-        background-color: #21262D !important;
-        border-color: #58A6FF !important;
-        box-shadow: 0 0 0 2px rgba(88,166,255,0.15) !important;
+        background-color: #1a2a33 !important;
+        border-color: #33B5E5 !important;
+        box-shadow: 0 0 0 2px rgba(51,181,229,0.18) !important;
     }
     .stSelectbox [data-baseweb="select"] > div[aria-expanded="true"],
     .stSelectbox [data-baseweb="select"]:focus-within > div,
     .stMultiSelect [data-baseweb="select"] > div[aria-expanded="true"],
     .stMultiSelect [data-baseweb="select"]:focus-within > div {
-        background-color: #21262D !important;
-        border-color: #58A6FF !important;
-        box-shadow: 0 0 0 2px rgba(88,166,255,0.15) !important;
+        background-color: #1a2a33 !important;
+        border-color: #33B5E5 !important;
+        box-shadow: 0 0 0 2px rgba(51,181,229,0.18) !important;
     }
     .stMultiSelect [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
-        background-color: #21262D !important;
-        border-color: #58A6FF !important;
+        background-color: #1a2a33 !important;
+        border-color: #33B5E5 !important;
     }
     .stTextInput input:not(:placeholder-shown),
     .stDateInput input:not(:placeholder-shown) {
-        background-color: #21262D !important;
-        border-color: #484f58 !important;
+        background-color: #1a2a33 !important;
+        border-color: #444444 !important;
     }
 }
 
@@ -462,12 +500,12 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     text-transform: uppercase;
     margin-bottom: 0.75rem;
 }
-.sb-blue   { background: var(--accent-blue-lt);   color: var(--accent-blue);   }
-.sb-green  { background: var(--accent-green-lt);  color: var(--accent-green);  }
-.sb-red    { background: var(--accent-red-lt);    color: var(--accent-red);    }
-.sb-orange { background: var(--accent-orange-lt); color: var(--accent-orange); }
-.sb-purple { background: var(--accent-purple-lt); color: var(--accent-purple); }
-.sb-teal   { background: var(--accent-teal-lt);   color: var(--accent-teal);   }
+.sb-blue   { background: var(--idu-blue-lt, #d0eef9);   color: var(--idu-blue, #00A6E1);   }
+.sb-green  { background: var(--accent-green-lt);         color: var(--accent-green);         }
+.sb-red    { background: var(--idu-red-lt, #fde8e9);     color: var(--idu-red, #ED1C24);     }
+.sb-orange { background: var(--idu-yellow-lt, #fff5d6);  color: #8a6200;                     }
+.sb-purple { background: var(--accent-purple-lt);        color: var(--accent-purple);        }
+.sb-teal   { background: var(--accent-teal-lt);          color: var(--idu-blue-dark, #0076B0); }
 
 /* ════════════════════════════════════════════
    STATUS BADGES
@@ -490,7 +528,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
    CONTRATO — HEADER Y FICHAS
    ════════════════════════════════════════════ */
 .contract-header {
-    background: linear-gradient(135deg, #002D57 0%, #004B8D 100%);
+    background: linear-gradient(135deg, #00A6E1 0%, #0076B0 100%);
     border-radius: 12px;
     padding: 1.4rem 1.8rem;
     margin-bottom: 1.2rem;
@@ -742,19 +780,33 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .presup-bar-fill.danger { background: var(--exec-critico); }
 
 /* ════════════════════════════════════════════
-   BOTON CTA (Bogota Yellow)
+   BOTONES CTA — Identidad Visual IDU
+   Acciones (guardar / PDF): Rojo Bogotá
+   Filtros / navegación:     Azul IDU
    ════════════════════════════════════════════ */
-.stApp .stButton > button[kind="primary"],
-.stApp .stFormSubmitButton > button {
+/* Botones de acción principal (type="primary") → Rojo Bogotá */
+.stApp .stButton > button[kind="primary"] {
     background-color: var(--btn-cta-bg) !important;
     color: var(--btn-cta-fg) !important;
     border: 1px solid var(--btn-cta-border) !important;
     font-weight: 700 !important;
+    font-family: 'Barlow', sans-serif !important;
 }
-.stApp .stButton > button[kind="primary"]:hover,
+.stApp .stButton > button[kind="primary"]:hover {
+    background-color: #c01019 !important;
+    border-color: #a00d14 !important;
+}
+/* Botones de formulario de filtros → Azul IDU */
+.stApp .stFormSubmitButton > button {
+    background-color: var(--btn-filter-bg) !important;
+    color: var(--btn-filter-fg) !important;
+    border: 1px solid var(--btn-filter-border) !important;
+    font-weight: 700 !important;
+    font-family: 'Barlow', sans-serif !important;
+}
 .stApp .stFormSubmitButton > button:hover {
-    background-color: var(--bogota-gold, #E6BC00) !important;
-    border-color: var(--bogota-gold, #E6BC00) !important;
+    background-color: #0090c3 !important;
+    border-color: #007aaa !important;
 }
 
 /* ════════════════════════════════════════════
@@ -777,14 +829,47 @@ details summary {
 }
 
 h1, h2, h3 {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'Montserrat', 'Barlow', sans-serif;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--idu-blue);   /* Azul IDU para todos los títulos */
 }
 h3 {
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid var(--idu-blue);
     padding-bottom: 0.5rem;
     margin-bottom: 1.1rem;
+}
+
+/* Tabs — Activa: Azul IDU / Inactiva: Gris Neutro */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    background: transparent;
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Barlow', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px 6px 0 0 !important;
+    background: var(--bg-inset) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border) !important;
+    border-bottom: none !important;
+    padding: 0.45rem 1rem !important;
+}
+.stTabs [aria-selected="true"] {
+    background: var(--idu-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--idu-blue) !important;
+}
+.stTabs [data-baseweb="tab-highlight"] { display: none !important; }
+@media (prefers-color-scheme: dark) {
+    .stTabs [data-baseweb="tab"] {
+        background: #252525 !important;
+        color: var(--text-secondary) !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: var(--idu-blue) !important;
+        color: #0d1117 !important;
+    }
 }
 
 /* ════════════════════════════════════════════

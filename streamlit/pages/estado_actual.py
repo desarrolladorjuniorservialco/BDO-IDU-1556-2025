@@ -44,11 +44,11 @@ def _timeline_html(pct: float, dias_trans: int, dias_rest: int,
     """Renderiza la barra de ejecución del plazo en HTML puro."""
     p = max(min(pct, 100.0), 0.0)
     if p > 85:
-        color = "#aa1b1b"
+        color = "#ED1C24"   # Rojo Bogotá — retraso/alerta
     elif p > 60:
-        color = "#c97a00"
+        color = "#FFC425"   # Amarillo Estelar — en proceso
     else:
-        color = "#005c4e"
+        color = "#198754"   # Verde — cumplido
 
     # Evitar desbordamiento de texto en barras muy cortas
     bar_text = f"{p:.1f}% transcurrido" if p >= 20 else f"{p:.1f}%"
@@ -169,7 +169,7 @@ def page_estado_actual() -> None:
     # ── KPIs de plazo ──────────────────────────────────────
     ct1, ct2, ct3, ct4 = st.columns(4)
     t_a = ("kpi-red"    if pct_tiempo > 85 else
-           "kpi-orange" if pct_tiempo > 60 else "kpi-green")
+           "kpi-orange" if pct_tiempo > 60 else "kpi-green")  # naranja=amarillo IDU
     t_c = ("accent-red"    if pct_tiempo > 85 else
            "accent-orange" if pct_tiempo > 60 else "accent-green")
 
