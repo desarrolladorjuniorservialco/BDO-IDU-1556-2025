@@ -32,7 +32,7 @@ def _fmt_cop(val) -> str:
         return f"${v / 1_000_000_000_000:.2f} Billones"
     # Mil millones (10^9) - Antes marcado como "B"
     if abs_v >= 1_000_000_000:
-        return f"${v / 1_000_000_000:.2f} mil MM"
+        return f"${v / 1_000_000_000:.2f} milM"
     # Millones (10^6)
     if abs_v >= 1_000_000:
         return f"${v / 1_000_000:.1f} M"
