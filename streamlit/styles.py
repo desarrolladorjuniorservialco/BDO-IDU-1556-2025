@@ -41,7 +41,7 @@ CSS = """
     --bg-app:          #EDF1F6;   /* Gris Neutro — fondo general */
     --bg-card:         #FFFFFF;   /* Blanco puro — tarjetas de contenido */
     --bg-card-hover:   #f0f7fc;
-    --bg-sidebar:      #0076B0;   /* Azul Oscuro — sidebar institucional */
+    --bg-sidebar:      #6d6d6e;   /* Sombra de azul-magenta — sidebar institucional */
     --bg-sidebar-item: rgba(255,255,255,0.08);
     --bg-inset:        #EDF1F6;
 
