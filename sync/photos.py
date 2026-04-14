@@ -112,13 +112,20 @@ def upload_photo(supabase, token, project_id, file_path, folio):
     storage_name = f"{base}.jpg"
     storage_path = f"{folio}/{storage_name}"
 
+    public_url = f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
     try:
         supabase.storage.from_(STORAGE_BUCKET).upload(
             path=storage_path,
             file=content,
             file_options={"content-type": content_type, "upsert": "true"},
         )
-        return f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
+        return public_url
     except Exception as e:
+        err_str = str(e)
+        # El archivo ya existe en Storage (Duplicate 400/409) → reutilizar la URL
+        # sin re-subir. Ocurre cuando el registro de BD fue eliminado pero el
+        # archivo en Storage sigue vigente.
+        if 'Duplicate' in err_str or 'already exists' in err_str.lower() or '"Duplicate"' in err_str:
+            return public_url
         print(f"    ⚠ Error subiendo foto: {e}")
         return None
