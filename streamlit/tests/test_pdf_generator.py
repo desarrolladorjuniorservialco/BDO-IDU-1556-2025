@@ -4,7 +4,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from datetime import date
 import pandas as pd
-import pytest
 
 from pdf_generator import _fecha_es, _collect_groups, _filter_by_group
 
@@ -18,6 +17,10 @@ def test_fecha_es_enero():
 
 def test_fecha_es_diciembre():
     assert _fecha_es(date(2024, 12, 31)) == "31 de diciembre de 2024"
+
+def test_fecha_es_datetime_object():
+    from datetime import datetime
+    assert _fecha_es(datetime(2026, 4, 14, 10, 30)) == "14 de abril de 2026"
 
 
 # ── _collect_groups ───────────────────────────────────────────
@@ -112,3 +115,13 @@ def test_filter_by_group_no_tramo_col_matches_all_dates():
     ])
     result = _filter_by_group(df, date(2026, 4, 14), 'fecha_creacion', 'T-01', '111')
     assert len(result) == 2
+
+def test_to_date_unparseable_returns_none():
+    from pdf_generator import _to_date
+    assert _to_date('not-a-date') is None
+
+def test_norm_str_nat_string():
+    from pdf_generator import _norm_str
+    assert _norm_str('NaT') == ''
+    assert _norm_str('nan') == ''
+    assert _norm_str('None') == ''

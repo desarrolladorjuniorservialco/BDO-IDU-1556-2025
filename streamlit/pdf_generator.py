@@ -523,6 +523,7 @@ def _filter_by_group(
     Filtra df por (fecha, id_tramo, civ).
     - Si date_col no existe en df, retorna DataFrame vacío.
     - Si id_tramo no existe en df, se omite ese filtro.
+      (Nombre de columna hardcodeado como 'id_tramo' y 'civ'.)
     - Si civ no existe en df, se omite ese filtro.
     """
     if df.empty or date_col not in df.columns:
