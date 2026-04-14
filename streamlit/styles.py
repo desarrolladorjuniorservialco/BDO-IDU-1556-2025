@@ -6,7 +6,7 @@ Sidebar siempre oscuro (estilo panel IDU).
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
 /* ════════════════════════════════════════════
    VARIABLES — MODO CLARO (por defecto)
@@ -14,89 +14,89 @@ CSS = """
    ════════════════════════════════════════════ */
 :root {
     /* --- Identidad Central IDU --- */
-    --idu-blue:        #00A6E1;   /* Azul IDU primario — logo, titulos, tabs activas */
-    --idu-blue-dark:   #0076B0;   /* Azul Oscuro — cabeceras de tabla, fondos panel */
-    --idu-blue-lt:     #d0eef9;   /* Azul IDU claro — fondos de badge */
-    --idu-red:         #ED1C24;   /* Rojo Bogota — botones de accion, alertas */
+    --idu-blue:        #002D57;   /* Azul Institucional Bogotá — logo, titulos, tabs activas */
+    --idu-blue-dark:   #001A33;   /* Azul Profundo — cabeceras de tabla, fondos panel */
+    --idu-blue-lt:     #E6F0F9;   /* Azul claro — fondos de badge */
+    --idu-red:         #ED1C24;   /* Rojo Bogotá — botones de accion, alertas */
     --idu-red-lt:      #fde8e9;   /* Rojo claro — fondos de alerta */
-    --idu-yellow:      #FFC425;   /* Amarillo Estelar — advertencias, iconos soporte */
-    --idu-yellow-lt:   #fff5d6;   /* Amarillo claro */
-    --idu-green:       #198754;   /* Verde cumplido — semaforo */
-    --idu-green-lt:    #d1f2dc;
+    --idu-yellow:      #FFD200;   /* Amarillo Bogotá — advertencias, iconos soporte */
+    --idu-yellow-lt:   #fff9d6;   /* Amarillo claro */
+    --idu-green:       #6D8E2D;   /* Verde IDU — acciones, semáforo cumplido */
+    --idu-green-lt:    #e2e8d5;
 
     /* --- Backward-compat aliases --- */
-    --bogota-blue-deep:  #0076B0;
-    --bogota-blue-active:#00A6E1;
-    --bogota-yellow:     #FFC425;
-    --bogota-gold:       #e6ae20;
-    --idu-navy:        #00A6E1;
-    --idu-navy-deep:   #0076B0;
-    --idu-navy-lt:     #d0eef9;
-    --idu-teal:        #198754;
-    --idu-teal-lt:     #d1f2dc;
-    --idu-amber:       #FFC425;
-    --idu-amber-lt:    #fff5d6;
+    --bogota-blue-deep:  #001A33;
+    --bogota-blue-active:#002D57;
+    --bogota-yellow:     #FFD200;
+    --bogota-gold:       #E6BC00;
+    --idu-navy:          #002D57;
+    --idu-navy-deep:     #001A33;
+    --idu-navy-lt:       #E6F0F9;
+    --idu-teal:          #6D8E2D;
+    --idu-teal-lt:       #e2e8d5;
+    --idu-amber:         #FFD200;
+    --idu-amber-lt:      #fff9d6;
 
     /* Fondos */
-    --bg-app:          #EDF1F6;   /* Gris Neutro — fondo general */
+    --bg-app:          #F3F5F7;   /* Gris Concreto — fondo general neutral */
     --bg-card:         #FFFFFF;   /* Blanco puro — tarjetas de contenido */
-    --bg-card-hover:   #f0f7fc;
-    --bg-sidebar:      #6d6d6e;   /* Sombra de azul-magenta — sidebar institucional */
-    --bg-sidebar-item: rgba(255,255,255,0.08);
-    --bg-inset:        #EDF1F6;
+    --bg-card-hover:   #F8F9FA;
+    --bg-sidebar:      #2A303C;   /* Gris Asfalto — sidebar institucional */
+    --bg-sidebar-item: rgba(255,255,255,0.05);
+    --bg-inset:        #E9ECEF;
 
     /* Bordes */
-    --border:          #D8E3ED;
-    --border-strong:   #B0BEC5;
+    --border:          #DEE2E6;
+    --border-strong:   #ADB5BD;
 
     /* Texto */
-    --text-primary:    #4D4D4D;   /* Gris Texto — lectura larga */
-    --text-secondary:  #4D4D4D;
-    --text-muted:      #7A8A99;
+    --text-primary:    #1C2129;   /* Gris Casi Negro — lectura larga */
+    --text-secondary:  #5D6A7F;   /* Gris Acero — metadatos */
+    --text-muted:      #8B949E;
     --text-sidebar:    #FFFFFF;
-    --text-sidebar-muted: #c8dff0;
+    --text-sidebar-muted: #ADB5BD;
 
     /* Acentos semanticos — mapeados a paleta IDU */
-    --accent-blue:     #00A6E1;
-    --accent-blue-lt:  #d0eef9;
-    --accent-green:    #198754;
-    --accent-green-lt: #d1f2dc;
+    --accent-blue:     #002D57;
+    --accent-blue-lt:  #E6F0F9;
+    --accent-green:    #6D8E2D;
+    --accent-green-lt: #e2e8d5;
     --accent-red:      #ED1C24;
     --accent-red-lt:   #fde8e9;
-    --accent-orange:   #FFC425;
-    --accent-orange-lt:#fff5d6;
+    --accent-orange:   #FD7E14;
+    --accent-orange-lt:#ffe5d0;
     --accent-purple:   #6f42c1;
     --accent-purple-lt:#e8dcf8;
     --accent-teal:     #0076B0;
     --accent-teal-lt:  #cce7f5;
 
     /* Semáforo de ejecución */
-    --exec-completado: #198754;   /* Verde — cumplido */
-    --exec-progreso:   #FFC425;   /* Amarillo Estelar — en proceso */
-    --exec-atrasado:   #FFC425;
+    --exec-completado: #6D8E2D;   /* Verde IDU — cumplido */
+    --exec-progreso:   #FFD200;   /* Amarillo Bogotá — en proceso */
+    --exec-atrasado:   #FD7E14;   /* Naranja industrial — alerta leve */
     --exec-critico:    #ED1C24;   /* Rojo Bogotá — retraso/alerta */
-    --exec-planeacion: #B0BEC5;
+    --exec-planeacion: #ADB5BD;
 
     /* Nav */
-    --nav-cat-color:    #c8dff0;
-    --nav-cat-hi-color: #FFC425;
-    --nav-active-bg:    rgba(0,166,225,0.15);
-    --nav-active-border:#00A6E1;
+    --nav-cat-color:    #ADB5BD;
+    --nav-cat-hi-color: #FFD200;
+    --nav-active-bg:    rgba(255,210,0,0.15);
+    --nav-active-border:#FFD200;
     --nav-active-text:  #ffffff;
-    --nav-idle-text:    #c8dff0;
+    --nav-idle-text:    #E6EDF3;
 
     /* Badges de estado */
-    --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
-    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #003d61;  /* oscurecido: 8:1 vs #d0eef9 */
-    --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
+    --badge-borrador-bg:  #E9ECEF; --badge-borrador-fg: #5D6A7F;
+    --badge-revisado-bg:  #E6F0F9; --badge-revisado-fg: #002D57;  /* Azul oscuro sobre azul claro */
+    --badge-aprobado-bg:  #e2e8d5; --badge-aprobado-fg: #2a3d11;
     --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
-    --badge-amarillo-bg:  #FFC425; --badge-amarillo-fg: #3d2800;  /* Amarillo Estelar IDU */
+    --badge-amarillo-bg:  #FFD200; --badge-amarillo-fg: #3d2800;  /* Amarillo Bogotá IDU */
 
     /* KPI */
-    --kpi-value-color:  #00A6E1;  /* Cifras grandes en Azul IDU */
+    --kpi-value-color:  #1C2129;  /* Cifras grandes en Gris Casi Negro */
 
     /* Botones */
-    --btn-approve-bg:   #198754;
+    --btn-approve-bg:   #6D8E2D;
     --btn-approve-fg:   #ffffff;
     --btn-return-bg:    #ED1C24;
     --btn-return-fg:    #ffffff;
@@ -104,16 +104,16 @@ CSS = """
     /* CTA principal (guardar, generar PDF) → Rojo Bogotá */
     --btn-cta-bg:       #ED1C24;
     --btn-cta-fg:       #ffffff;
-    --btn-cta-border:   #c01019;
+    --btn-cta-border:   #B01A1F;
 
-    /* CTA filtros / navegación → Azul IDU */
-    --btn-filter-bg:    #00A6E1;
+    /* CTA filtros / navegación → Verde IDU */
+    --btn-filter-bg:    #6D8E2D;
     --btn-filter-fg:    #ffffff;
-    --btn-filter-border:#0090c3;
+    --btn-filter-border:#567023;
 
     /* Slider — independiente de primaryColor */
-    --slider-color:     #0076B0;   /* Azul Oscuro IDU — modificar aquí para cambiar solo el slider */
-    --slider-thumb-border: #005a8a;
+    --slider-color:     #6D8E2D;   /* Verde IDU — modificar aquí para cambiar solo el slider */
+    --slider-thumb-border: #567023;
 }
 
 /* ════════════════════════════════════════════
@@ -124,104 +124,104 @@ CSS = """
 @media (prefers-color-scheme: dark) {
     :root {
         /* IDU en oscuro — versiones encendidas para buen contraste */
-        --idu-blue:        #33B5E5;   /* Azul IDU suavizado — titulos, tabs activas */
-        --idu-blue-dark:   #004B6B;   /* Cabeceras de tabla en oscuro */
+        --idu-blue:        #1F6FEB;   /* Azul Bogotá encendido — titulos, tabs activas */
+        --idu-blue-dark:   #0D2B4D;   /* Cabeceras de tabla en oscuro */
         --idu-blue-lt:     #0d2f3f;
         --idu-red:         #FF5252;   /* Rojo Bogotá vibrante — botones, alertas */
         --idu-red-lt:      #3d1010;
-        --idu-yellow:      #FFD54F;   /* Amarillo Estelar — advertencias */
+        --idu-yellow:      #FFD200;   /* Amarillo Bogotá — advertencias */
         --idu-yellow-lt:   #3d2800;
-        --idu-green:       #3fb950;
-        --idu-green-lt:    #0d2818;
+        --idu-green:       #8DB147;   /* Verde IDU claro */
+        --idu-green-lt:    #1a240b;
 
         /* Backward-compat aliases */
-        --bogota-blue-deep:  #004B6B;
-        --bogota-blue-active:#33B5E5;
-        --bogota-yellow:     #FFD54F;
-        --bogota-gold:       #e6ae20;
-        --idu-navy:        #33B5E5;
-        --idu-navy-deep:   #004B6B;
-        --idu-navy-lt:     #0d2f3f;
-        --idu-teal:        #3fb950;
-        --idu-teal-lt:     #0d2818;
-        --idu-amber:       #FFD54F;
-        --idu-amber-lt:    #3d2800;
+        --bogota-blue-deep:  #0D2B4D;
+        --bogota-blue-active:#1F6FEB;
+        --bogota-yellow:     #FFD200;
+        --bogota-gold:       #E6BC00;
+        --idu-navy:          #1F6FEB;
+        --idu-navy-deep:     #0D2B4D;
+        --idu-navy-lt:       #0d2f3f;
+        --idu-teal:          #8DB147;
+        --idu-teal-lt:       #1a240b;
+        --idu-amber:         #FFD200;
+        --idu-amber-lt:      #3d2800;
 
         /* Superficies por elevación */
-        --bg-app:          #121212;   /* Fondo aplicación */
-        --bg-card:         #1E1E1E;   /* Tarjetas/paneles */
-        --bg-card-hover:   #252525;
-        --bg-sidebar:      #0d1a22;   /* Panel lateral oscuro */
+        --bg-app:          #0B1117;   /* Fondo aplicación Deep Dark */
+        --bg-card:         #161B22;   /* Tarjetas/paneles Surface */
+        --bg-card-hover:   #21262D;
+        --bg-sidebar:      #161B22;   /* Panel lateral oscuro */
         --bg-sidebar-item: rgba(255,255,255,0.05);
-        --bg-inset:        #1E1E1E;
+        --bg-inset:        #21262D;
 
         /* Bordes sutiles */
-        --border:          #333333;
-        --border-strong:   #444444;
+        --border:          #30363D;
+        --border-strong:   #444C56;
 
         /* Texto sin deslumbramiento */
-        --text-primary:    #E0E0E0;   /* Blanco roto — texto principal */
-        --text-secondary:  #A0A0A0;   /* Gris medio — etiquetas, unidades */
-        --text-muted:      #A0A0A0;
-        --text-sidebar:    #E0E0E0;
-        --text-sidebar-muted: #A0A0A0;
+        --text-primary:    #E6EDF3;   /* Blanco roto — texto principal */
+        --text-secondary:  #8B949E;   /* Gris acero oscuro — etiquetas, unidades */
+        --text-muted:      #8B949E;
+        --text-sidebar:    #E6EDF3;
+        --text-sidebar-muted: #8B949E;
 
         /* Acentos oscuros */
-        --accent-blue:     #33B5E5;
+        --accent-blue:     #1F6FEB;
         --accent-blue-lt:  #0d2f3f;
-        --accent-green:    #3fb950;
-        --accent-green-lt: #0d2818;
+        --accent-green:    #8DB147;
+        --accent-green-lt: #1a240b;
         --accent-red:      #FF5252;
         --accent-red-lt:   #3d1010;
         --accent-orange:   #FFD54F;
         --accent-orange-lt:#3d2800;
         --accent-purple:   #bc8cff;
         --accent-purple-lt:#2d1f60;
-        --accent-teal:     #33B5E5;
+        --accent-teal:     #1F6FEB;
         --accent-teal-lt:  #0d2f3f;
 
         /* Semáforo oscuro */
-        --exec-completado: #3fb950;
-        --exec-progreso:   #FFD54F;
-        --exec-atrasado:   #FFD54F;
+        --exec-completado: #8DB147;
+        --exec-progreso:   #FFD200;
+        --exec-atrasado:   #FD7E14;
         --exec-critico:    #FF5252;
-        --exec-planeacion: #444444;
+        --exec-planeacion: #444C56;
 
         /* Nav */
-        --nav-cat-color:    #A0A0A0;
-        --nav-cat-hi-color: #FFD54F;
-        --nav-active-bg:    rgba(51,181,229,0.12);
-        --nav-active-border:#33B5E5;
-        --nav-active-text:  #E0E0E0;
-        --nav-idle-text:    #A0A0A0;
+        --nav-cat-color:    #8B949E;
+        --nav-cat-hi-color: #FFD200;
+        --nav-active-bg:    rgba(255,210,0,0.15);
+        --nav-active-border:#FFD200;
+        --nav-active-text:  #E6EDF3;
+        --nav-idle-text:    #8B949E;
 
         /* Badges */
-        --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
-        --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #7dd4f5;  /* claro sobre fondo oscuro */
-        --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
+        --badge-borrador-bg:  #21262D; --badge-borrador-fg: #8B949E;
+        --badge-revisado-bg:  #0D2B4D; --badge-revisado-fg: #7dd4f5;  /* claro sobre fondo oscuro */
+        --badge-aprobado-bg:  #1a240b; --badge-aprobado-fg: #8DB147;
         --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
-        --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD54F;
+        --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD200;
 
-        --kpi-value-color:  #33B5E5;
+        --kpi-value-color:  #E6EDF3;
 
-        --btn-approve-bg:   #3fb950;
-        --btn-approve-fg:   #0d1117;
+        --btn-approve-bg:   #8DB147;
+        --btn-approve-fg:   #0B1117;
         --btn-return-bg:    #FF5252;
-        --btn-return-fg:    #0d1117;
+        --btn-return-fg:    #0B1117;
 
         /* CTA principal oscuro → Rojo Bogotá */
         --btn-cta-bg:       #FF5252;
         --btn-cta-fg:       #ffffff;
         --btn-cta-border:   #e03030;
 
-        /* CTA filtros oscuro → Azul IDU */
-        --btn-filter-bg:    #33B5E5;
-        --btn-filter-fg:    #0d1117;
-        --btn-filter-border:#2299c5;
+        /* CTA filtros oscuro → Verde IDU */
+        --btn-filter-bg:    #8DB147;
+        --btn-filter-fg:    #0B1117;
+        --btn-filter-border:#678531;
 
         /* Slider oscuro */
-        --slider-color:     #33B5E5;
-        --slider-thumb-border: #2299c5;
+        --slider-color:     #8DB147;
+        --slider-thumb-border: #678531;
     }
 }
 
@@ -253,7 +253,7 @@ CSS = """
    BASE
    ════════════════════════════════════════════ */
 html, body, [class*="css"] {
-    font-family: 'Barlow', 'IBM Plex Sans', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     color: var(--text-primary);
 }
 .stApp { background: var(--bg-app); color: var(--text-primary); }
@@ -275,7 +275,7 @@ section[data-testid="stSidebar"] ul {
    ════════════════════════════════════════════ */
 section[data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
-    border-right: 1px solid rgba(31,111,235,0.12);
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
 section[data-testid="stSidebar"] * {
     color: var(--text-sidebar) !important;
@@ -288,7 +288,7 @@ section[data-testid="stSidebar"] .stButton > button {
     color: var(--nav-idle-text) !important;
     border: 1px solid rgba(255,255,255,0.06) !important;
     border-radius: 6px !important;
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
     text-align: left !important;
@@ -297,25 +297,25 @@ section[data-testid="stSidebar"] .stButton > button {
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(0,166,225,0.25) !important;
+    background: rgba(255,210,0,0.15) !important;
     color: #ffffff !important;
-    border-color: rgba(0,166,225,0.45) !important;
+    border-color: rgba(255,210,0,0.45) !important;
 }
 
-/* Nav item activo — Amarillo Estelar IDU como indicador de selección */
+/* Nav item activo — Amarillo Bogotá como indicador de selección */
 .nav-item-active {
     display: flex;
     align-items: center;
     gap: 8px;
-    /* Franja izquierda amarilla IDU — 4px sólido, visible sobre el azul oscuro */
-    border-left: 4px solid #FFC425;
+    /* Franja izquierda amarilla IDU — 4px sólido, visible sobre el gris asfalto */
+    border-left: 4px solid #FFD200;
     border-radius: 0 8px 8px 0;
     /* Fondo: amarillo IDU al 16% de opacidad — crea contraste sin saturar */
-    background: rgba(255, 196, 37, 0.16);
+    background: rgba(255, 210, 0, 0.16);
     padding: 0.55rem 0.85rem 0.55rem 0.8rem;
     margin-bottom: 3px;
     color: #ffffff !important;
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.87rem;
     font-weight: 700;
     width: 100%;
@@ -323,7 +323,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     letter-spacing: 0.01em;
     position: relative;
 }
-/* Punto amarillo IDU como indicador gráfico antes del nombre */
+/* Punto amarillo Bogotá como indicador gráfico antes del nombre */
 .nav-item-active::before {
     content: '';
     display: inline-block;
@@ -331,13 +331,13 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #FFC425;
-    box-shadow: 0 0 7px rgba(255,196,37,0.70);
+    background: #FFD200;
+    box-shadow: 0 0 7px rgba(255,210,0,0.70);
 }
 
 /* Categoria normal */
 .nav-cat {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.60rem;
     font-weight: 600;
     letter-spacing: 0.16em;
@@ -351,7 +351,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 
 /* Categoria destacada */
 .nav-cat-hi {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.60rem;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -365,7 +365,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 /* Chips de estado */
 .stat-row  { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .stat-chip {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.65rem;
     padding: 2px 8px;
     border-radius: 4px;
@@ -395,7 +395,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .kpi-card.accent-blue::before   { background: var(--accent-blue); }
 .kpi-card.accent-green::before  { background: var(--accent-green); }
 .kpi-card.accent-red::before    { background: var(--accent-red); }
-.kpi-card.accent-orange::before { background: #FFC425; }  /* Amarillo Estelar IDU */
+.kpi-card.accent-orange::before { background: #FFD200; }  /* Amarillo Bogotá IDU */
 .kpi-card.accent-purple::before { background: var(--accent-purple); }
 .kpi-card.accent-teal::before   { background: var(--accent-teal); }
 
@@ -405,7 +405,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     letter-spacing: 0.10em;
     color: var(--text-muted);
     margin-bottom: 0.3rem;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-weight: 500;
 }
 .kpi-value {
@@ -414,13 +414,13 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color: var(--kpi-value-color);
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 .kpi-sub {
     font-size: 0.72rem;
     color: var(--text-muted);
     margin-top: 0.15rem;
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 /* Colores de valor */
@@ -442,7 +442,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .stDateInput label, .stMultiSelect label,
 .stRadio label, .stCheckbox label {
     color: var(--text-primary) !important;
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
 }
@@ -454,7 +454,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     margin-bottom: 1rem;
 }
 .filter-form-title {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.63rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -464,13 +464,13 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     align-items: center;
     gap: 6px;
 }
-/* Bolita amarilla IDU antes del título del formulario */
+/* Bolita amarilla Bogotá antes del título del formulario */
 .filter-form-title::before {
     content: '';
     display: inline-block;
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: #FFC425;
+    background: #FFD200;
     flex-shrink: 0;
 }
 
@@ -492,8 +492,8 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stTextArea"]    textarea {
     color-scheme: light !important;   /* evita que el OS oscuro tire el fondo negro */
     background-color: #ffffff !important;
-    color: #4D4D4D !important;
-    border-color: #D8E3ED !important;
+    color: #1C2129 !important;
+    border-color: #DEE2E6 !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -502,18 +502,18 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stNumberInput"] input::placeholder,
 [data-testid="stDateInput"]   input::placeholder,
 [data-testid="stTextArea"]    textarea::placeholder {
-    color: #9aabb8 !important;
+    color: #8B949E !important;
     opacity: 1 !important;
 }
 
-/* ── Focus: borde Azul IDU + halo sutil ───────── */
+/* ── Focus: borde Verde IDU + halo sutil ───────── */
 [data-testid="stTextInput"]   input:focus,
 [data-testid="stNumberInput"] input:focus,
 [data-testid="stDateInput"]   input:focus,
 [data-testid="stTextArea"]    textarea:focus {
-    background-color: #f0f8fd !important;
-    border-color: #00A6E1 !important;
-    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
+    background-color: #F8F9FA !important;
+    border-color: #6D8E2D !important;
+    box-shadow: 0 0 0 2px rgba(109,142,45,0.18) !important;
     outline: none !important;
 }
 
@@ -522,8 +522,8 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
     color-scheme: light !important;
     background-color: #ffffff !important;
-    color: #4D4D4D !important;
-    border-color: #D8E3ED !important;
+    color: #1C2129 !important;
+    border-color: #DEE2E6 !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -532,70 +532,70 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stSelectbox"]   [data-baseweb="select"]:focus-within > div,
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div[aria-expanded="true"],
 [data-testid="stMultiSelect"] [data-baseweb="select"]:focus-within > div {
-    background-color: #f0f8fd !important;
-    border-color: #00A6E1 !important;
-    box-shadow: 0 0 0 2px rgba(0,166,225,0.18) !important;
+    background-color: #F8F9FA !important;
+    border-color: #6D8E2D !important;
+    box-shadow: 0 0 0 2px rgba(109,142,45,0.18) !important;
 }
 
 /* ── Texto dentro del trigger del selectbox ────── */
 [data-testid="stSelectbox"]   [data-baseweb="select"] span,
 [data-testid="stSelectbox"]   [data-baseweb="select"] div[class*="placeholder"],
 [data-testid="stMultiSelect"] [data-baseweb="select"] span {
-    color: #4D4D4D !important;
+    color: #1C2129 !important;
 }
 
 /* ── Dropdown (lista de opciones) ─────────────── */
 [data-baseweb="popover"] [data-baseweb="menu"],
 [data-baseweb="menu"] {
     background-color: #ffffff !important;
-    border: 1px solid #D8E3ED !important;
+    border: 1px solid #DEE2E6 !important;
     box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
     border-radius: 8px !important;
 }
 [data-baseweb="menu"] li,
 [data-baseweb="menu"] [role="option"] {
-    color: #4D4D4D !important;
+    color: #1C2129 !important;
     background-color: transparent !important;
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
     font-size: 0.88rem !important;
 }
 [data-baseweb="menu"] li:hover,
 [data-baseweb="menu"] [role="option"]:hover {
-    background-color: #d0eef9 !important;
-    color: #004a7c !important;
+    background-color: #e2e8d5 !important;
+    color: #2a3d11 !important;
 }
 [data-baseweb="menu"] [aria-selected="true"] {
-    background-color: #00A6E1 !important;
+    background-color: #6D8E2D !important;
     color: #ffffff !important;
     font-weight: 600 !important;
 }
 
 /* ── Multiselect tags (chips) ─────────────────── */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
-    background-color: #d0eef9 !important;
-    color: #004a7c !important;
+    background-color: #e2e8d5 !important;
+    color: #2a3d11 !important;
     font-weight: 700 !important;
-    border: 1px solid rgba(0,74,124,0.2) !important;
+    border: 1px solid rgba(109,142,45,0.2) !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="select"]:has([data-baseweb="tag"]) > div {
-    background-color: #f0f8fd !important;
-    border-color: #00A6E1 !important;
+    background-color: #F8F9FA !important;
+    border-color: #6D8E2D !important;
 }
 
 /* ── Checkbox ─────────────────────────────────── */
 [data-testid="stCheckbox"] label span:first-child {
-    border-color: #D8E3ED !important;
+    border-color: #DEE2E6 !important;
 }
 
 /* ════════════════════════════════════════════
-   SELECCIÓN DE TEXTO — Amarillo Estelar IDU
+   SELECCIÓN DE TEXTO — Amarillo Bogotá
    Texto seleccionado con Ctrl+A o clic-drag
    queda destacado en amarillo institucional.
    ════════════════════════════════════════════ */
 .stTextInput input::selection,
 .stTextArea textarea::selection,
 .stNumberInput input::selection {
-    background-color: #FFC425 !important;
+    background-color: #FFD200 !important;
     color: #1a1000 !important;
 }
 /* Chips/tags del multiselect — texto dentro del tag */
@@ -605,8 +605,8 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 /* Dropdown option resaltado (hover en desplegable) */
 [data-baseweb="menu"] [role="option"]:hover,
 [data-baseweb="menu"] [aria-selected="true"] {
-    background-color: var(--idu-blue-lt, #d0eef9) !important;
-    color: #004a7c !important;
+    background-color: var(--idu-green-lt, #e2e8d5) !important;
+    color: #2a3d11 !important;
 }
 
 /* ════════════════════════════════════════════
@@ -618,27 +618,27 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     gap: 6px;
     padding: 5px 16px;
     border-radius: 20px;
-    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-family: 'Montserrat', 'IBM Plex Sans', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     margin-bottom: 0.75rem;
 }
-.sb-blue   { background: var(--idu-blue-lt, #d0eef9);   color: #004a7c;  /* ratio ≈ 7:1 */ }
-.sb-green  { background: var(--accent-green-lt);         color: var(--accent-green);           }
-.sb-red    { background: var(--idu-red-lt, #fde8e9);     color: var(--idu-red, #ED1C24);       }
-.sb-orange { background: var(--idu-yellow-lt, #fff5d6);  color: #8a6200;                       }
-.sb-yellow { background: #FFC425;                        color: #3d2800;  /* Amarillo Estelar — ratio ≈ 9:1 */ }
-.sb-purple { background: var(--accent-purple-lt);        color: var(--accent-purple);           }
-.sb-teal   { background: var(--accent-teal-lt);          color: #003d61;  /* ratio ≈ 8:1 */ }
+.sb-blue   { background: var(--idu-blue-lt, #E6F0F9);  color: #002D57;  /* ratio ≈ 7:1 */ }
+.sb-green  { background: var(--accent-green-lt);       color: var(--accent-green);           }
+.sb-red    { background: var(--idu-red-lt, #fde8e9);   color: var(--idu-red, #ED1C24);       }
+.sb-orange { background: var(--idu-yellow-lt, #fff9d6);color: #8a6200;                       }
+.sb-yellow { background: #FFD200;                      color: #3d2800;  /* Amarillo Bogotá — ratio ≈ 9:1 */ }
+.sb-purple { background: var(--accent-purple-lt);      color: var(--accent-purple);           }
+.sb-teal   { background: var(--accent-teal-lt);        color: #002D57;  /* ratio ≈ 8:1 */ }
 
 /* ════════════════════════════════════════════
    STATUS BADGES
    ════════════════════════════════════════════ */
 .badge {
     display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.67rem;
     font-weight: 700;
     padding: 2px 10px;
@@ -649,24 +649,24 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .badge-revisado  { background: var(--badge-revisado-bg);  color: var(--badge-revisado-fg);  }
 .badge-aprobado  { background: var(--badge-aprobado-bg);  color: var(--badge-aprobado-fg);  }
 .badge-devuelto  { background: var(--badge-devuelto-bg);  color: var(--badge-devuelto-fg);  }
-.badge-amarillo  { background: var(--badge-amarillo-bg, #FFC425); color: var(--badge-amarillo-fg, #3d2800); }
+.badge-amarillo  { background: var(--badge-amarillo-bg, #FFD200); color: var(--badge-amarillo-fg, #3d2800); }
 
 /* ════════════════════════════════════════════
    CONTRATO — HEADER Y FICHAS
    ════════════════════════════════════════════ */
 .contract-header {
-    background: linear-gradient(135deg, #ED1C24 0%, #B01A1F 100%);
+    background: linear-gradient(180deg, #6D8E2D 0%, #465b1d 100%);
     border-radius: 12px;
     padding: 1.4rem 1.8rem;
     margin-bottom: 1.2rem;
     color: #fff;
     position: relative;
     overflow: hidden;
-    /* Franja Amarillo Estelar IDU en el borde inferior — acento institucional */
-    border-bottom: 5px solid #FFD200;
+    /* Franja Amarillo Bogotá en el borde inferior — acento institucional */
+    border-bottom: 5px solid #e6bd00;
 }
 .contract-id {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.78rem;
     font-weight: 600;
     color: rgba(255,255,255,0.55);
@@ -675,7 +675,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     margin-bottom: 0.25rem;
 }
 .contract-name {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 1.05rem;
     font-weight: 700;
     color: #fff;
@@ -689,7 +689,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 .contract-meta-item { }
 .contract-meta-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.60rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -697,7 +697,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     margin-bottom: 0.18rem;
 }
 .contract-meta-value {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     color: rgba(255,255,255,0.92);
@@ -720,14 +720,14 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     margin-bottom: 0.55rem;
 }
 .timeline-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.67rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-muted);
 }
 .timeline-pct {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-primary);
@@ -750,7 +750,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     transition: width 0.6s ease;
 }
 .timeline-bar-text {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.60rem;
     font-weight: 700;
     color: rgba(255,255,255,0.9);
@@ -762,7 +762,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     margin-top: 0.45rem;
 }
 .timeline-date-item {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.64rem;
     color: var(--text-muted);
 }
@@ -777,7 +777,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     padding: 0.9rem 1rem;
 }
 .approval-panel-title {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.66rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -790,7 +790,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     border-radius: 6px;
     padding: 0.6rem 0.8rem;
     margin-bottom: 0.6rem;
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.78rem;
     color: var(--text-secondary);
 }
@@ -803,7 +803,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 }
 .approval-history-item:last-child { border-bottom: none; }
 .approval-history-role {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.62rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -851,7 +851,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     gap: 0.5rem;
 }
 .tracking-table-title {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-primary);
@@ -859,7 +859,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     letter-spacing: 0.05em;
 }
 .tracking-table-count {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.68rem;
     color: var(--text-muted);
     background: var(--border);
@@ -876,7 +876,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     gap: 4px;
     padding: 2px 10px;
     border-radius: 20px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.66rem;
     font-weight: 600;
     background: var(--bg-inset);
@@ -911,7 +911,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 /* ════════════════════════════════════════════
    BOTONES CTA — Identidad Visual IDU
    Acciones (guardar / PDF): Rojo Bogotá
-   Filtros / navegación:     Azul IDU
+   Filtros / navegación:     Verde IDU
    ════════════════════════════════════════════ */
 /* Botones de acción principal (type="primary") → Rojo Bogotá */
 .stApp .stButton > button[kind="primary"] {
@@ -919,23 +919,23 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color: var(--btn-cta-fg) !important;
     border: 1px solid var(--btn-cta-border) !important;
     font-weight: 700 !important;
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
 }
 .stApp .stButton > button[kind="primary"]:hover {
     background-color: #c01019 !important;
     border-color: #a00d14 !important;
 }
-/* Botones de formulario de filtros → Azul IDU */
+/* Botones de formulario de filtros → Verde IDU */
 .stApp .stFormSubmitButton > button {
     background-color: var(--btn-filter-bg) !important;
     color: var(--btn-filter-fg) !important;
     border: 1px solid var(--btn-filter-border) !important;
     font-weight: 700 !important;
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
 }
 .stApp .stFormSubmitButton > button:hover {
-    background-color: #0090c3 !important;
-    border-color: #007aaa !important;
+    background-color: #567023 !important;
+    border-color: #43581c !important;
 }
 
 /* ════════════════════════════════════════════
@@ -944,7 +944,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .stDataFrame { border-radius: 8px; overflow: hidden; }
 
 .stButton > button {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 600;
     border-radius: 6px;
 }
@@ -952,15 +952,15 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 hr { border-color: var(--border); }
 
 details summary {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.84rem;
     color: var(--text-secondary);
 }
 
 h1, h2, h3 {
-    font-family: 'Montserrat', 'Barlow', sans-serif;
+    font-family: 'Montserrat', 'IBM Plex Sans', sans-serif;
     font-weight: 700;
-    color: var(--idu-blue);   /* Azul IDU para todos los títulos */
+    color: var(--idu-blue);   /* Azul Institucional para todos los títulos */
 }
 h3 {
     border-bottom: 2px solid var(--idu-blue);
@@ -968,13 +968,13 @@ h3 {
     margin-bottom: 1.1rem;
 }
 
-/* Tabs — Activa: Azul IDU / Inactiva: Gris Neutro */
+/* Tabs — Activa: Verde IDU / Inactiva: Gris Neutro */
 .stTabs [data-baseweb="tab-list"] {
     gap: 4px;
     background: transparent;
 }
 .stTabs [data-baseweb="tab"] {
-    font-family: 'Barlow', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
     border-radius: 6px 6px 0 0 !important;
@@ -985,9 +985,9 @@ h3 {
     padding: 0.45rem 1rem !important;
 }
 .stTabs [aria-selected="true"] {
-    background: var(--idu-blue) !important;
+    background: var(--idu-green) !important;
     color: #ffffff !important;
-    border-color: var(--idu-blue) !important;
+    border-color: var(--idu-green) !important;
 }
 .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 @media (prefers-color-scheme: dark) {
@@ -996,7 +996,7 @@ h3 {
         color: var(--text-secondary) !important;
     }
     .stTabs [aria-selected="true"] {
-        background: var(--idu-blue) !important;
+        background: var(--idu-green) !important;
         color: #0d1117 !important;
     }
 }
@@ -1027,7 +1027,7 @@ h3 {
     margin-bottom: 0.75rem;
 }
 .record-field-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.62rem;
     text-transform: uppercase;
     letter-spacing: 0.09em;
@@ -1035,7 +1035,7 @@ h3 {
     margin-bottom: 2px;
 }
 .record-field-value {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.90rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -1057,7 +1057,7 @@ h3 {
 }
 .acum-panel-title {
     width: 100%;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.63rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -1066,14 +1066,14 @@ h3 {
 }
 .acum-item { }
 .acum-item-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.60rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
 .acum-item-value {
-    font-family: 'Barlow', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
@@ -1089,171 +1089,171 @@ h3 {
 
 /* Forzar modo claro aunque el OS sea oscuro */
 html[data-bdo-theme="light"] {
-    --idu-blue:        #00A6E1;
-    --idu-blue-dark:   #0076B0;
-    --idu-blue-lt:     #d0eef9;
+    --idu-blue:        #002D57;
+    --idu-blue-dark:   #001A33;
+    --idu-blue-lt:     #E6F0F9;
     --idu-red:         #ED1C24;
     --idu-red-lt:      #fde8e9;
-    --idu-yellow:      #FFC425;
-    --idu-yellow-lt:   #fff5d6;
-    --idu-green:       #198754;
-    --idu-green-lt:    #d1f2dc;
-    --bogota-blue-deep:  #0076B0;
-    --bogota-blue-active:#00A6E1;
-    --bogota-yellow:     #FFC425;
-    --bogota-gold:       #e6ae20;
-    --idu-navy:        #00A6E1;
-    --idu-navy-deep:   #0076B0;
-    --idu-navy-lt:     #d0eef9;
-    --idu-teal:        #198754;
-    --idu-teal-lt:     #d1f2dc;
-    --idu-amber:       #FFC425;
-    --idu-amber-lt:    #fff5d6;
-    --bg-app:          #EDF1F6;
+    --idu-yellow:      #FFD200;
+    --idu-yellow-lt:   #fff9d6;
+    --idu-green:       #6D8E2D;
+    --idu-green-lt:    #e2e8d5;
+    --bogota-blue-deep:  #001A33;
+    --bogota-blue-active:#002D57;
+    --bogota-yellow:     #FFD200;
+    --bogota-gold:       #E6BC00;
+    --idu-navy:          #002D57;
+    --idu-navy-deep:     #001A33;
+    --idu-navy-lt:       #E6F0F9;
+    --idu-teal:          #6D8E2D;
+    --idu-teal-lt:       #e2e8d5;
+    --idu-amber:         #FFD200;
+    --idu-amber-lt:      #fff9d6;
+    --bg-app:          #F3F5F7;
     --bg-card:         #FFFFFF;
-    --bg-card-hover:   #f0f7fc;
-    --bg-sidebar:      #0076B0;
-    --bg-sidebar-item: rgba(255,255,255,0.08);
-    --bg-inset:        #EDF1F6;
-    --border:          #D8E3ED;
-    --border-strong:   #B0BEC5;
-    --text-primary:    #4D4D4D;
-    --text-secondary:  #4D4D4D;
-    --text-muted:      #7A8A99;
+    --bg-card-hover:   #F8F9FA;
+    --bg-sidebar:      #2A303C;
+    --bg-sidebar-item: rgba(255,255,255,0.05);
+    --bg-inset:        #E9ECEF;
+    --border:          #DEE2E6;
+    --border-strong:   #ADB5BD;
+    --text-primary:    #1C2129;
+    --text-secondary:  #5D6A7F;
+    --text-muted:      #8B949E;
     --text-sidebar:    #FFFFFF;
-    --text-sidebar-muted: #c8dff0;
-    --accent-blue:     #00A6E1;
-    --accent-blue-lt:  #d0eef9;
-    --accent-green:    #198754;
-    --accent-green-lt: #d1f2dc;
+    --text-sidebar-muted: #ADB5BD;
+    --accent-blue:     #002D57;
+    --accent-blue-lt:  #E6F0F9;
+    --accent-green:    #6D8E2D;
+    --accent-green-lt: #e2e8d5;
     --accent-red:      #ED1C24;
     --accent-red-lt:   #fde8e9;
-    --accent-orange:   #FFC425;
-    --accent-orange-lt:#fff5d6;
+    --accent-orange:   #FD7E14;
+    --accent-orange-lt:#ffe5d0;
     --accent-purple:   #6f42c1;
     --accent-purple-lt:#e8dcf8;
     --accent-teal:     #0076B0;
     --accent-teal-lt:  #cce7f5;
-    --exec-completado: #198754;
-    --exec-progreso:   #FFC425;
-    --exec-atrasado:   #FFC425;
+    --exec-completado: #6D8E2D;
+    --exec-progreso:   #FFD200;
+    --exec-atrasado:   #FD7E14;
     --exec-critico:    #ED1C24;
-    --exec-planeacion: #B0BEC5;
-    --nav-cat-color:    #c8dff0;
-    --nav-cat-hi-color: #FFC425;
-    --nav-active-bg:    rgba(0,166,225,0.15);
-    --nav-active-border:#00A6E1;
+    --exec-planeacion: #ADB5BD;
+    --nav-cat-color:    #ADB5BD;
+    --nav-cat-hi-color: #FFD200;
+    --nav-active-bg:    rgba(255,210,0,0.15);
+    --nav-active-border:#FFD200;
     --nav-active-text:  #ffffff;
-    --nav-idle-text:    #c8dff0;
-    --badge-borrador-bg:  #EDF1F6; --badge-borrador-fg: #4D4D4D;
-    --badge-revisado-bg:  #d0eef9; --badge-revisado-fg: #003d61;
-    --badge-aprobado-bg:  #d1f2dc; --badge-aprobado-fg: #0f5132;
+    --nav-idle-text:    #E6EDF3;
+    --badge-borrador-bg:  #E9ECEF; --badge-borrador-fg: #5D6A7F;
+    --badge-revisado-bg:  #E6F0F9; --badge-revisado-fg: #002D57;
+    --badge-aprobado-bg:  #e2e8d5; --badge-aprobado-fg: #2a3d11;
     --badge-devuelto-bg:  #fde8e9; --badge-devuelto-fg: #ED1C24;
-    --badge-amarillo-bg:  #FFC425; --badge-amarillo-fg: #3d2800;
-    --kpi-value-color:  #00A6E1;
-    --btn-approve-bg:   #198754;
+    --badge-amarillo-bg:  #FFD200; --badge-amarillo-fg: #3d2800;
+    --kpi-value-color:  #1C2129;
+    --btn-approve-bg:   #6D8E2D;
     --btn-approve-fg:   #ffffff;
     --btn-return-bg:    #ED1C24;
     --btn-return-fg:    #ffffff;
     --btn-cta-bg:       #ED1C24;
     --btn-cta-fg:       #ffffff;
-    --btn-cta-border:   #c01019;
-    --btn-filter-bg:    #00A6E1;
+    --btn-cta-border:   #B01A1F;
+    --btn-filter-bg:    #6D8E2D;
     --btn-filter-fg:    #ffffff;
-    --btn-filter-border:#0090c3;
+    --btn-filter-border:#567023;
 }
 
 /* Forzar modo oscuro aunque el OS sea claro */
 html[data-bdo-theme="dark"] {
-    --idu-blue:        #33B5E5;
-    --idu-blue-dark:   #004B6B;
+    --idu-blue:        #1F6FEB;
+    --idu-blue-dark:   #0D2B4D;
     --idu-blue-lt:     #0d2f3f;
     --idu-red:         #FF5252;
     --idu-red-lt:      #3d1010;
-    --idu-yellow:      #FFD54F;
+    --idu-yellow:      #FFD200;
     --idu-yellow-lt:   #3d2800;
-    --idu-green:       #3fb950;
-    --idu-green-lt:    #0d2818;
-    --bogota-blue-deep:  #004B6B;
-    --bogota-blue-active:#33B5E5;
-    --bogota-yellow:     #FFD54F;
-    --bogota-gold:       #e6ae20;
-    --idu-navy:        #33B5E5;
-    --idu-navy-deep:   #004B6B;
-    --idu-navy-lt:     #0d2f3f;
-    --idu-teal:        #3fb950;
-    --idu-teal-lt:     #0d2818;
-    --idu-amber:       #FFD54F;
-    --idu-amber-lt:    #3d2800;
-    --bg-app:          #121212;
-    --bg-card:         #1E1E1E;
-    --bg-card-hover:   #252525;
-    --bg-sidebar:      #0d1a22;
+    --idu-green:       #8DB147;
+    --idu-green-lt:    #1a240b;
+    --bogota-blue-deep:  #0D2B4D;
+    --bogota-blue-active:#1F6FEB;
+    --bogota-yellow:     #FFD200;
+    --bogota-gold:       #E6BC00;
+    --idu-navy:          #1F6FEB;
+    --idu-navy-deep:     #0D2B4D;
+    --idu-navy-lt:       #0d2f3f;
+    --idu-teal:          #8DB147;
+    --idu-teal-lt:       #1a240b;
+    --idu-amber:         #FFD200;
+    --idu-amber-lt:      #3d2800;
+    --bg-app:          #0B1117;
+    --bg-card:         #161B22;
+    --bg-card-hover:   #21262D;
+    --bg-sidebar:      #161B22;
     --bg-sidebar-item: rgba(255,255,255,0.05);
-    --bg-inset:        #1E1E1E;
-    --border:          #333333;
-    --border-strong:   #444444;
-    --text-primary:    #E0E0E0;
-    --text-secondary:  #A0A0A0;
-    --text-muted:      #A0A0A0;
-    --text-sidebar:    #E0E0E0;
-    --text-sidebar-muted: #A0A0A0;
-    --accent-blue:     #33B5E5;
+    --bg-inset:        #21262D;
+    --border:          #30363D;
+    --border-strong:   #444C56;
+    --text-primary:    #E6EDF3;
+    --text-secondary:  #8B949E;
+    --text-muted:      #8B949E;
+    --text-sidebar:    #E6EDF3;
+    --text-sidebar-muted: #8B949E;
+    --accent-blue:     #1F6FEB;
     --accent-blue-lt:  #0d2f3f;
-    --accent-green:    #3fb950;
-    --accent-green-lt: #0d2818;
+    --accent-green:    #8DB147;
+    --accent-green-lt: #1a240b;
     --accent-red:      #FF5252;
     --accent-red-lt:   #3d1010;
     --accent-orange:   #FFD54F;
     --accent-orange-lt:#3d2800;
     --accent-purple:   #bc8cff;
     --accent-purple-lt:#2d1f60;
-    --accent-teal:     #33B5E5;
+    --accent-teal:     #1F6FEB;
     --accent-teal-lt:  #0d2f3f;
-    --exec-completado: #3fb950;
-    --exec-progreso:   #FFD54F;
-    --exec-atrasado:   #FFD54F;
+    --exec-completado: #8DB147;
+    --exec-progreso:   #FFD200;
+    --exec-atrasado:   #FD7E14;
     --exec-critico:    #FF5252;
-    --exec-planeacion: #444444;
-    --nav-cat-color:    #A0A0A0;
-    --nav-cat-hi-color: #FFD54F;
-    --nav-active-bg:    rgba(51,181,229,0.12);
-    --nav-active-border:#33B5E5;
-    --nav-active-text:  #E0E0E0;
-    --nav-idle-text:    #A0A0A0;
-    --badge-borrador-bg:  #252525; --badge-borrador-fg: #A0A0A0;
-    --badge-revisado-bg:  #0d2f3f; --badge-revisado-fg: #7dd4f5;  /* claro sobre oscuro */
-    --badge-aprobado-bg:  #0d2818; --badge-aprobado-fg: #3fb950;
+    --exec-planeacion: #444C56;
+    --nav-cat-color:    #8B949E;
+    --nav-cat-hi-color: #FFD200;
+    --nav-active-bg:    rgba(255,210,0,0.15);
+    --nav-active-border:#FFD200;
+    --nav-active-text:  #E6EDF3;
+    --nav-idle-text:    #8B949E;
+    --badge-borrador-bg:  #21262D; --badge-borrador-fg: #8B949E;
+    --badge-revisado-bg:  #0D2B4D; --badge-revisado-fg: #7dd4f5;  /* claro sobre oscuro */
+    --badge-aprobado-bg:  #1a240b; --badge-aprobado-fg: #8DB147;
     --badge-devuelto-bg:  #3d1010; --badge-devuelto-fg: #FF5252;
-    --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD54F;  /* amarillo sobre oscuro */
-    --kpi-value-color:  #33B5E5;
-    --btn-approve-bg:   #3fb950;
-    --btn-approve-fg:   #0d1117;
+    --badge-amarillo-bg:  #3d2800; --badge-amarillo-fg: #FFD200;  /* amarillo sobre oscuro */
+    --kpi-value-color:  #E6EDF3;
+    --btn-approve-bg:   #8DB147;
+    --btn-approve-fg:   #0B1117;
     --btn-return-bg:    #FF5252;
-    --btn-return-fg:    #0d1117;
+    --btn-return-fg:    #0B1117;
     --btn-cta-bg:       #FF5252;
     --btn-cta-fg:       #ffffff;
     --btn-cta-border:   #e03030;
-    --btn-filter-bg:    #33B5E5;
-    --btn-filter-fg:    #0d1117;
-    --btn-filter-border:#2299c5;
+    --btn-filter-bg:    #8DB147;
+    --btn-filter-fg:    #0B1117;
+    --btn-filter-border:#678531;
 }
 
 /* Tabs dark override (también por data-bdo-theme) */
 html[data-bdo-theme="dark"] .stTabs [data-baseweb="tab"] {
     background: #252525 !important;
-    color: #A0A0A0 !important;
+    color: #8B949E !important;
 }
 html[data-bdo-theme="dark"] .stTabs [aria-selected="true"] {
-    background: #33B5E5 !important;
-    color: #0d1117 !important;
+    background: #8DB147 !important;
+    color: #0B1117 !important;
 }
 html[data-bdo-theme="light"] .stTabs [data-baseweb="tab"] {
     background: var(--bg-inset) !important;
     color: var(--text-primary) !important;
 }
 html[data-bdo-theme="light"] .stTabs [aria-selected="true"] {
-    background: #00A6E1 !important;
+    background: #6D8E2D !important;
     color: #ffffff !important;
 }
 </style>
@@ -1267,79 +1267,79 @@ html[data-bdo-theme="light"] .stTabs [aria-selected="true"] {
 # el CSS personalizado con el tema real de Streamlit (incluido el toggle UI).
 
 _LIGHT_ROOT_VARS = """
-    --idu-blue:#00A6E1; --idu-blue-dark:#0076B0; --idu-blue-lt:#d0eef9;
+    --idu-blue:#002D57; --idu-blue-dark:#001A33; --idu-blue-lt:#E6F0F9;
     --idu-red:#ED1C24; --idu-red-lt:#fde8e9;
-    --idu-yellow:#FFC425; --idu-yellow-lt:#fff5d6;
-    --idu-green:#198754; --idu-green-lt:#d1f2dc;
-    --bogota-blue-deep:#0076B0; --bogota-blue-active:#00A6E1;
-    --bogota-yellow:#FFC425; --bogota-gold:#e6ae20;
-    --idu-navy:#00A6E1; --idu-navy-deep:#0076B0; --idu-navy-lt:#d0eef9;
-    --idu-teal:#198754; --idu-teal-lt:#d1f2dc;
-    --idu-amber:#FFC425; --idu-amber-lt:#fff5d6;
-    --bg-app:#F8F9FA; --bg-card:#FFFFFF; --bg-card-hover:#f0f7fc;
-    --bg-sidebar:#3C4043; --bg-sidebar-item:#4F5256; --bg-inset:#EDF1F6;
-    --border:#D8E3ED; --border-strong:#B0BEC5;
-    --text-primary:#4D4D4D; --text-secondary:#4D4D4D; --text-muted:#7A8A99;
-    --text-sidebar:#FFFFFF; --text-sidebar-muted:#c8dff0;
-    --accent-blue:#00A6E1; --accent-blue-lt:#d0eef9;
-    --accent-green:#198754; --accent-green-lt:#d1f2dc;
+    --idu-yellow:#FFD200; --idu-yellow-lt:#fff9d6;
+    --idu-green:#6D8E2D; --idu-green-lt:#e2e8d5;
+    --bogota-blue-deep:#001A33; --bogota-blue-active:#002D57;
+    --bogota-yellow:#FFD200; --bogota-gold:#E6BC00;
+    --idu-navy:#002D57; --idu-navy-deep:#001A33; --idu-navy-lt:#E6F0F9;
+    --idu-teal:#6D8E2D; --idu-teal-lt:#e2e8d5;
+    --idu-amber:#FFD200; --idu-amber-lt:#fff9d6;
+    --bg-app:#F3F5F7; --bg-card:#FFFFFF; --bg-card-hover:#F8F9FA;
+    --bg-sidebar:#2A303C; --bg-sidebar-item:rgba(255,255,255,0.05); --bg-inset:#E9ECEF;
+    --border:#DEE2E6; --border-strong:#ADB5BD;
+    --text-primary:#1C2129; --text-secondary:#5D6A7F; --text-muted:#8B949E;
+    --text-sidebar:#FFFFFF; --text-sidebar-muted:#ADB5BD;
+    --accent-blue:#002D57; --accent-blue-lt:#E6F0F9;
+    --accent-green:#6D8E2D; --accent-green-lt:#e2e8d5;
     --accent-red:#ED1C24; --accent-red-lt:#fde8e9;
-    --accent-orange:#FFC425; --accent-orange-lt:#fff5d6;
+    --accent-orange:#FD7E14; --accent-orange-lt:#ffe5d0;
     --accent-purple:#6f42c1; --accent-purple-lt:#e8dcf8;
     --accent-teal:#0076B0; --accent-teal-lt:#cce7f5;
-    --exec-completado:#198754; --exec-progreso:#FFC425;
-    --exec-atrasado:#FFC425; --exec-critico:#ED1C24; --exec-planeacion:#B0BEC5;
-    --nav-cat-color:#c8dff0; --nav-cat-hi-color:#FFC425;
-    --nav-active-bg:rgba(0,166,225,0.15); --nav-active-border:#00A6E1;
-    --nav-active-text:#ffffff; --nav-idle-text:#c8dff0;
-    --badge-borrador-bg:#EDF1F6; --badge-borrador-fg:#4D4D4D;
-    --badge-revisado-bg:#d0eef9; --badge-revisado-fg:#003d61;
-    --badge-aprobado-bg:#d1f2dc; --badge-aprobado-fg:#0f5132;
+    --exec-completado:#6D8E2D; --exec-progreso:#FFD200;
+    --exec-atrasado:#FD7E14; --exec-critico:#ED1C24; --exec-planeacion:#ADB5BD;
+    --nav-cat-color:#ADB5BD; --nav-cat-hi-color:#FFD200;
+    --nav-active-bg:rgba(255,210,0,0.15); --nav-active-border:#FFD200;
+    --nav-active-text:#ffffff; --nav-idle-text:#E6EDF3;
+    --badge-borrador-bg:#E9ECEF; --badge-borrador-fg:#5D6A7F;
+    --badge-revisado-bg:#E6F0F9; --badge-revisado-fg:#002D57;
+    --badge-aprobado-bg:#e2e8d5; --badge-aprobado-fg:#2a3d11;
     --badge-devuelto-bg:#fde8e9; --badge-devuelto-fg:#ED1C24;
-    --badge-amarillo-bg:#FFC425; --badge-amarillo-fg:#3d2800;
-    --kpi-value-color:#00A6E1;
-    --btn-approve-bg:#198754; --btn-approve-fg:#ffffff;
+    --badge-amarillo-bg:#FFD200; --badge-amarillo-fg:#3d2800;
+    --kpi-value-color:#1C2129;
+    --btn-approve-bg:#6D8E2D; --btn-approve-fg:#ffffff;
     --btn-return-bg:#ED1C24; --btn-return-fg:#ffffff;
-    --btn-cta-bg:#ED1C24; --btn-cta-fg:#ffffff; --btn-cta-border:#c01019;
-    --btn-filter-bg:#00A6E1; --btn-filter-fg:#ffffff; --btn-filter-border:#0090c3;
+    --btn-cta-bg:#ED1C24; --btn-cta-fg:#ffffff; --btn-cta-border:#B01A1F;
+    --btn-filter-bg:#6D8E2D; --btn-filter-fg:#ffffff; --btn-filter-border:#567023;
 """
 
 _DARK_ROOT_VARS = """
-    --idu-blue:#33B5E5; --idu-blue-dark:#004B6B; --idu-blue-lt:#0d2f3f;
+    --idu-blue:#1F6FEB; --idu-blue-dark:#0D2B4D; --idu-blue-lt:#0d2f3f;
     --idu-red:#FF5252; --idu-red-lt:#3d1010;
-    --idu-yellow:#FFD54F; --idu-yellow-lt:#3d2800;
-    --idu-green:#3fb950; --idu-green-lt:#0d2818;
-    --bogota-blue-deep:#004B6B; --bogota-blue-active:#33B5E5;
-    --bogota-yellow:#FFD54F; --bogota-gold:#e6ae20;
-    --idu-navy:#33B5E5; --idu-navy-deep:#004B6B; --idu-navy-lt:#0d2f3f;
-    --idu-teal:#3fb950; --idu-teal-lt:#0d2818;
-    --idu-amber:#FFD54F; --idu-amber-lt:#3d2800;
-    --bg-app:#121212; --bg-card:#1E1E1E; --bg-card-hover:#252525;
-    --bg-sidebar:#0d1a22; --bg-sidebar-item:rgba(255,255,255,0.05); --bg-inset:#1E1E1E;
-    --border:#333333; --border-strong:#444444;
-    --text-primary:#E0E0E0; --text-secondary:#A0A0A0; --text-muted:#A0A0A0;
-    --text-sidebar:#E0E0E0; --text-sidebar-muted:#A0A0A0;
-    --accent-blue:#33B5E5; --accent-blue-lt:#0d2f3f;
-    --accent-green:#3fb950; --accent-green-lt:#0d2818;
+    --idu-yellow:#FFD200; --idu-yellow-lt:#3d2800;
+    --idu-green:#8DB147; --idu-green-lt:#1a240b;
+    --bogota-blue-deep:#0D2B4D; --bogota-blue-active:#1F6FEB;
+    --bogota-yellow:#FFD200; --bogota-gold:#E6BC00;
+    --idu-navy:#1F6FEB; --idu-navy-deep:#0D2B4D; --idu-navy-lt:#0d2f3f;
+    --idu-teal:#8DB147; --idu-teal-lt:#1a240b;
+    --idu-amber:#FFD200; --idu-amber-lt:#3d2800;
+    --bg-app:#0B1117; --bg-card:#161B22; --bg-card-hover:#21262D;
+    --bg-sidebar:#161B22; --bg-sidebar-item:rgba(255,255,255,0.05); --bg-inset:#21262D;
+    --border:#30363D; --border-strong:#444C56;
+    --text-primary:#E6EDF3; --text-secondary:#8B949E; --text-muted:#8B949E;
+    --text-sidebar:#E6EDF3; --text-sidebar-muted:#8B949E;
+    --accent-blue:#1F6FEB; --accent-blue-lt:#0d2f3f;
+    --accent-green:#8DB147; --accent-green-lt:#1a240b;
     --accent-red:#FF5252; --accent-red-lt:#3d1010;
     --accent-orange:#FFD54F; --accent-orange-lt:#3d2800;
     --accent-purple:#bc8cff; --accent-purple-lt:#2d1f60;
-    --accent-teal:#33B5E5; --accent-teal-lt:#0d2f3f;
-    --exec-completado:#3fb950; --exec-progreso:#FFD54F;
-    --exec-atrasado:#FFD54F; --exec-critico:#FF5252; --exec-planeacion:#444444;
-    --nav-cat-color:#A0A0A0; --nav-cat-hi-color:#FFD54F;
-    --nav-active-bg:rgba(51,181,229,0.12); --nav-active-border:#33B5E5;
-    --nav-active-text:#E0E0E0; --nav-idle-text:#A0A0A0;
-    --badge-borrador-bg:#252525; --badge-borrador-fg:#A0A0A0;
-    --badge-revisado-bg:#0d2f3f; --badge-revisado-fg:#7dd4f5;
-    --badge-aprobado-bg:#0d2818; --badge-aprobado-fg:#3fb950;
+    --accent-teal:#1F6FEB; --accent-teal-lt:#0d2f3f;
+    --exec-completado:#8DB147; --exec-progreso:#FFD200;
+    --exec-atrasado:#FD7E14; --exec-critico:#FF5252; --exec-planeacion:#444C56;
+    --nav-cat-color:#8B949E; --nav-cat-hi-color:#FFD200;
+    --nav-active-bg:rgba(255,210,0,0.15); --nav-active-border:#FFD200;
+    --nav-active-text:#E6EDF3; --nav-idle-text:#8B949E;
+    --badge-borrador-bg:#21262D; --badge-borrador-fg:#8B949E;
+    --badge-revisado-bg:#0D2B4D; --badge-revisado-fg:#7dd4f5;
+    --badge-aprobado-bg:#1a240b; --badge-aprobado-fg:#8DB147;
     --badge-devuelto-bg:#3d1010; --badge-devuelto-fg:#FF5252;
-    --badge-amarillo-bg:#3d2800; --badge-amarillo-fg:#FFD54F;
-    --kpi-value-color:#33B5E5;
-    --btn-approve-bg:#3fb950; --btn-approve-fg:#0d1117;
-    --btn-return-bg:#FF5252; --btn-return-fg:#0d1117;
+    --badge-amarillo-bg:#3d2800; --badge-amarillo-fg:#FFD200;
+    --kpi-value-color:#E6EDF3;
+    --btn-approve-bg:#8DB147; --btn-approve-fg:#0B1117;
+    --btn-return-bg:#FF5252; --btn-return-fg:#0B1117;
     --btn-cta-bg:#FF5252; --btn-cta-fg:#ffffff; --btn-cta-border:#e03030;
-    --btn-filter-bg:#33B5E5; --btn-filter-fg:#0d1117; --btn-filter-border:#2299c5;
+    --btn-filter-bg:#8DB147; --btn-filter-fg:#0B1117; --btn-filter-border:#678531;
 """
 
 # Bloques completos listos para inyectar con st.markdown(unsafe_allow_html=True).
