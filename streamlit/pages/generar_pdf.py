@@ -276,8 +276,12 @@ def page_generar_pdf(perfil: dict) -> None:
                     use_container_width=True,
                 )
             else:
-                st.error("No se pudo generar el PDF. Verifica que reportlab esté instalado:")
-                st.code("pip install reportlab", language="bash")
+                st.error(
+                    "No se pudo generar el PDF. "
+                    "El error detallado queda en los logs del servidor. "
+                    "Causas comunes: registros con datos inconsistentes, "
+                    "fotos con URL no accesible, o error interno de ReportLab."
+                )
 
         # ── CSV ────────────────────────────────────────────
         elif formato == "CSV":

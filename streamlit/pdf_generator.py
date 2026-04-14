@@ -379,8 +379,12 @@ def generate_pdf_bitacora(
         )
         canvas.restoreState()
 
-    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
-    return buf.getvalue()
+    try:
+        doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
+        return buf.getvalue()
+    except Exception:
+        _log.exception("Error al construir el PDF (doc.build falló)")
+        return None
 
 
 # ══════════════════════════════════════════════════════════════

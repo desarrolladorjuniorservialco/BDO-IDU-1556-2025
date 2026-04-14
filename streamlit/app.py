@@ -18,10 +18,9 @@ import inspect
 import logging
 
 import streamlit as st
-import streamlit.components.v1 as _components
 
 # ── Infraestructura ────────────────────────────────────────
-from styles  import CSS, THEME_SYNC_JS
+from styles  import CSS, CSS_LIGHT_OVERRIDE, CSS_DARK_OVERRIDE
 from auth    import login
 from sidebar import sidebar
 from config  import NAV_ACCESS
@@ -55,10 +54,16 @@ st.set_page_config(
 
 st.markdown(CSS, unsafe_allow_html=True)
 
-# Sincronizar tema real de Streamlit con data-bdo-theme en <html>
-# para que el CSS pueda responder al toggle interno (oscuro/claro)
-# independientemente de la configuración del sistema operativo.
-_components.html(THEME_SYNC_JS, height=0, scrolling=False)
+# Inyectar override de variables CSS según el tema activo de Streamlit.
+# Al insertarse DESPUÉS del CSS principal, el :root posterior gana en cascada
+# sobre el @media prefers-color-scheme — sin JS ni iframes.
+# st.get_option("theme.base") devuelve el tema activo de la sesión actual
+# (incluye el valor del toggle UI del usuario, no solo config.toml).
+_active_theme = st.get_option("theme.base") or "light"
+st.markdown(
+    CSS_DARK_OVERRIDE if _active_theme == "dark" else CSS_LIGHT_OVERRIDE,
+    unsafe_allow_html=True,
+)
 
 
 # ══════════════════════════════════════════════════════════════
