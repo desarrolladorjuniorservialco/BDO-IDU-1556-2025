@@ -579,3 +579,111 @@ def _collect_groups(
 
     return sorted(tuples)
 
+
+def _format_clima(folio: str, df_clima: pd.DataFrame) -> str:
+    """
+    Formatea condición climática de un folio.
+    Retorna p.ej. '08:00 Soleado, 14:00 Nublado' o '' si no hay datos.
+    """
+    if df_clima.empty or 'folio' not in df_clima.columns:
+        return ''
+    sub = df_clima[df_clima['folio'].astype(str) == folio]
+    if sub.empty:
+        return ''
+    parts = []
+    for _, r in sub.iterrows():
+        hora   = _norm_str(r.get('hora', ''))[:5]
+        estado = _norm_str(r.get('estado_clima', ''))
+        if estado:
+            parts.append(f"{hora} {estado}".strip())
+    return ', '.join(parts)
+
+
+def _format_personal(folio: str, df_personal: pd.DataFrame) -> str:
+    """
+    Formatea personal de obra de un folio.
+    Retorna p.ej. 'Inspectores: 2, Operativo: 5' o '' si todo es cero.
+    """
+    if df_personal.empty or 'folio' not in df_personal.columns:
+        return ''
+    sub = df_personal[df_personal['folio'].astype(str) == folio]
+    if sub.empty:
+        return ''
+    CAMPOS = [
+        ('inspectores',        'Inspectores'),
+        ('personal_operativo', 'Operativo'),
+        ('personal_boal',      'BOAL'),
+        ('personal_transito',  'Tránsito'),
+    ]
+    parts = []
+    for row_idx in range(len(sub)):
+        r = sub.iloc[row_idx]
+        for col, label in CAMPOS:
+            v = int(r.get(col, 0) or 0)
+            if v:
+                parts.append(f"{label}: {v}")
+    return ', '.join(parts)
+
+
+def _format_maquinaria(folio: str, df_maquinaria: pd.DataFrame) -> str:
+    """
+    Formatea maquinaria en obra de un folio.
+    Retorna columnas no nulas/cero o '' si todo es cero.
+    """
+    if df_maquinaria.empty or 'folio' not in df_maquinaria.columns:
+        return ''
+    sub = df_maquinaria[df_maquinaria['folio'].astype(str) == folio]
+    if sub.empty:
+        return ''
+    CAMPOS = [
+        ('operarios',            'Operarios'),
+        ('volquetas',            'Volquetas'),
+        ('vibrocompactador',     'Vibrocompactador'),
+        ('minicargador',         'Minicargador'),
+        ('ruteadora',            'Ruteadora'),
+        ('compresor',            'Compresor'),
+        ('retrocargador',        'Retrocargador'),
+        ('extendedora_asfalto',  'Extendedora'),
+        ('compactador_neumatico','Compactador neum.'),
+        ('equipos_especiales',   'Equipos esp.'),
+    ]
+    parts = []
+    for row_idx in range(len(sub)):
+        r = sub.iloc[row_idx]
+        for col, label in CAMPOS:
+            if col not in r.index:
+                continue
+            v = int(r.get(col, 0) or 0)
+            if v:
+                parts.append(f"{label}: {v}")
+    return ', '.join(parts)
+
+
+def _format_sst(folio: str, df_sst: pd.DataFrame) -> str:
+    """
+    Formatea datos SST/Ambiental de un folio.
+    Retorna columnas no nulas/cero o '' si todo es cero.
+    """
+    if df_sst.empty or 'folio' not in df_sst.columns:
+        return ''
+    sub = df_sst[df_sst['folio'].astype(str) == folio]
+    if sub.empty:
+        return ''
+    CAMPOS = [
+        ('botiquin',          'Botiquin'),
+        ('kit_antiderrames',  'Kit antiderrames'),
+        ('punto_hidratacion', 'Punto hidratación'),
+        ('punto_ecologico',   'Punto ecológico'),
+        ('extintor',          'Extintor'),
+    ]
+    parts = []
+    for row_idx in range(len(sub)):
+        r = sub.iloc[row_idx]
+        for col, label in CAMPOS:
+            if col not in r.index:
+                continue
+            v = int(r.get(col, 0) or 0)
+            if v:
+                parts.append(f"{label}: {v}")
+    return ', '.join(parts)
+

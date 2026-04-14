@@ -125,3 +125,90 @@ def test_norm_str_nat_string():
     assert _norm_str('NaT') == ''
     assert _norm_str('nan') == ''
     assert _norm_str('None') == ''
+
+
+# ── _format_clima ─────────────────────────────────────────────
+def test_format_clima_empty():
+    from pdf_generator import _format_clima
+    assert _format_clima('F001', pd.DataFrame()) == ''
+
+def test_format_clima_single():
+    from pdf_generator import _format_clima
+    df = pd.DataFrame([{'folio': 'F001', 'hora': '08:00', 'estado_clima': 'Soleado'}])
+    assert _format_clima('F001', df) == '08:00 Soleado'
+
+def test_format_clima_multiple():
+    from pdf_generator import _format_clima
+    df = pd.DataFrame([
+        {'folio': 'F001', 'hora': '08:00', 'estado_clima': 'Soleado'},
+        {'folio': 'F001', 'hora': '14:00', 'estado_clima': 'Nublado'},
+    ])
+    result = _format_clima('F001', df)
+    assert '08:00 Soleado' in result
+    assert '14:00 Nublado' in result
+
+def test_format_clima_other_folio_ignored():
+    from pdf_generator import _format_clima
+    df = pd.DataFrame([{'folio': 'F002', 'hora': '08:00', 'estado_clima': 'Soleado'}])
+    assert _format_clima('F001', df) == ''
+
+
+# ── _format_personal ──────────────────────────────────────────
+def test_format_personal_empty():
+    from pdf_generator import _format_personal
+    assert _format_personal('F001', pd.DataFrame()) == ''
+
+def test_format_personal_all_zero():
+    from pdf_generator import _format_personal
+    df = pd.DataFrame([{
+        'folio': 'F001',
+        'inspectores': 0, 'personal_operativo': 0,
+        'personal_boal': 0, 'personal_transito': 0,
+    }])
+    assert _format_personal('F001', df) == ''
+
+def test_format_personal_nonzero():
+    from pdf_generator import _format_personal
+    df = pd.DataFrame([{
+        'folio': 'F001',
+        'inspectores': 2, 'personal_operativo': 5,
+        'personal_boal': 0, 'personal_transito': 0,
+    }])
+    result = _format_personal('F001', df)
+    assert 'Inspectores: 2' in result
+    assert 'Operativo: 5' in result
+    assert 'BOAL' not in result
+
+
+# ── _format_maquinaria ────────────────────────────────────────
+def test_format_maquinaria_empty():
+    from pdf_generator import _format_maquinaria
+    assert _format_maquinaria('F001', pd.DataFrame()) == ''
+
+def test_format_maquinaria_nonzero():
+    from pdf_generator import _format_maquinaria
+    df = pd.DataFrame([{
+        'folio': 'F001', 'volquetas': 3, 'vibrocompactador': 0,
+        'operarios': 0, 'minicargador': 1,
+    }])
+    result = _format_maquinaria('F001', df)
+    assert 'Volquetas: 3' in result
+    assert 'Minicargador: 1' in result
+    assert 'Vibrocompactador' not in result
+
+
+# ── _format_sst ───────────────────────────────────────────────
+def test_format_sst_empty():
+    from pdf_generator import _format_sst
+    assert _format_sst('F001', pd.DataFrame()) == ''
+
+def test_format_sst_nonzero():
+    from pdf_generator import _format_sst
+    df = pd.DataFrame([{
+        'folio': 'F001', 'botiquin': 1, 'extintor': 2,
+        'kit_antiderrames': 0, 'punto_hidratacion': 0, 'punto_ecologico': 0,
+    }])
+    result = _format_sst('F001', df)
+    assert 'Botiquin: 1' in result
+    assert 'Extintor: 2' in result
+    assert 'Kit' not in result
