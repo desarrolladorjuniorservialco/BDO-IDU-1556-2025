@@ -254,17 +254,20 @@ def generate_pdf_bitacora(
     )
     border_color = C_IDU_RED if alerta else C_BORDER
 
-    obs_data = [[Paragraph(obs_text, S['obs'])]]
-    obs_tbl  = Table(obs_data, colWidths=[W])
-    obs_tbl.setStyle(TableStyle([
-        ('BOX',          (0, 0), (-1, -1), 1.2, border_color),
-        ('BACKGROUND',   (0, 0), (-1, -1), C_WHITE),
-        ('LEFTPADDING',  (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING',   (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING',(0, 0), (-1, -1), 60),   # espacio narrativo amplio
-    ]))
-    story.append(obs_tbl)
+    # Usar Paragraph directo (sin Table) para que el texto pueda paginar
+    # si las observaciones son muy largas.
+    story.append(HRFlowable(width=W, thickness=1.2, color=border_color))
+    obs_style = ParagraphStyle(
+        'obs_block', parent=S['obs'],
+        leftIndent=10, rightIndent=10,
+        spaceBefore=6, spaceAfter=6,
+        backColor=C_WHITE,
+    )
+    for linea in obs_text.split(' | '):
+        linea = linea.strip()
+        if linea:
+            story.append(Paragraph(linea, obs_style))
+    story.append(HRFlowable(width=W, thickness=0.5, color=border_color))
     story.append(Spacer(1, 0.3 * cm))
 
     # ══════════════════════════════════════════════════════
