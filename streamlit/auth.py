@@ -154,7 +154,7 @@ def login() -> None:
             <div style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem;
                         letter-spacing:0.16em; color:var(--accent-blue);
                         text-transform:uppercase; margin-bottom:0.3rem;">
-                Sistema de Bitácora Digital
+                BOB - Sistema de Bitácora Digital
             </div>
             <div style="font-size:1.85rem; font-weight:700; color:var(--text-primary);
                         margin-bottom:0.1rem; font-family:'IBM Plex Sans',sans-serif;">
