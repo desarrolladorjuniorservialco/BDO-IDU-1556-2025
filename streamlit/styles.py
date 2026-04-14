@@ -655,7 +655,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
    CONTRATO — HEADER Y FICHAS
    ════════════════════════════════════════════ */
 .contract-header {
-    background: linear-gradient(135deg, #00A6E1 0%, #0076B0 100%);
+    background: linear-gradient(135deg, #ED1C24 0%, #B01A1F 100%);
     border-radius: 12px;
     padding: 1.4rem 1.8rem;
     margin-bottom: 1.2rem;
@@ -663,7 +663,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     position: relative;
     overflow: hidden;
     /* Franja Amarillo Estelar IDU en el borde inferior — acento institucional */
-    border-bottom: 4px solid #FFC425;
+    border-bottom: 5px solid #FFD200;
 }
 .contract-id {
     font-family: 'JetBrains Mono', monospace;
