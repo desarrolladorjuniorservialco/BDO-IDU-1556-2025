@@ -12,7 +12,7 @@ Comparado con la versión anterior:
   Antes : N foto-compressions + N upload-attempts + N SELECT individuales
   Ahora : 1 SELECT batch + K foto-compressions + K INSERTs  (K = registros nuevos)
 """
-
+#sync
 from .utils import safe
 from .gpkg import download_gpkg, read_layer
 from .photos import upload_photo
