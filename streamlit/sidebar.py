@@ -56,7 +56,7 @@ def sidebar(perfil: dict) -> str:
                 f"""
                 <div class="stat-row">
                     <span class="stat-chip"
-                          style="background:rgba(255,255,255,0.06);color:#8b949e;">
+                          style="background:rgba(109,109,110);color:#6d6d6e;">
                         {total} total
                     </span>
                     <span class="stat-chip"
