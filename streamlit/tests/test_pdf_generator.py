@@ -75,6 +75,14 @@ def test_collect_groups_merges_all_tables():
     assert '222' in civs
     assert '333' in civs
 
+def test_collect_groups_diario_fecha_fallback():
+    """df_diario con columna 'fecha' en lugar de 'fecha_reporte' debe funcionar."""
+    df_diario = pd.DataFrame([{
+        'fecha': '2026-04-14', 'id_tramo': 'T-01', 'civ': '444',
+    }])
+    result = _collect_groups(pd.DataFrame(), pd.DataFrame(), df_diario)
+    assert result == [(date(2026, 4, 14), 'T-01', '444')]
+
 
 # ── _filter_by_group ──────────────────────────────────────────
 def test_filter_by_group_basic():
