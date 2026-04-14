@@ -75,7 +75,7 @@ def build_photo_urls(token, project_id, path_raw):
         f'{BASE_URL}/files/{project_id}/files/{encoded}/',
         f'{BASE_URL}/files/{project_id}/{encoded}/',
     ]
-
+#photos
 
 # ── función principal ───────────────────────────────────────────────────────
 
