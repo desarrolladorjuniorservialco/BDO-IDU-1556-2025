@@ -379,3 +379,61 @@ def test_build_quantities_table_merges_comp():
         pd.DataFrame(), df_comp,
     )
     assert isinstance(result, Table)
+
+
+from pdf_generator import generate_pdf_bitacora
+from datetime import date
+
+
+def _make_datos(with_diario=True, with_cant=True):
+    datos = {
+        'cantidades': pd.DataFrame([{
+            'fecha_creacion': '2026-04-14', 'id_tramo': 'T-01',
+            'civ': '111', 'pk': '18474', 'item_pago': '2.1',
+            'item_descripcion': 'Demolición', 'tramo_descripcion': 'Carrera 26',
+            'cantidad': 100.0, 'unidad': 'm2', 'observaciones': '',
+        }]) if with_cant else pd.DataFrame(),
+        'componentes': pd.DataFrame(),
+        'diario': pd.DataFrame([{
+            'fecha_reporte': '2026-04-14', 'id_tramo': 'T-01',
+            'civ': '111', 'pk': '18474', 'folio': 'F001',
+            'observaciones': 'Sin novedad',
+        }]) if with_diario else pd.DataFrame(),
+        'clima':     pd.DataFrame(),
+        'personal':  pd.DataFrame(),
+        'maquinaria': pd.DataFrame(),
+        'sst':        pd.DataFrame(),
+    }
+    return datos
+
+
+def test_generate_pdf_returns_bytes():
+    datos = _make_datos()
+    contrato = {'id': 'IDU-1556-2025', 'contratista': 'SERVIALCO S.A.S.'}
+    result = generate_pdf_bitacora(
+        datos, contrato,
+        date(2026, 4, 14), date(2026, 4, 14),
+        'Bitácora Consolidada',
+    )
+    assert isinstance(result, bytes)
+    assert len(result) > 1000  # PDF válido tiene más de 1 KB
+
+def test_generate_pdf_empty_datos_returns_none():
+    datos = {k: pd.DataFrame() for k in
+             ['cantidades','componentes','diario','clima','personal','maquinaria','sst']}
+    result = generate_pdf_bitacora(
+        datos, {},
+        date(2026, 4, 14), date(2026, 4, 14),
+        'Bitácora Consolidada',
+    )
+    assert result is None
+
+def test_generate_pdf_only_cant_no_diario():
+    datos = _make_datos(with_diario=False, with_cant=True)
+    contrato = {'id': 'IDU-1556-2025', 'contratista': 'SERVIALCO S.A.S.'}
+    result = generate_pdf_bitacora(
+        datos, contrato,
+        date(2026, 4, 14), date(2026, 4, 14),
+        'Bitácora Consolidada',
+    )
+    assert isinstance(result, bytes)

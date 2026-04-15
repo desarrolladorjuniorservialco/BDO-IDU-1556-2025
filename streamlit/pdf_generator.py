@@ -37,30 +37,27 @@ _log = logging.getLogger(__name__)
 
 
 def generate_pdf_bitacora(
-    df: pd.DataFrame,
+    datos: dict,
     contrato: dict,
-    fi: date,
-    ff: date,
+    fi,
+    ff,
     tipo_reporte: str,
-    secciones: List[str],
     *,
-    observaciones: str = "",
-    frente_obra: str = "",
-    clima_am: str = "",
-    clima_pm: str = "",
     alerta: bool = False,
 ) -> bytes | None:
     """
-    Genera el PDF de Bitácora Diaria de Obra.
+    Genera el PDF de Bitácora Diaria de Obra en formato jerárquico.
 
-    Parámetros adicionales:
-      observaciones — texto narrativo de la jornada
-      frente_obra   — frente/tramo del reporte
-      clima_am      — condición climática AM
-      clima_pm      — condición climática PM
-      alerta        — si True, el borde del cuadro de observaciones es Rojo Bogotá
+    datos: dict con claves
+      'cantidades'  → pd.DataFrame de registros_cantidades
+      'componentes' → pd.DataFrame de registros_componentes
+      'diario'      → pd.DataFrame de registros_reporte_diario
+      'clima'       → pd.DataFrame de bd_condicion_climatica
+      'personal'    → pd.DataFrame de bd_personal_obra
+      'maquinaria'  → pd.DataFrame de bd_maquinaria_obra
+      'sst'         → pd.DataFrame de bd_sst_ambiental
 
-    Retorna bytes del PDF, o None si reportlab no está instalado.
+    Retorna bytes del PDF, o None si reportlab no está instalado o datos vacíos.
     """
     try:
         from reportlab.lib.pagesizes import A4
@@ -75,9 +72,23 @@ def generate_pdf_bitacora(
     except ImportError:
         return None
 
-    # ── Configuración del documento ────────────────────────
+    from datetime import date as _date
+
+    # ── Extraer DataFrames ─────────────────────────────────────
+    df_cant     = datos.get('cantidades',  pd.DataFrame())
+    df_comp     = datos.get('componentes', pd.DataFrame())
+    df_diario   = datos.get('diario',      pd.DataFrame())
+    df_clima    = datos.get('clima',       pd.DataFrame())
+    df_personal = datos.get('personal',    pd.DataFrame())
+    df_maq      = datos.get('maquinaria',  pd.DataFrame())
+    df_sst      = datos.get('sst',         pd.DataFrame())
+
+    if df_cant.empty and df_comp.empty and df_diario.empty:
+        return None
+
+    # ── Configuración del documento ────────────────────────────
     buf    = io.BytesIO()
-    PAGE   = A4                    # 21 × 29.7 cm — vertical
+    PAGE   = A4
     MARGIN = 1.6 * cm
 
     doc = SimpleDocTemplate(
@@ -86,25 +97,21 @@ def generate_pdf_bitacora(
         topMargin=MARGIN,   bottomMargin=2.2 * cm,
     )
 
-    W = PAGE[0] - 2 * MARGIN   # ancho útil ≈ 17.8 cm
+    W = PAGE[0] - 2 * MARGIN
 
-    # ── Paleta IDU ─────────────────────────────────────────
-    C_IDU_BLUE   = rl_colors.HexColor('#00A6E1')   # Azul IDU primario
-    C_IDU_DARK   = rl_colors.HexColor('#0076B0')   # Azul Oscuro / cabecera tabla
-    C_IDU_RED    = rl_colors.HexColor('#ED1C24')   # Rojo Bogotá
-    C_IDU_YELLOW = rl_colors.HexColor('#FFC425')   # Amarillo Estelar
-    C_NEUTRAL    = rl_colors.HexColor('#EDF1F6')   # Gris Neutro — fondo metadata
-    C_TEXT       = rl_colors.HexColor('#4D4D4D')   # Gris Texto — cuerpo
-    C_MUTED      = rl_colors.HexColor('#7A8A99')   # Texto secundario
-    C_WHITE      = rl_colors.white
-    C_BORDER     = rl_colors.HexColor('#D8E3ED')   # Borde tabla
-    C_ROW_ALT    = rl_colors.HexColor('#F8FBFD')   # Fila alterna tabla
+    # ── Paleta IDU ─────────────────────────────────────────────
+    C_IDU_BLUE = rl_colors.HexColor('#00A6E1')
+    C_IDU_DARK = rl_colors.HexColor('#0076B0')
+    C_NEUTRAL  = rl_colors.HexColor('#EDF1F6')
+    C_TEXT     = rl_colors.HexColor('#4D4D4D')
+    C_MUTED    = rl_colors.HexColor('#7A8A99')
+    C_WHITE    = rl_colors.white
+    C_BORDER   = rl_colors.HexColor('#D8E3ED')
 
-    # ── Estilos tipográficos ───────────────────────────────
+    # ── Estilos tipográficos ───────────────────────────────────
     base = getSampleStyleSheet()
 
     S = {
-        # Encabezado principal
         'bdo_title': ParagraphStyle('bdo_title', parent=base['Normal'],
             fontName='Helvetica-Bold', fontSize=14,
             textColor=C_IDU_BLUE, spaceAfter=2),
@@ -114,27 +121,12 @@ def generate_pdf_bitacora(
         'bdo_date': ParagraphStyle('bdo_date', parent=base['Normal'],
             fontName='Helvetica', fontSize=9,
             textColor=rl_colors.HexColor('#c8dff0'), spaceAfter=0),
-        # Metadata localización
         'meta_label': ParagraphStyle('meta_label', parent=base['Normal'],
             fontName='Helvetica-Bold', fontSize=7,
             textColor=C_MUTED, leading=9),
-        'meta_value': ParagraphStyle('meta_value', parent=base['Normal'],
-            fontName='Helvetica-Bold', fontSize=8.5,
-            textColor=C_TEXT, leading=11),
-        # Secciones
-        'section': ParagraphStyle('section', parent=base['Normal'],
-            fontName='Helvetica-Bold', fontSize=8,
-            textColor=C_IDU_BLUE, spaceBefore=6, spaceAfter=3,
-            textTransform='uppercase', letterSpacing=0.8),
-        # Observaciones
-        'obs': ParagraphStyle('obs', parent=base['Normal'],
-            fontName='Helvetica', fontSize=8.5,
-            textColor=C_TEXT, leading=12, spaceAfter=4),
-        # Cabecera tabla
         'th': ParagraphStyle('th', parent=base['Normal'],
             fontName='Helvetica-Bold', fontSize=7,
             textColor=C_WHITE, alignment=TA_CENTER, leading=9),
-        # Celdas tabla
         'td': ParagraphStyle('td', parent=base['Normal'],
             fontName='Helvetica', fontSize=7.5,
             textColor=C_TEXT, leading=10),
@@ -144,7 +136,6 @@ def generate_pdf_bitacora(
         'td_num': ParagraphStyle('td_n', parent=base['Normal'],
             fontName='Helvetica-Bold', fontSize=7.5,
             textColor=C_IDU_BLUE, leading=10, alignment=TA_CENTER),
-        # Firmas
         'firma_line': ParagraphStyle('firma_line', parent=base['Normal'],
             fontName='Helvetica', fontSize=8,
             textColor=C_MUTED, alignment=TA_CENTER),
@@ -159,17 +150,17 @@ def generate_pdf_bitacora(
     }
 
     story = []
-    numero_contrato = _ce(contrato, 'id',     'IDU-1556-2025') if contrato else 'IDU-1556-2025'
-    contratista     = _ce(contrato, 'contratista', 'SERVIALCO S.A.S.') if contrato else 'SERVIALCO S.A.S.'
+    fi_date = fi if isinstance(fi, _date) else pd.to_datetime(fi).date()
+    ff_date = ff if isinstance(ff, _date) else pd.to_datetime(ff).date()
+    numero_contrato = _ce(contrato, 'id',         'IDU-1556-2025') if contrato else 'IDU-1556-2025'
+    contratista     = _ce(contrato, 'contratista','SERVIALCO S.A.S.') if contrato else 'SERVIALCO S.A.S.'
 
-    # ══════════════════════════════════════════════════════
-    # 1. HEADER (15%) — Azul IDU fondo, título bitácora
-    # ══════════════════════════════════════════════════════
-    fecha_rpt = fi.strftime('%d/%m/%Y') if fi == ff else (
-        f"{fi.strftime('%d/%m/%Y')} — {ff.strftime('%d/%m/%Y')}"
-    )
+    # ══════════════════════════════════════════════════════════
+    # 1. HEADER — Azul IDU
+    # ══════════════════════════════════════════════════════════
+    fecha_rpt = (fi_date.strftime('%d/%m/%Y') if fi_date == ff_date else
+                 f"{fi_date.strftime('%d/%m/%Y')} — {ff_date.strftime('%d/%m/%Y')}")
 
-    # Panel izquierdo: bloque de identificación
     id_block = [
         [Paragraph('BITÁCORA DIARIA DE OBRA', S['bdo_title'])],
         [Paragraph(f"Contrato N.° <b>{numero_contrato}</b>", S['bdo_contract'])],
@@ -183,7 +174,6 @@ def generate_pdf_bitacora(
         ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
     ]))
 
-    # Panel derecho: contratista / tipo
     right_block = [
         [Paragraph('CONTRATISTA', S['meta_label'])],
         [Paragraph(contratista, ParagraphStyle('ct', parent=base['Normal'],
@@ -200,8 +190,7 @@ def generate_pdf_bitacora(
         ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
     ]))
 
-    hdr_data = [[id_tbl, right_tbl]]
-    hdr_tbl  = Table(hdr_data, colWidths=[W * 0.55, W * 0.45])
+    hdr_tbl = Table([[id_tbl, right_tbl]], colWidths=[W * 0.55, W * 0.45])
     hdr_tbl.setStyle(TableStyle([
         ('BACKGROUND',   (0, 0), (-1, -1), C_IDU_DARK),
         ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
@@ -212,141 +201,72 @@ def generate_pdf_bitacora(
         ('LINEBELOW',    (0, 0), (-1, 0), 3, C_IDU_BLUE),
     ]))
     story.append(hdr_tbl)
-    story.append(Spacer(1, 0.25 * cm))
+    story.append(Spacer(1, 0.4 * cm))
 
-    # ══════════════════════════════════════════════════════
-    # 2. BLOQUE DE LOCALIZACIÓN (10%) — Gris Neutro
-    # ══════════════════════════════════════════════════════
-    loc_data = [
-        [
-            Paragraph('FECHA', S['meta_label']),
-            Paragraph('FRENTE DE OBRA / TRAMO', S['meta_label']),
-            Paragraph('CLIMA AM', S['meta_label']),
-            Paragraph('CLIMA PM', S['meta_label']),
-        ],
-        [
-            Paragraph(fi.strftime('%d/%m/%Y'), S['meta_value']),
-            Paragraph(_esc(frente_obra) or '—', S['meta_value']),
-            Paragraph(_esc(clima_am)    or '—', S['meta_value']),
-            Paragraph(_esc(clima_pm)    or '—', S['meta_value']),
-        ],
-    ]
-    loc_tbl = Table(loc_data, colWidths=[W * 0.15, W * 0.45, W * 0.20, W * 0.20])
-    loc_tbl.setStyle(TableStyle([
-        ('BACKGROUND',   (0, 0), (-1, -1), C_NEUTRAL),
-        ('GRID',         (0, 0), (-1, -1), 0.5, C_BORDER),
-        ('LEFTPADDING',  (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING',   (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING',(0, 0), (-1, -1), 4),
-        ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    story.append(loc_tbl)
-    story.append(Spacer(1, 0.25 * cm))
+    # ══════════════════════════════════════════════════════════
+    # 2. SECCIONES JERÁRQUICAS (fecha, tramo, CIV)
+    # ══════════════════════════════════════════════════════════
+    tramo_desc_map: dict[str, str] = {}
+    if (not df_cant.empty
+            and 'id_tramo' in df_cant.columns
+            and 'tramo_descripcion' in df_cant.columns):
+        for _, r in df_cant.dropna(subset=['id_tramo']).iterrows():
+            tid   = _norm_str(r.get('id_tramo', ''))
+            tdesc = _norm_str(r.get('tramo_descripcion', ''))
+            if tid and tdesc and tid not in tramo_desc_map:
+                tramo_desc_map[tid] = tdesc
 
-    # ══════════════════════════════════════════════════════
-    # 3. NARRATIVA (40%) — Cuadro de Observaciones
-    # ══════════════════════════════════════════════════════
-    story.append(Paragraph('OBSERVACIONES / DESCRIPCIÓN DE LA JORNADA', S['section']))
+    groups = _collect_groups(df_cant, df_comp, df_diario)
 
-    obs_text = _esc(observaciones) if observaciones else (
-        'Sin observaciones registradas para este período.'
-    )
-    border_color = C_IDU_RED if alerta else C_BORDER
+    for (fecha, tramo_id, civ) in groups:
+        tramo_desc = tramo_desc_map.get(tramo_id, '')
 
-    # Usar Paragraph directo (sin Table) para que el texto pueda paginar
-    # si las observaciones son muy largas.
-    story.append(HRFlowable(width=W, thickness=1.2, color=border_color))
-    obs_style = ParagraphStyle(
-        'obs_block', parent=S['obs'],
-        leftIndent=10, rightIndent=10,
-        spaceBefore=6, spaceAfter=6,
-        backColor=C_WHITE,
-    )
-    for linea in obs_text.split(' | '):
-        linea = linea.strip()
-        if linea:
-            story.append(Paragraph(linea, obs_style))
-    story.append(HRFlowable(width=W, thickness=0.5, color=border_color))
-    story.append(Spacer(1, 0.3 * cm))
+        story.append(_build_group_header(fecha, tramo_id, tramo_desc, civ))
 
-    # ══════════════════════════════════════════════════════
-    # 4. TABLA DE CANTIDADES EJECUTADAS (25%)
-    # ══════════════════════════════════════════════════════
-    if not df.empty and ('Registro de actividades' in secciones or not secciones):
-        story.append(Paragraph('TABLA DE CANTIDADES EJECUTADAS', S['section']))
-        _build_records_table(story, df, S, C_IDU_DARK, C_NEUTRAL, C_BORDER,
-                             C_WHITE, C_ROW_ALT, C_IDU_RED, C_IDU_YELLOW, W)
-        story.append(Spacer(1, 0.3 * cm))
+        paras = _build_content_paragraphs(
+            fecha, tramo_id, civ,
+            df_diario, df_clima, df_personal, df_maq, df_sst,
+        )
+        story.extend(paras)
 
-    # ══════════════════════════════════════════════════════
-    # 5. RESUMEN ESTADÍSTICO (opcional)
-    # ══════════════════════════════════════════════════════
-    if not df.empty and 'estado' in df.columns:
-        total = len(df)
-        apr   = len(df[df['estado'] == 'APROBADO'])
-        rev   = len(df[df['estado'] == 'REVISADO'])
-        dev   = len(df[df['estado'] == 'DEVUELTO'])
-        bor   = total - apr - rev - dev
+        tbl = _build_quantities_table(fecha, tramo_id, civ, df_cant, df_comp)
+        if tbl is not None:
+            story.append(Spacer(1, 0.2 * cm))
+            story.append(tbl)
 
-        res_h = ['Registros', 'Aprobados', 'Revisados', 'Devueltos', 'Borradores']
-        res_v = [str(total), str(apr), str(rev), str(dev), str(bor)]
-
-        res_tbl = Table([res_h, res_v], colWidths=[W / 5] * 5)
-        res_tbl.setStyle(TableStyle([
-            ('BACKGROUND',   (0, 0), (-1, 0), C_IDU_BLUE),
-            ('TEXTCOLOR',    (0, 0), (-1, 0), C_WHITE),
-            ('FONT',         (0, 0), (-1, 0), 'Helvetica-Bold', 7),
-            ('BACKGROUND',   (0, 1), (-1, 1), C_NEUTRAL),
-            ('FONT',         (0, 1), (-1, 1), 'Helvetica-Bold', 9),
-            ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID',         (0, 0), (-1, -1), 0.4, C_BORDER),
-            ('TOPPADDING',   (0, 0), (-1, -1), 5),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 5),
-        ]))
-        story.append(Paragraph('RESUMEN DEL PERÍODO', S['section']))
-        story.append(res_tbl)
         story.append(Spacer(1, 0.4 * cm))
 
-    # ══════════════════════════════════════════════════════
-    # 7. PIE: FIRMAS (10%)
-    # ══════════════════════════════════════════════════════
-    if 'Firmas' in secciones or not secciones:
-        story.append(HRFlowable(width=W, thickness=0.8, color=C_IDU_BLUE))
-        story.append(Spacer(1, 0.3 * cm))
-        story.append(Paragraph('CONTROL Y FIRMAS', S['section']))
+    # ══════════════════════════════════════════════════════════
+    # 3. PIE: FIRMAS
+    # ══════════════════════════════════════════════════════════
+    story.append(HRFlowable(width=W, thickness=0.8, color=C_IDU_BLUE))
+    story.append(Spacer(1, 0.3 * cm))
+    story.append(Paragraph('CONTROL Y FIRMAS', ParagraphStyle('sec',
+        parent=base['Normal'], fontName='Helvetica-Bold', fontSize=8,
+        textColor=C_IDU_BLUE, spaceBefore=6, spaceAfter=3)))
 
-        firma_data = [
-            [
-                Paragraph('_' * 38, S['firma_line']),
-                Paragraph('_' * 38, S['firma_line']),
-            ],
-            [
-                Paragraph('RESIDENTE DE OBRA', S['firma_label']),
-                Paragraph('RESIDENTE DE INTERVENTORÍA', S['firma_label']),
-            ],
-            [
-                Paragraph('Nombre y Matrícula Profesional', S['firma_sub']),
-                Paragraph('Nombre y Matrícula Profesional', S['firma_sub']),
-            ],
-        ]
-        firma_tbl = Table(firma_data, colWidths=[W / 2, W / 2])
-        firma_tbl.setStyle(TableStyle([
-            ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
-            ('TOPPADDING',   (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 3),
-        ]))
-        story.append(firma_tbl)
+    firma_data = [
+        [Paragraph('_' * 38, S['firma_line']),
+         Paragraph('_' * 38, S['firma_line'])],
+        [Paragraph('RESIDENTE DE OBRA', S['firma_label']),
+         Paragraph('RESIDENTE DE INTERVENTORÍA', S['firma_label'])],
+        [Paragraph('Nombre y Matrícula Profesional', S['firma_sub']),
+         Paragraph('Nombre y Matrícula Profesional', S['firma_sub'])],
+    ]
+    firma_tbl = Table(firma_data, colWidths=[W / 2, W / 2])
+    firma_tbl.setStyle(TableStyle([
+        ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
+        ('TOPPADDING',   (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING',(0, 0), (-1, -1), 3),
+    ]))
+    story.append(firma_tbl)
 
-    # ── Footer con número de página ────────────────────────
+    # ── Footer paginación ──────────────────────────────────────
     def _footer(canvas, doc_):
         canvas.saveState()
-        # Línea superior del pie
         canvas.setStrokeColor(C_IDU_BLUE)
         canvas.setLineWidth(0.6)
         canvas.line(MARGIN, 1.4 * cm, PAGE[0] - MARGIN, 1.4 * cm)
-        # Texto izquierda
         canvas.setFont('Helvetica', 6.5)
         canvas.setFillColor(C_MUTED)
         canvas.drawString(
@@ -354,13 +274,9 @@ def generate_pdf_bitacora(
             f"BDO IDU-1556-2025  ·  {contratista}  ·  "
             f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
         )
-        # Paginación "Página X de Y" — derecha
         canvas.setFillColor(C_IDU_BLUE)
         canvas.setFont('Helvetica-Bold', 7)
-        canvas.drawRightString(
-            PAGE[0] - MARGIN, 0.9 * cm,
-            f"Página {doc_.page}",
-        )
+        canvas.drawRightString(PAGE[0] - MARGIN, 0.9 * cm, f"Página {doc_.page}")
         canvas.restoreState()
 
     try:
