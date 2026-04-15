@@ -139,24 +139,34 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
     with b1:
         if st.button("Aprobar", key=f"rc_apr_{reg_id}",
                      use_container_width=True, type="primary"):
-            try:
-                sb  = get_user_client(st.session_state.get('_access_token', ''))
-                upd = {
-                    'estado':               estado_apr,
-                    campo_cant:             cant_val,
-                    campos['campo_estado']: 'aprobado',
-                    campos['campo_apr']:    perfil['id'],
-                    campos['campo_fecha']:  datetime.now().isoformat(),
-                }
-                if obs_val.strip():
-                    upd[campo_obs] = obs_val.strip()
-                sb.table('registros_cantidades').update(upd).eq('id', reg_id).execute()
-                clear_cache()
-                st.success("Registro aprobado")
-                st.rerun()
-            except Exception:
-                _log.exception("Error al aprobar registro id=%s", reg_id)
-                st.error("No fue posible aprobar. Intenta de nuevo.")
+            token = st.session_state.get('_access_token', '')
+            if not token:
+                st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
+            else:
+                try:
+                    sb  = get_user_client(token)
+                    upd = {
+                        'estado':               estado_apr,
+                        campo_cant:             cant_val,
+                        campos['campo_estado']: 'aprobado',
+                        campos['campo_apr']:    perfil['id'],
+                        campos['campo_fecha']:  datetime.now().isoformat(),
+                    }
+                    if obs_val.strip():
+                        upd[campo_obs] = obs_val.strip()
+                    resp = sb.table('registros_cantidades').update(upd).eq('id', reg_id).execute()
+                    if not resp.data:
+                        st.error(
+                            "La actualización no afectó ningún registro. "
+                            "Verifica que tengas permiso para aprobar este registro."
+                        )
+                    else:
+                        clear_cache()
+                        st.success("Registro aprobado")
+                        st.rerun()
+                except Exception as exc:
+                    _log.exception("Error al aprobar registro id=%s", reg_id)
+                    st.error(f"No fue posible aprobar: {exc}")
 
     with b2:
         if st.button("Devolver", key=f"rc_dev_{reg_id}",
@@ -164,20 +174,30 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:
-                try:
-                    sb = get_user_client(st.session_state.get('_access_token', ''))
-                    sb.table('registros_cantidades').update({
-                        'estado':               'DEVUELTO',
-                        campos['campo_estado']: 'devuelto',
-                        campo_obs:              obs_val.strip(),
-                        campos['campo_fecha']:  datetime.now().isoformat(),
-                    }).eq('id', reg_id).execute()
-                    clear_cache()
-                    st.warning("Registro devuelto")
-                    st.rerun()
-                except Exception:
-                    _log.exception("Error al devolver registro id=%s", reg_id)
-                    st.error("No fue posible devolver. Intenta de nuevo.")
+                token = st.session_state.get('_access_token', '')
+                if not token:
+                    st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
+                else:
+                    try:
+                        sb = get_user_client(token)
+                        resp = sb.table('registros_cantidades').update({
+                            'estado':               'DEVUELTO',
+                            campos['campo_estado']: 'devuelto',
+                            campo_obs:              obs_val.strip(),
+                            campos['campo_fecha']:  datetime.now().isoformat(),
+                        }).eq('id', reg_id).execute()
+                        if not resp.data:
+                            st.error(
+                                "La actualización no afectó ningún registro. "
+                                "Verifica que tengas permiso para devolver este registro."
+                            )
+                        else:
+                            clear_cache()
+                            st.warning("Registro devuelto")
+                            st.rerun()
+                    except Exception as exc:
+                        _log.exception("Error al devolver registro id=%s", reg_id)
+                        st.error(f"No fue posible devolver: {exc}")
 
 
 def page_reporte_cantidades(perfil: dict) -> None:
