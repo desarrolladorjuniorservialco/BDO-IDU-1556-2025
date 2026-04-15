@@ -238,7 +238,6 @@ def page_mapa(perfil: dict) -> None:
                     grp, f"Componentes -- {estado}", color,
                     ['folio', 'id_tramo', 'tipo_componente', 'tipo_actividad',
                      'cantidad', 'unidad', 'estado'],
-                    symbol='square',
                 ))
 
         if not geo_diario.empty:
@@ -248,7 +247,6 @@ def page_mapa(perfil: dict) -> None:
                 traces.append(_scatter(
                     grp, f"Reporte Diario -- {estado}", color,
                     ['folio', 'usuario_qfield', 'observaciones', 'estado'],
-                    symbol='star',
                 ))
 
         if not geo_pmt.empty:
