@@ -33,18 +33,18 @@ from ui import kpi, section_badge
 
 # Paleta de colores por estado — Guía IDU 2025
 _ESTADO_COLOR = {
-    'BORRADOR': '#B0BEC5',   # Gris Neutro — en planeación
-    'REVISADO': '#FFC425',   # Amarillo Estelar — en proceso
-    'APROBADO': '#198754',   # Verde — cumplido
-    'DEVUELTO': '#ED1C24',   # Rojo Bogotá — alerta
+    'BORRADOR': '#5bc0de',   # Azul Neutro — en planeación
+    'REVISADO': '#ffb71b',   # Amarillo Estelar — en proceso
+    'APROBADO': '#859226',   # Verde — cumplido
+    'DEVUELTO': '#ea273f',   # Rojo Bogotá — alerta
 }
 
 # Color base de cada capa — tonos IDU
 _LAYER_COLOR = {
-    'cantidades':  '#00A6E1',   # Azul IDU primario
+    'cantidades':  '#859226',   # Azul IDU primario
     'componentes': '#FFC425',   # Amarillo Estelar
-    'diario':      '#0076B0',   # Azul Oscuro IDU
-    'pmt':         '#ED1C24',   # Rojo Bogotá
+    'diario':      '#5bc0de',   # Azul Oscuro IDU
+    'pmt':         '#ea273f',   # Rojo Bogotá
 }
 
 _ESTADO_OPTS = ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
