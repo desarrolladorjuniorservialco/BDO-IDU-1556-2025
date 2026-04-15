@@ -57,6 +57,8 @@ def generate_pdf_bitacora(
       'maquinaria'  → pd.DataFrame de bd_maquinaria_obra
       'sst'         → pd.DataFrame de bd_sst_ambiental
 
+    alerta: reserved for future use (currently has no effect on output).
+
     Retorna bytes del PDF, o None si reportlab no está instalado o datos vacíos.
     """
     try:
@@ -150,8 +152,14 @@ def generate_pdf_bitacora(
     }
 
     story = []
-    fi_date = fi if isinstance(fi, _date) else pd.to_datetime(fi).date()
-    ff_date = ff if isinstance(ff, _date) else pd.to_datetime(ff).date()
+    try:
+        fi_date = fi if isinstance(fi, _date) else pd.to_datetime(fi).date()
+    except Exception:
+        fi_date = _date.today()
+    try:
+        ff_date = ff if isinstance(ff, _date) else pd.to_datetime(ff).date()
+    except Exception:
+        ff_date = _date.today()
     numero_contrato = _ce(contrato, 'id',         'IDU-1556-2025') if contrato else 'IDU-1556-2025'
     contratista     = _ce(contrato, 'contratista','SERVIALCO S.A.S.') if contrato else 'SERVIALCO S.A.S.'
 
@@ -229,7 +237,7 @@ def generate_pdf_bitacora(
         )
         story.extend(paras)
 
-        tbl = _build_quantities_table(fecha, tramo_id, civ, df_cant, df_comp)
+        tbl = _build_quantities_table(fecha, tramo_id, civ, df_cant, df_comp, W)
         if tbl is not None:
             story.append(Spacer(1, 0.2 * cm))
             story.append(tbl)
@@ -307,91 +315,6 @@ def _esc(val) -> str:
 def _ce(d: dict, key: str, default: str) -> str:
     """Escapa campo de contrato."""
     return _esc(str(d.get(key, default) or default))
-
-
-def _build_records_table(
-    story, df, S,
-    C_IDU_DARK, C_NEUTRAL, C_BORDER, C_WHITE, C_ROW_ALT,
-    C_IDU_RED, C_IDU_YELLOW, W,
-):
-    """Construye la tabla de cantidades con cabecera Azul Oscuro IDU."""
-    try:
-        from reportlab.platypus import Table, TableStyle, Paragraph as _P
-        from reportlab.lib import colors as rl_colors
-        from reportlab.lib.units import cm as _cm
-    except ImportError:
-        return
-
-    COLS   = ['folio', 'id_tramo', 'civ', 'tipo_actividad',
-              'cantidad', 'unidad', 'cant_residente', 'cant_interventor', 'estado']
-    LABELS = {
-        'folio': 'Folio', 'id_tramo': 'Tramo', 'civ': 'CIV',
-        'tipo_actividad': 'Actividad / Descripción',
-        'cantidad': 'Cant.\nInspector', 'unidad': 'Und.',
-        'cant_residente': 'Cant.\nResidente',
-        'cant_interventor': 'Cant.\nInterventor',
-        'estado': 'Estado',
-    }
-    COL_W_CM = {
-        'folio': 1.3, 'id_tramo': 1.6, 'civ': 1.2,
-        'tipo_actividad': 4.5, 'cantidad': 1.2, 'unidad': 0.9,
-        'cant_residente': 1.2, 'cant_interventor': 1.3, 'estado': 1.4,
-    }
-
-    cols      = [c for c in COLS if c in df.columns]
-    col_widths = [COL_W_CM.get(c, W / len(cols) / _cm) * _cm for c in cols]
-
-    header = [_P(LABELS.get(c, c), S['th']) for c in cols]
-    rows   = [header]
-
-    estado_bg = {
-        'APROBADO': rl_colors.HexColor('#d1f2dc'),
-        'REVISADO': rl_colors.HexColor('#fff5d6'),
-        'DEVUELTO': rl_colors.HexColor('#fde8e9'),
-        'BORRADOR': rl_colors.HexColor('#EDF1F6'),
-    }
-
-    for _, r in df.iterrows():
-        row = []
-        for c in cols:
-            val = r.get(c, '')
-            if val is None or (isinstance(val, float) and math.isnan(val)):
-                val = '—'
-            elif c in ('cantidad', 'cant_residente', 'cant_interventor'):
-                f = _safe_float(val)
-                val = f"{f:,.2f}" if f else '—'
-            sty = S['td_num'] if c in ('cantidad', 'cant_residente', 'cant_interventor') else S['td_center'] if c in ('estado', 'unidad', 'folio') else S['td']
-            row.append(_P(_esc(val), sty))
-        rows.append(row)
-
-    tbl = Table(rows, colWidths=col_widths, repeatRows=1)
-
-    tbl_style = [
-        # Cabecera — Azul Oscuro IDU
-        ('BACKGROUND',    (0, 0), (-1, 0), C_IDU_DARK),
-        ('GRID',          (0, 0), (-1, -1), 0.3, C_BORDER),
-        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING',    (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING',   (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
-    ]
-
-    # Filas alternas (zebra) — compatible con todas las versiones de ReportLab
-    for idx in range(1, len(rows)):
-        bg = C_WHITE if idx % 2 == 1 else C_ROW_ALT
-        tbl_style.append(('BACKGROUND', (0, idx), (-1, idx), bg))
-
-    # Color semántico por estado en columna
-    if 'estado' in cols:
-        ei = cols.index('estado')
-        for idx in range(1, len(rows)):
-            val = df.iloc[idx - 1].get('estado', '')
-            clr = estado_bg.get(val, C_WHITE)
-            tbl_style.append(('BACKGROUND', (ei, idx), (ei, idx), clr))
-
-    tbl.setStyle(TableStyle(tbl_style))
-    story.append(tbl)
 
 
 # ── Meses en español (sin locale para portabilidad) ────────────
@@ -743,6 +666,7 @@ def _build_quantities_table(
     civ: str,
     df_cant: pd.DataFrame,
     df_comp: pd.DataFrame,
+    page_width: float = 0,
 ) -> object | None:
     """
     Construye la tabla de cantidades ejecutadas para un grupo (fecha, tramo, civ).
@@ -806,7 +730,7 @@ def _build_quantities_table(
     # ── Anchos de columna ──────────────────────────────────────
     # Total útil ≈ 17.8 cm
     # PK=1.8 | Ítem=1.5 | Descripción=5.5 | Cantidad=1.8 | Unidad=1.4 | Obs=resto
-    W_TOTAL = 17.8 * _cm
+    W_TOTAL = page_width if page_width > 0 else 17.8 * _cm
     col_w = [1.8*_cm, 1.5*_cm, 5.5*_cm, 1.8*_cm, 1.4*_cm,
              W_TOTAL - 1.8*_cm - 1.5*_cm - 5.5*_cm - 1.8*_cm - 1.4*_cm]
 
