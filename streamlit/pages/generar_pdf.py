@@ -6,10 +6,10 @@ Filtros disponibles:
   · Rango de fechas
   · Tipos de formulario (cantidades, componentes, diario)
   · Estado de las anotaciones
-  · Incluir/excluir fotos en el informe
 """
 
 import io
+import re
 from datetime import date, timedelta
 
 import pandas as pd
@@ -113,8 +113,6 @@ def page_generar_pdf(perfil: dict) -> None:
     estados_q = _FILTRO_ESTADOS[estado_f]
 
     # ── Cargar datos ───────────────────────────────────────
-    import re
-
     frames: dict[str, pd.DataFrame] = {}
     for tipo_label in tipos_sel:
         tipo_key = _TIPOS[tipo_label]
