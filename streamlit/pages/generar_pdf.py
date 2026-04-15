@@ -17,6 +17,7 @@ import streamlit as st
 
 from database import (
     load_cantidades, load_componentes, load_reporte_diario, load_contrato,
+    load_bd_clima, load_bd_personal, load_bd_maquinaria, load_bd_sst,
 )
 from pdf_generator import generate_pdf_bitacora
 from ui import kpi, section_badge
@@ -216,27 +217,35 @@ def page_generar_pdf(perfil: dict) -> None:
 
         # ── PDF ────────────────────────────────────────────
         if formato == "PDF":
-            # Seleccionar df principal: preferir reporte diario, luego cantidades
-            df_pdf = frames.get("Reporte Diario", pd.DataFrame())
-            if df_pdf.empty:
-                df_pdf = frames.get("Cantidades de Obra", pd.DataFrame())
-            if df_pdf.empty and frames:
-                df_pdf = next(iter(frames.values()))
+            df_diario = frames.get('Reporte Diario', pd.DataFrame())
 
-            # Recopilar observaciones del reporte diario
-            observaciones_pdf = ""
-            if not frames.get("Reporte Diario", pd.DataFrame()).empty:
-                df_d = frames["Reporte Diario"]
-                if 'observaciones' in df_d.columns:
-                    obs_list = df_d['observaciones'].dropna().astype(str).tolist()
-                    observaciones_pdf = " | ".join(o for o in obs_list if o.strip())
+            # Cargar sub-tablas vinculadas a los folios del reporte diario
+            folios_diario = (
+                tuple(df_diario['folio'].dropna().tolist())
+                if not df_diario.empty and 'folio' in df_diario.columns
+                else ()
+            )
+            with st.spinner("Cargando datos del reporte…"):
+                df_clima      = load_bd_clima(folios_diario)
+                df_personal   = load_bd_personal(folios_diario)
+                df_maquinaria = load_bd_maquinaria(folios_diario)
+                df_sst        = load_bd_sst(folios_diario)
+
+            datos = {
+                'cantidades':  frames.get('Cantidades de Obra',        pd.DataFrame()),
+                'componentes': frames.get('Componentes Transversales', pd.DataFrame()),
+                'diario':      df_diario,
+                'clima':       df_clima,
+                'personal':    df_personal,
+                'maquinaria':  df_maquinaria,
+                'sst':         df_sst,
+            }
 
             with st.spinner("Generando Bitácora PDF…"):
                 pdf_bytes = generate_pdf_bitacora(
-                    df_pdf, contrato, fi, ff,
-                    "Bitácora Consolidada", [],
-                    observaciones=observaciones_pdf,
+                    datos, contrato, fi, ff, "Bitácora Consolidada",
                 )
+
             if pdf_bytes:
                 nombre = f"Bitacora_IDU-1556-2025_{fecha_tag}.pdf"
                 st.success(f"Bitácora PDF generada — {total_registros} registros")
@@ -249,11 +258,9 @@ def page_generar_pdf(perfil: dict) -> None:
                     width="stretch",
                 )
             else:
-                st.error(
-                    "No se pudo generar el PDF. "
-                    "El error detallado queda en los logs del servidor. "
-                    "Causas comunes: registros con datos inconsistentes "
-                    "o error interno de ReportLab."
+                st.warning(
+                    "No se generó el PDF. "
+                    "Verifica que los registros tengan fechas y tramos asignados."
                 )
 
         # ── CSV ────────────────────────────────────────────
