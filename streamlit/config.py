@@ -114,10 +114,11 @@ PAGE_COLOR: dict[str, str] = {
 
 APROBACION_CONFIG: dict[str, tuple] = {
     # operativo: solo lectura, sin panel de aprobación
-    'operativo':     (None, None, None),
-    # obra (residente): nivel 1 — revisa BORRADOR/DEVUELTO → REVISADO
+    'operativo': (None, None, None, None),
+
+    # obra (residente): nivel 1 — ve todos, acciona solo BORRADOR → REVISADO
     'obra': (
-        ['BORRADOR', 'DEVUELTO'],
+        None,
         'REVISADO',
         {
             'campo_cant':   'cant_residente',
@@ -126,10 +127,12 @@ APROBACION_CONFIG: dict[str, tuple] = {
             'campo_fecha':  'fecha_residente',
             'campo_obs':    'obs_residente',
         },
+        ['BORRADOR'],
     ),
-    # interventoria: nivel 2 — aprueba definitivamente REVISADO → APROBADO
+
+    # interventoria: nivel 2 — ve todos, acciona solo REVISADO → APROBADO
     'interventoria': (
-        ['REVISADO'],
+        None,
         'APROBADO',
         {
             'campo_cant':   'cant_interventor',
@@ -138,12 +141,15 @@ APROBACION_CONFIG: dict[str, tuple] = {
             'campo_fecha':  'fecha_interventor',
             'campo_obs':    'obs_interventor',
         },
+        ['REVISADO'],
     ),
-    # supervision: solo lectura
-    'supervision':   (None, None, None),
-    # admin: mismos permisos que interventoria (aprobación nivel 2)
+
+    # supervision: ve todos los estados, sin panel de acciones
+    'supervision': (None, None, None, None),
+
+    # admin: mismos permisos de acción que interventoria
     'admin': (
-        ['REVISADO'],
+        None,
         'APROBADO',
         {
             'campo_cant':   'cant_interventor',
@@ -152,5 +158,6 @@ APROBACION_CONFIG: dict[str, tuple] = {
             'campo_fecha':  'fecha_interventor',
             'campo_obs':    'obs_interventor',
         },
+        ['REVISADO'],
     ),
 }
