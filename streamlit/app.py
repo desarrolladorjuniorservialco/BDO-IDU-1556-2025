@@ -57,7 +57,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 # Inyectar override de variables CSS según el tema activo de Streamlit.
 # Al insertarse DESPUÉS del CSS principal, el :root posterior gana en cascada
 # sobre el @media prefers-color-scheme — sin JS ni iframes.
-# st.get_option("theme.base") devuelve el tema activo de la sesión actual
+# st.get_option("theme.base") devuelve el tema activo de la sesión actual.
 # (incluye el valor del toggle UI del usuario, no solo config.toml).
 _active_theme = st.get_option("theme.base") or "light"
 st.markdown(
