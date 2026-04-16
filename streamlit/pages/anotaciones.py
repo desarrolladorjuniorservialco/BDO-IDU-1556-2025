@@ -4,19 +4,18 @@ Registro libre de notas no vinculadas a reportes de QFieldCloud.
 
 Flujo:
   - Todos los roles autenticados pueden leer el historial (chat).
-  - El rol 'supervisor' solo puede leer; el compositor no se renderiza.
-  - El resto de roles pueden insertar anotaciones.
+  - Todos los roles autenticados pueden insertar anotaciones.
 
 SEGURIDAD:
   - Inserción vía get_user_client() → RLS activo en Supabase.
-  - Rol 'supervisor' bloqueado en RLS además de en UI.
   - max_chars=2000 en st.chat_input() limita el payload.
   - Los valores de tramo/civ/pk se insertan como parámetros (sin
     concatenación SQL directa).
 """
 
+import base64
 import logging
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 
 import streamlit as st
 
@@ -24,6 +23,59 @@ from database import load_anotaciones_generales, get_user_client, clear_cache
 from ui import section_badge, esc
 
 _log = logging.getLogger(__name__)
+
+_TZ_BOGOTA = timezone(timedelta(hours=-5))
+
+# Colores por empresa — coinciden con identidad visual del proyecto
+_COMPANY_COLORS: dict[str, str] = {
+    'CONSORCIO INTERCONSERVACION': '#4194E8',
+    'URBACON':                     '#D95134',
+    'IDU':                         '#7DCF38',
+}
+_COLOR_DEFAULT = '#888888'
+
+
+def _company_color(empresa: str) -> str:
+    """Retorna el color hex asociado a la empresa del usuario."""
+    emp_upper = empresa.upper()
+    for key, color in _COMPANY_COLORS.items():
+        if key in emp_upper:
+            return color
+    return _COLOR_DEFAULT
+
+
+def _avatar_svg(empresa: str) -> str:
+    """
+    Data URL de un SVG con ícono clásico de usuario.
+    El color de fondo varía según la empresa para diferenciar visualmente
+    quién pertenece a cada organización.
+    """
+    color = _company_color(empresa)
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'
+        f'<circle cx="20" cy="20" r="20" fill="{color}"/>'
+        f'<circle cx="20" cy="15" r="7" fill="white" opacity="0.92"/>'
+        f'<ellipse cx="20" cy="35" rx="12" ry="9" fill="white" opacity="0.92"/>'
+        f'</svg>'
+    )
+    encoded = base64.b64encode(svg.encode()).decode()
+    return f"data:image/svg+xml;base64,{encoded}"
+
+
+def _fmt_ts(raw: str) -> str:
+    """
+    Convierte un timestamp UTC de Supabase a hora de Bogotá (UTC-5).
+    Retorna string con formato 'YYYY-MM-DD HH:MM'.
+    """
+    if not raw:
+        return ''
+    try:
+        ts = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return ts.astimezone(_TZ_BOGOTA).strftime('%Y-%m-%d %H:%M')
+    except Exception:
+        return raw[:16].replace('T', ' ')
 
 
 def page_anotaciones(perfil: dict) -> None:
@@ -33,9 +85,6 @@ def page_anotaciones(perfil: dict) -> None:
     perfil: dict con claves id, nombre, rol, empresa
             (cargado desde st.session_state['perfil'] en app.py)
     """
-    rol          = perfil['rol']
-    puede_anotar = rol != 'supervisor'
-
     section_badge("Anotaciones Generales", "purple")
     st.markdown("### Bitácora General")
 
@@ -47,7 +96,9 @@ def page_anotaciones(perfil: dict) -> None:
         if df.empty:
             st.caption("Aún no hay anotaciones registradas.")
         else:
-            for _, row in df.iterrows():
+            rows  = list(df.iterrows())
+            total = len(rows)
+            for i, (_, row) in enumerate(rows):
                 nombre  = str(row.get('usuario_nombre', '—'))
                 rol_u   = str(row.get('usuario_rol',    '') or '')
                 empresa = str(row.get('usuario_empresa','') or '')
@@ -56,9 +107,9 @@ def page_anotaciones(perfil: dict) -> None:
                 civ     = str(row.get('civ',            '') or '')
                 pk      = str(row.get('pk',             '') or '')
                 texto   = str(row.get('anotacion',      ''))
-                ts      = str(row.get('created_at',     ''))[:16].replace('T', ' ')
+                ts_raw  = str(row.get('created_at',     ''))
 
-                with st.chat_message(nombre):
+                with st.chat_message(nombre, avatar=_avatar_svg(empresa)):
                     # ── Fila de metadatos — todos los valores escapados ──
                     pills = (
                         f'<span class="info-pill">{esc(nombre)}</span>'
@@ -81,13 +132,18 @@ def page_anotaciones(perfil: dict) -> None:
                         f'<div class="record-meta-row">{pills}</div>',
                         unsafe_allow_html=True,
                     )
-                    st.write(texto)   # st.write() renderiza texto plano de forma segura
-                    st.caption(esc(ts))
+                    st.write(texto)
+                    st.caption(esc(_fmt_ts(ts_raw)))
 
-    # ── Compositor (no se renderiza para supervisor) ────────────
-    if not puede_anotar:
-        return
+                # Separador sutil entre anotaciones (fuera del globo)
+                if i < total - 1:
+                    st.markdown(
+                        '<hr style="border:none;border-top:1px solid '
+                        'rgba(128,128,128,0.18);margin:2px 0 4px 0;">',
+                        unsafe_allow_html=True,
+                    )
 
+    # ── Compositor ─────────────────────────────────────────────
     # Fila de metadatos — viven en session_state fuera de un form
     mc1, mc2, mc3, mc4 = st.columns(4)
     with mc1:
