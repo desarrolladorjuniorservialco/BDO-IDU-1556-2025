@@ -352,49 +352,6 @@ git commit -m "feat: rewrite anotaciones as general bitacora chat page"
 
 ---
 
-## Task 4: Prueba funcional en el navegador
-
-- [ ] **Step 1: Levantar la app**
-
-Desde el directorio `streamlit/`:
-
-```bash
-streamlit run app.py
-```
-
-- [ ] **Step 2: Verificar historial vacío**
-
-- Iniciar sesión con cualquier rol.
-- Navegar a **Anotaciones**.
-- Esperar ver el caption `"Aún no hay anotaciones registradas."` dentro del contenedor de chat.
-- Verificar que aparece la fila de metadatos (Fecha · Tramo · CIV · PK) y la barra de `st.chat_input()` fija al fondo.
-
-- [ ] **Step 3: Crear una anotación**
-
-- Completar campos: Fecha (hoy), Tramo `T-01`, CIV `123456`, PK `PK+0000`.
-- Escribir texto en la barra de chat: `Prueba de anotación general.`
-- Presionar Enter o el botón de envío.
-- Esperar que la página recargue.
-- Verificar que la burbuja aparece en el historial con nombre, rol, empresa, pills de Tramo/CIV/PK y el texto.
-- Verificar que los campos Tramo, CIV y PK se limpiaron (vuelven a estar en blanco).
-
-- [ ] **Step 4: Verificar rol supervisor**
-
-- Cerrar sesión e iniciar con un usuario de rol `supervisor`.
-- Navegar a **Anotaciones**.
-- Verificar que el historial con las burbujas es visible.
-- Verificar que **no aparece** la fila de metadatos ni la barra de chat.
-
-- [ ] **Step 5: Commit final y push**
-
-```bash
-git add -A
-git commit -m "feat: anotaciones generales — complete implementation"
-git push
-```
-
----
-
 ## Checklist de cobertura del spec
 
 | Requisito | Tarea |
@@ -410,4 +367,3 @@ git push
 | Supervisor solo ve historial, sin compositor | Task 3 |
 | Limpieza de tramo/civ/pk tras envío | Task 3 |
 | Inserción vía `get_user_client()` con RLS activo | Task 3 |
-| Verificación funcional en navegador | Task 4 |
