@@ -200,7 +200,7 @@ def sync_registros_reporte_diario(supabase, token, project_id):
             'latitud':        lat,
             'longitud':       lon,
             'fecha':          safe(row.get('fecha')),
-            'id_tramo':       safe(row.get('id_tramo')),
+            'id_tramo':       safe(row.get('tramo_id')),
             'civ':            safe(row.get('civ')),
             'pk_id':          safe(row.get('pk_id')),
             'cantidad':       safe(row.get('cantidad')),
