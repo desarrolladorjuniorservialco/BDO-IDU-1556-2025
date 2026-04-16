@@ -46,7 +46,7 @@ CSS = """
     --bg-inset:        #E9ECEF;
 
     /* Bordes */
-    --border:          #DEE2E6;
+    --border:          #ADB5BD;
     --border-strong:   #ADB5BD;
 
     /* Texto */
@@ -493,7 +493,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color-scheme: light !important;   /* evita que el OS oscuro tire el fondo negro */
     background-color: #ffffff !important;
     color: #1C2129 !important;
-    border-color: #DEE2E6 !important;
+    border-color: #ADB5BD !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -523,7 +523,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color-scheme: light !important;
     background-color: #ffffff !important;
     color: #1C2129 !important;
-    border-color: #DEE2E6 !important;
+    border-color: #ADB5BD !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -548,7 +548,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-baseweb="popover"] [data-baseweb="menu"],
 [data-baseweb="menu"] {
     background-color: #ffffff !important;
-    border: 1px solid #DEE2E6 !important;
+    border: 1px solid #ADB5BD !important;
     box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
     border-radius: 8px !important;
 }
@@ -584,7 +584,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 
 /* ── Checkbox ─────────────────────────────────── */
 [data-testid="stCheckbox"] label span:first-child {
-    border-color: #DEE2E6 !important;
+    border-color: #ADB5BD !important;
 }
 
 /* ════════════════════════════════════════════
@@ -1116,7 +1116,7 @@ html[data-bdo-theme="light"] {
     --bg-sidebar:      #2A303C;
     --bg-sidebar-item: rgba(255,255,255,0.05);
     --bg-inset:        #E9ECEF;
-    --border:          #DEE2E6;
+    --border:          #ADB5BD;
     --border-strong:   #ADB5BD;
     --text-primary:    #1C2129;
     --text-secondary:  #5D6A7F;
