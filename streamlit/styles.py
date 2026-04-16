@@ -492,8 +492,8 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stTextArea"]    textarea {
     color-scheme: light !important;   /* evita que el OS oscuro tire el fondo negro */
     background-color: #e6e7e8 !important;
-    color: #ADB5BD !important;
-    border-color: #ADB5BD !important;
+    color: #a9acb0 !important;
+    border-color: #a9acb0 !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
