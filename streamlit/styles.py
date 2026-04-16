@@ -491,9 +491,9 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 [data-testid="stTimeInput"]   input,
 [data-testid="stTextArea"]    textarea {
     color-scheme: light !important;   /* evita que el OS oscuro tire el fondo negro */
-    background-color: #e6e7e8 !important;
+    background-color: #ffffff !important;
     color: #a9acb0 !important;
-    border-color: #a9acb0 !important;
+    border-color: #e6e7e8 !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -523,7 +523,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     color-scheme: light !important;
     background-color: #ffffff !important;
     color: #1C2129 !important;
-    border-color: #ADB5BD !important;
+    border-color: #e6e7e8 !important;
     transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
