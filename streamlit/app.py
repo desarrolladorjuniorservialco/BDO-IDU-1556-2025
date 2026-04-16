@@ -128,6 +128,9 @@ def main() -> None:
                 st.session_state['_session_id']   = sid
                 if data.get('current_page'):
                     st.session_state['current_page'] = data['current_page']
+            else:
+                # Sesión expirada o inválida — limpiar la URL antes de mostrar login
+                st.query_params.clear()
 
     # ── 2. Verificar sesión ────────────────────────────────
     if 'user' not in st.session_state or 'perfil' not in st.session_state:

@@ -30,7 +30,7 @@ from datetime import datetime, timedelta
 
 import streamlit as st
 
-_SESSION_TTL_HOURS = 24
+_SESSION_TTL_HOURS = 1
 
 
 @st.cache_resource
