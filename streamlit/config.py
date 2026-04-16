@@ -21,26 +21,39 @@ ROL_LABELS: dict[str, str] = {
 # CONTROL DE ACCESO POR PÁGINA
 # ══════════════════════════════════════════════════════════════
 
+# Todos los roles autenticados
 _TODOS = ['inspector', 'obra', 'residente', 'coordinador',
           'interventor', 'supervisor', 'admin']
+
+# Solo gestión (sin campo: inspector/obra no acceden a vistas financieras,
+# mapas de ejecución ni generación de informes)
 _GESTION = ['residente', 'coordinador', 'interventor', 'supervisor', 'admin']
+
+# Campo + gestión: inspector/obra ven sus propios datos (RLS filtra por
+# creado_por); residente+ ven todos los registros para revisar/aprobar.
+# formulario_pmt no tiene filtro por creado_por en RLS → obra ve todos.
+_CAMPO = _TODOS
 
 NAV_ACCESS: dict[str, list[str]] = {
     # ── General ──────────────────────────────────────────────
     "Estado Actual":              _TODOS,
     "Anotaciones":                _TODOS,
     "Anotaciones Diario":         _TODOS,
-    "Generar Informe":            _GESTION,
+    # Solo gestión: vistas financieras y de infraestructura a nivel proyecto
     "Mapa Ejecución":             _GESTION,
     "Seguimiento Presupuesto":    _GESTION,
-    # ── Reportes de Cantidades ────────────────────────────────
-    "Reporte Cantidades":         _GESTION,
-    # ── Reportes de Componentes Transversales ─────────────────
-    "Componente Ambiental - SST": _GESTION,
-    "Componente Social":          _GESTION,
-    "Componente PMT":             _GESTION,
-    # ── Seguimiento de PMTs ───────────────────────────────────
-    "Seguimiento PMTs":           _GESTION,
+    "Generar Informe":            _GESTION,
+    # ── Reportes ─────────────────────────────────────────────
+    # inspector/obra ven sus propios registros (RLS: creado_por = auth.uid())
+    # residente+ ven todos para el flujo de revisión y aprobación
+    "Reporte Cantidades":         _CAMPO,
+    # ── Componentes Transversales ─────────────────────────────
+    # Mismo patrón de RLS que Reporte Cantidades
+    "Componente Ambiental - SST": _CAMPO,
+    "Componente Social":          _CAMPO,
+    # formulario_pmt: RLS sin filtro por creado_por → obra ve todos los PMTs
+    "Componente PMT":             _CAMPO,
+    "Seguimiento PMTs":           _CAMPO,
 }
 
 # ══════════════════════════════════════════════════════════════
