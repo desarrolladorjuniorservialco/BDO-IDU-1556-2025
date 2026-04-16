@@ -20,10 +20,11 @@ import logging
 import streamlit as st
 
 # ── Infraestructura ────────────────────────────────────────
-from styles  import CSS, CSS_LIGHT_OVERRIDE, CSS_DARK_OVERRIDE
-from auth    import login
-from sidebar import sidebar
-from config  import NAV_ACCESS
+from styles        import CSS, CSS_LIGHT_OVERRIDE, CSS_DARK_OVERRIDE
+from auth          import login
+from sidebar       import sidebar
+from config        import NAV_ACCESS
+from session_store import restore_session
 
 # ── Páginas ────────────────────────────────────────────────
 from pages.estado_actual        import page_estado_actual
@@ -115,14 +116,27 @@ def _perfil_integro(perfil: dict) -> bool:
 # ══════════════════════════════════════════════════════════════
 
 def main() -> None:
-    # ── 1. Verificar sesión ────────────────────────────────
+    # ── 1. Restaurar sesión desde URL (recarga del navegador) ──
+    if 'user' not in st.session_state:
+        sid = st.query_params.get('sid', '')
+        if sid:
+            data = restore_session(sid)
+            if data:
+                st.session_state['user']          = data['user']
+                st.session_state['perfil']        = data['perfil']
+                st.session_state['_access_token'] = data['access_token']
+                st.session_state['_session_id']   = sid
+                if data.get('current_page'):
+                    st.session_state['current_page'] = data['current_page']
+
+    # ── 2. Verificar sesión ────────────────────────────────
     if 'user' not in st.session_state or 'perfil' not in st.session_state:
         login()
         return
 
     perfil = st.session_state['perfil']
 
-    # ── 2. Validar integridad del perfil ───────────────────
+    # ── 3. Validar integridad del perfil ───────────────────
     if not _perfil_integro(perfil):
         st.error("Sesión inválida. Por favor, inicia sesión nuevamente.")
         for k in ['user', 'perfil', 'current_page']:
@@ -130,10 +144,10 @@ def main() -> None:
         st.rerun()
         return
 
-    # ── 3. Renderizar sidebar y obtener página activa ──────
+    # ── 4. Renderizar sidebar y obtener página activa ──────
     page = sidebar(perfil)
 
-    # ── 4. Verificar autorización (server-side) ────────────
+    # ── 5. Verificar autorización (server-side) ────────────
     if not _authorized(perfil, page):
         st.error("No tienes permiso para acceder a esta sección.")
         _log.warning(
@@ -142,7 +156,7 @@ def main() -> None:
         )
         return
 
-    # ── 5. Renderizar página ───────────────────────────────
+    # ── 6. Renderizar página ───────────────────────────────
     fn = PAGE_MAP.get(page)
     if not fn:
         st.error("Página no disponible.")

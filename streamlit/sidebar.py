@@ -3,9 +3,10 @@ sidebar.py — Navegación lateral con control de acceso por rol.
 """
 
 import streamlit as st
-from config import ROL_LABELS, NAV_ACCESS, NAV_CATEGORIES
-from database import load_cantidades
-from auth import logout
+from config        import ROL_LABELS, NAV_ACCESS, NAV_CATEGORIES
+from database      import load_cantidades
+from auth          import logout
+from session_store import update_page
 
 
 def sidebar(perfil: dict) -> str:
@@ -110,6 +111,7 @@ def sidebar(perfil: dict) -> str:
                 else:
                     if st.button(page, key=f"nav_{page}", use_container_width=True):
                         st.session_state['current_page'] = page
+                        update_page(st.session_state.get('_session_id', ''), page)
                         st.rerun()
 
         # ── Cerrar sesión ──────────────────────────────────

@@ -24,6 +24,7 @@ from datetime import datetime, timedelta
 import streamlit as st
 
 from database import get_supabase
+from session_store import create_session, invalidate_session
 
 _log = logging.getLogger(__name__)
 
@@ -238,9 +239,13 @@ def login() -> None:
             access_token = None
             if resp.session:
                 access_token = resp.session.access_token
+
+            sid = create_session(resp.user, perfil, access_token or '')
             st.session_state['user']          = resp.user
             st.session_state['perfil']        = perfil
             st.session_state['_access_token'] = access_token
+            st.session_state['_session_id']   = sid
+            st.query_params['sid'] = sid
             st.rerun()
 
         except Exception:
@@ -252,7 +257,10 @@ def login() -> None:
 
 def logout() -> None:
     """Cierra la sesión y limpia todo el estado de Streamlit."""
-    # Incluye _access_token y contadores de rate limiting
+    sid = st.session_state.get('_session_id')
+    if sid:
+        invalidate_session(sid)
+    st.query_params.clear()
     for k in list(st.session_state.keys()):
         st.session_state.pop(k, None)
     st.rerun()
