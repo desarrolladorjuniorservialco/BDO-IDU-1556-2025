@@ -315,6 +315,37 @@ def load_fotos_reporte(folios: tuple) -> pd.DataFrame:
     return _safe_query(_q, context='load_fotos_reporte')
 
 
+@st.cache_data(ttl=30)
+def load_anotaciones_generales(limit: int = 300) -> pd.DataFrame:
+    """
+    Anotaciones generales de bitácora.
+    Retorna las `limit` más recientes ordenadas ASC (más antigua arriba,
+    más reciente abajo) para visualización tipo chat.
+    TTL corto (30 s) para que el historial se sienta responsivo.
+    """
+    _cols = (
+        'id,fecha,tramo,civ,pk,anotacion,'
+        'usuario_nombre,usuario_rol,usuario_empresa,created_at'
+    )
+
+    def _q():
+        # Traer las más recientes (DESC) y reordenar en Python a ASC
+        result = (
+            get_supabase()
+            .table('anotaciones_generales')
+            .select(_cols)
+            .order('created_at', desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return result
+
+    df = _safe_query(_q, context='load_anotaciones_generales')
+    if not df.empty:
+        df = df.iloc[::-1].reset_index(drop=True)
+    return df
+
+
 @st.cache_data(ttl=300)
 def load_formulario_pmt() -> pd.DataFrame:
     """Formularios PMT registrados en campo."""
