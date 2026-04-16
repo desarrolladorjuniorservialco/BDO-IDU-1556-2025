@@ -105,8 +105,7 @@ def _perfil_integro(perfil: dict) -> bool:
         isinstance(perfil, dict)
         and isinstance(perfil.get('id'), str) and len(perfil['id']) > 0
         and isinstance(perfil.get('rol'), str) and perfil['rol'] in {
-            'inspector', 'obra', 'residente', 'coordinador',
-            'interventor', 'supervisor', 'admin',
+            'operativo', 'obra', 'interventoria', 'supervision', 'admin',
         }
         and isinstance(perfil.get('nombre'), str)
     )

@@ -57,26 +57,26 @@ def _historial_aprobacion_html(reg: pd.Series) -> str:
     """Genera HTML con el historial de aprobación del registro."""
     items = []
 
-    # Residente
+    # Obra — nivel 1
     if reg.get('aprobado_residente'):
         est = str(reg.get('estado_residente', '')).capitalize()
         fec = str(reg.get('fecha_residente', ''))[:10]
         obs = reg.get('obs_residente', '')
         items.append(f"""
         <div class="approval-history-item">
-            <span class="approval-history-role">Residente · {est} · {fec}</span>
+            <span class="approval-history-role">Obra (Niv. 1) · {est} · {fec}</span>
             <span style="font-size:0.78rem;">{reg['aprobado_residente']}</span>
             {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
         </div>""")
 
-    # Interventor
+    # Interventoría — nivel 2
     if reg.get('aprobado_interventor'):
         est = str(reg.get('estado_interventor', '')).capitalize()
         fec = str(reg.get('fecha_interventor', ''))[:10]
         obs = reg.get('obs_interventor', '')
         items.append(f"""
         <div class="approval-history-item">
-            <span class="approval-history-role">Interventor · {est} · {fec}</span>
+            <span class="approval-history-role">Interventoría (Niv. 2) · {est} · {fec}</span>
             <span style="font-size:0.78rem;">{reg['aprobado_interventor']}</span>
             {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
         </div>""")
@@ -439,10 +439,10 @@ def page_reporte_cantidades(perfil: dict) -> None:
                         st.caption(str(reg['descripcion']))
 
                     # Observaciones de niveles previos (visibles para roles superiores)
-                    if reg.get('obs_residente') and rol in ('interventor', 'supervisor', 'admin'):
-                        st.warning(f"Obs. Residente: {reg['obs_residente']}")
-                    if reg.get('obs_interventor') and rol in ('supervisor', 'admin'):
-                        st.warning(f"Obs. Interventor: {reg['obs_interventor']}")
+                    if reg.get('obs_residente') and rol in ('interventoria', 'supervision', 'admin'):
+                        st.warning(f"Obs. Obra (Niv. 1): {reg['obs_residente']}")
+                    if reg.get('obs_interventor') and rol in ('supervision', 'admin'):
+                        st.warning(f"Obs. Interventoría (Niv. 2): {reg['obs_interventor']}")
 
                     # Registro fotográfico
                     if not df_fot.empty and 'folio' in df_fot.columns:

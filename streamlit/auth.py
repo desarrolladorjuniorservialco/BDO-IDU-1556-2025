@@ -36,8 +36,7 @@ _EMAIL_RE = re.compile(r'^[^@\s]{1,64}@[^@\s]{1,64}\.[^@\s]{1,10}$')
 
 # Roles válidos permitidos en perfiles
 _ROLES_VALIDOS = frozenset({
-    'inspector', 'obra', 'residente', 'coordinador',
-    'interventor', 'supervisor', 'admin',
+    'operativo', 'obra', 'interventoria', 'supervision', 'admin',
 })
 
 # ── Rate limiting SERVER-SIDE ──────────────────────────────

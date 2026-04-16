@@ -16,9 +16,10 @@ Sistema de sincronización **QFieldCloud → Supabase** para el seguimiento de o
 ## Flujo general
 
 ```
-Inspector / Residente (campo)
+Inspector de Campo (rol: operativo)
         │
         │  captura en QField (Android / iOS / Desktop)
+        │  + anotaciones generales en plataforma Streamlit
         ▼
 QFieldCloud
         │  GeoPackages (*.gpkg) + Excel contrato (*.xlsx) + fotos
@@ -32,6 +33,39 @@ sync/sync_qfield.py
                 ├─▶  Streamlit          dashboards y aprobaciones
                 └─▶  QGIS               SIG_IDU-1556-2025_cloud.qgs
 ```
+
+## Roles y flujo de aprobación
+
+| Rol           | Descripción                   | Acceso                                          |
+|---------------|-------------------------------|-------------------------------------------------|
+| `operativo`   | Inspectores de campo          | Crea registros en QField; anotaciones generales; lectura de sus propios registros |
+| `obra`        | Residentes de obra            | Revisión y aprobación **nivel 1** (BORRADOR/DEVUELTO → REVISADO) |
+| `interventoria` | Interventoría IDU           | Aprobación definitiva **nivel 2** (REVISADO → APROBADO) |
+| `supervision` | Supervisión IDU               | Solo lectura (todos los registros)              |
+| `admin`       | Administrador del sistema     | Aprobación nivel 2 + acceso total               |
+
+### Flujo escalonado de aprobación de cantidades y reportes
+
+```
+operativo crea registro  →  estado: BORRADOR
+        │
+        ▼
+obra revisa (Nivel 1)
+  · Aprueba  →  estado: REVISADO   (cant_residente, obs_residente)
+  · Devuelve →  estado: DEVUELTO   (obs_residente obligatoria)
+        │
+        ▼
+interventoria / admin aprueba definitivamente (Nivel 2)
+  · Aprueba  →  estado: APROBADO   (cant_interventor, obs_interventor)
+  · Devuelve →  estado: DEVUELTO   (obs_interventor obligatoria)
+        │
+        ▼
+supervision — solo lectura en todos los estados
+```
+
+> Las columnas de BD (`cant_residente`, `cant_interventor`, `estado_residente`,
+> `estado_interventor`, etc.) conservan sus nombres originales independientemente
+> de los roles que las escriben. El cambio de roles solo afecta la capa Streamlit.
 
 ---
 
@@ -384,6 +418,11 @@ El DDL de la base de datos (tablas, RLS, triggers, índices) se mantiene en el r
 4. `003_FUNCIONES_TRIGGERS.sql` — lógica de negocio en BD
 5. `004_INDICES.sql` — índices de rendimiento
 6. `005_USUARIOS.sql` — solo en desarrollo
+
+> **Nota sobre roles:** Las políticas RLS deben estar alineadas con los roles
+> definidos en la plataforma: `operativo`, `obra`, `interventoria`, `supervision`, `admin`.
+> Las columnas de aprobación en BD conservan los nombres heredados (`cant_residente`,
+> `cant_interventor`, etc.) por compatibilidad con los datos existentes.
 
 ---
 

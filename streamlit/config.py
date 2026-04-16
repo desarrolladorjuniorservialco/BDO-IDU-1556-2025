@@ -6,15 +6,19 @@ Roles, navegación, paleta de colores y configuración de aprobaciones.
 # ══════════════════════════════════════════════════════════════
 # ROLES
 # ══════════════════════════════════════════════════════════════
+# operativo    → inspectores de campo; crean registros en QField y
+#                realizan anotaciones generales (solo lectura en reportes)
+# obra         → residentes de obra; revisan y aprueban nivel 1
+# interventoria→ interventoría IDU; aprueban definitivamente nivel 2
+# supervision  → supervisión IDU; solo lectura
+# admin        → administrador total del sistema
 
 ROL_LABELS: dict[str, str] = {
-    'inspector':   'Inspector de Campo',
-    'obra':        'Personal de Obra',
-    'residente':   'Residente de Obra',
-    'coordinador': 'Coordinador de Obra',
-    'interventor': 'Interventor IDU',
-    'supervisor':  'Supervisor IDU',
-    'admin':       'Administrador',
+    'operativo':     'Inspector de Campo',
+    'obra':          'Residente de Obra',
+    'interventoria': 'Interventoría IDU',
+    'supervision':   'Supervisión IDU',
+    'admin':         'Administrador',
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -22,17 +26,16 @@ ROL_LABELS: dict[str, str] = {
 # ══════════════════════════════════════════════════════════════
 
 # Todos los roles autenticados
-_TODOS = ['inspector', 'obra', 'residente', 'coordinador',
-          'interventor', 'supervisor', 'admin']
+_TODOS = ['operativo', 'obra', 'interventoria', 'supervision', 'admin']
 
-# Solo gestión (sin campo: inspector/obra no acceden a vistas financieras,
+# Solo gestión (operativo no accede a vistas financieras,
 # mapas de ejecución ni generación de informes)
-_GESTION = ['residente', 'coordinador', 'interventor', 'supervisor', 'admin']
+_GESTION = ['obra', 'interventoria', 'supervision', 'admin']
 
-# Campo + gestión: inspector/obra ven sus propios datos (RLS filtra por
-# creado_por); residente+ ven todos los registros para revisar/aprobar.
-# formulario_pmt no tiene filtro por creado_por en RLS → obra ve todos.
-_CAMPO = _TODOS
+# operativo ve sus propios datos (RLS filtra por creado_por);
+# obra+ ven todos los registros para revisar/aprobar.
+# formulario_pmt no tiene filtro por creado_por en RLS → todos ven todos.
+
 
 NAV_ACCESS: dict[str, list[str]] = {
     # ── General ──────────────────────────────────────────────
@@ -44,16 +47,16 @@ NAV_ACCESS: dict[str, list[str]] = {
     "Seguimiento Presupuesto":    _GESTION,
     "Generar Informe":            _GESTION,
     # ── Reportes ─────────────────────────────────────────────
-    # inspector/obra ven sus propios registros (RLS: creado_por = auth.uid())
-    # residente+ ven todos para el flujo de revisión y aprobación
-    "Reporte Cantidades":         _CAMPO,
+    # operativo ve sus propios registros (RLS: creado_por = auth.uid())
+    # obra+ ven todos para el flujo de revisión y aprobación
+    "Reporte Cantidades":         _TODOS,
     # ── Componentes Transversales ─────────────────────────────
     # Mismo patrón de RLS que Reporte Cantidades
-    "Componente Ambiental - SST": _CAMPO,
-    "Componente Social":          _CAMPO,
-    # formulario_pmt: RLS sin filtro por creado_por → obra ve todos los PMTs
-    "Componente PMT":             _CAMPO,
-    "Seguimiento PMTs":           _CAMPO,
+    "Componente Ambiental - SST": _TODOS,
+    "Componente Social":          _TODOS,
+    # formulario_pmt: RLS sin filtro por creado_por → todos ven todos los PMTs
+    "Componente PMT":             _TODOS,
+    "Seguimiento PMTs":           _TODOS,
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -110,9 +113,10 @@ PAGE_COLOR: dict[str, str] = {
 # estados_visibles=None → solo lectura (sin botones de acción)
 
 APROBACION_CONFIG: dict[str, tuple] = {
-    'inspector':   (None, None, None),
-    'obra':        (None, None, None),
-    'residente':   (
+    # operativo: solo lectura, sin panel de aprobación
+    'operativo':     (None, None, None),
+    # obra (residente): nivel 1 — revisa BORRADOR/DEVUELTO → REVISADO
+    'obra': (
         ['BORRADOR', 'DEVUELTO'],
         'REVISADO',
         {
@@ -123,18 +127,8 @@ APROBACION_CONFIG: dict[str, tuple] = {
             'campo_obs':    'obs_residente',
         },
     ),
-    'coordinador': (
-        ['BORRADOR', 'DEVUELTO'],
-        'REVISADO',
-        {
-            'campo_cant':   'cant_residente',
-            'campo_estado': 'estado_residente',
-            'campo_apr':    'aprobado_residente',
-            'campo_fecha':  'fecha_residente',
-            'campo_obs':    'obs_residente',
-        },
-    ),
-    'interventor': (
+    # interventoria: nivel 2 — aprueba definitivamente REVISADO → APROBADO
+    'interventoria': (
         ['REVISADO'],
         'APROBADO',
         {
@@ -145,8 +139,10 @@ APROBACION_CONFIG: dict[str, tuple] = {
             'campo_obs':    'obs_interventor',
         },
     ),
-    'supervisor':  (None, None, None),
-    'admin':       (
+    # supervision: solo lectura
+    'supervision':   (None, None, None),
+    # admin: mismos permisos que interventoria (aprobación nivel 2)
+    'admin': (
         ['REVISADO'],
         'APROBADO',
         {
