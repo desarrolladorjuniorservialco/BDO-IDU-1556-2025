@@ -90,8 +90,8 @@ def page_anotaciones_diario(perfil: dict) -> None:
     section_badge("Anotaciones — Reporte Diario", "purple")
     st.markdown("### Registro Diario de Obra")
 
-    cfg = APROBACION_CONFIG.get(rol, (None, None, None))
-    estados_vis, estado_apr, campos = cfg
+    cfg = APROBACION_CONFIG.get(rol, (None, None, None, None))
+    estados_vis, estado_apr, campos, estados_accion = cfg
 
     # ── Formulario de filtros ──────────────────────────────
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
@@ -275,7 +275,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
                     if hist:
                         st.markdown(hist, unsafe_allow_html=True)
 
-                    _panel_aprobacion_rd(reg, perfil, campos, estado_apr)
+                    _panel_aprobacion_rd(reg, perfil, campos, estado_apr, estados_accion)
             t += 1
 
             # ── Tab Clima ──────────────────────────────────
@@ -351,9 +351,11 @@ def page_anotaciones_diario(perfil: dict) -> None:
 
 
 def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
-                          campos: dict | None, estado_apr: str | None) -> None:
+                          campos: dict | None, estado_apr: str | None,
+                          estados_accion: list | None) -> None:
     """Panel de aprobación/devolución para reporte diario."""
-    if not campos:
+    est_actual = str(reg.get('estado', '')).upper()
+    if not campos or not estados_accion or est_actual not in estados_accion:
         st.caption(f"Estado: {reg.get('estado', '—')}")
         return
 
