@@ -75,7 +75,7 @@ def _historial_aprobacion_html(reg: pd.Series) -> str:
 
 def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
                             campos: dict | None, estado_apr: str | None,
-                            tabla: str) -> None:
+                            tabla: str, estados_accion: list | None) -> None:
     """Panel de aprobación/devolución con cantidad validada."""
     est_actual = str(reg.get('estado', '')).upper()
     reg_id     = str(reg.get('id', ''))
@@ -84,7 +84,7 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
     if hist_html:
         st.markdown(hist_html, unsafe_allow_html=True)
 
-    if not campos:
+    if not campos or not estados_accion or est_actual not in estados_accion:
         st.caption(f"Estado: {est_actual}")
         return
 
@@ -173,8 +173,8 @@ def panel_componentes(
     tabla:       tabla Supabase donde se persisten las aprobaciones.
     """
     rol = perfil['rol']
-    cfg = APROBACION_CONFIG.get(rol, (None, None, None))
-    estados_vis, estado_apr, campos = cfg
+    cfg = APROBACION_CONFIG.get(rol, (None, None, None, None))
+    estados_vis, estado_apr, campos, estados_accion = cfg
 
     # ── Filtros ────────────────────────────────────────────
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
@@ -277,8 +277,8 @@ def panel_componentes(
         st.info("Sin registros para los filtros seleccionados.")
         return
 
-    # ── Vista solo lectura ─────────────────────────────────
-    if not campos:
+    # ── Vista solo lectura (operativo, supervision sin estados_accion) ──────
+    if not campos and not estados_accion:
         cols = [c for c in [
             'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo',
             'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad', 'estado',
@@ -365,4 +365,4 @@ def panel_componentes(
                         st.caption("Sin fotos registradas")
 
             with col_apr:
-                _panel_aprobacion_comp(reg, perfil, campos, estado_apr, tabla)
+                _panel_aprobacion_comp(reg, perfil, campos, estado_apr, tabla, estados_accion)
