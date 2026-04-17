@@ -109,8 +109,9 @@ PAGE_COLOR: dict[str, str] = {
 # ══════════════════════════════════════════════════════════════
 # FLUJO DE APROBACIÓN ESCALONADA
 # ══════════════════════════════════════════════════════════════
-# Formato: rol → (estados_visibles, estado_al_aprobar, dict_campos)
-# estados_visibles=None → solo lectura (sin botones de acción)
+# Formato: rol → (estados_visibles, estado_al_aprobar, dict_campos, estados_accion)
+# estados_visibles=None  → todos los estados son visibles (sin filtro de fila)
+# estados_accion=None    → sin panel de acciones (solo lectura)
 
 APROBACION_CONFIG: dict[str, tuple] = {
     # operativo: solo lectura, sin panel de aprobación
