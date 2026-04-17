@@ -94,7 +94,8 @@ def _historial_aprobacion_html(reg: pd.Series) -> str:
 
 
 def _panel_aprobacion(reg: pd.Series, perfil: dict,
-                       campos: dict | None, estado_apr: str | None) -> None:
+                       campos: dict | None, estado_apr: str | None,
+                       estados_accion: list | None) -> None:
     """Panel de aprobación/devolución con trazabilidad completa."""
     est_actual = str(reg.get('estado', '')).upper()
     reg_id     = str(reg.get('id', ''))
@@ -104,7 +105,7 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
     if hist_html:
         st.markdown(hist_html, unsafe_allow_html=True)
 
-    if not campos:
+    if not campos or not estados_accion or est_actual not in estados_accion:
         st.caption(f"Estado: {est_actual}")
         return
 
@@ -205,8 +206,8 @@ def page_reporte_cantidades(perfil: dict) -> None:
     section_badge("Reporte de Cantidades de Obra", "blue")
     st.markdown("### Medición y Validación de Cantidades")
 
-    cfg = APROBACION_CONFIG.get(rol, (None, None, None))
-    estados_vis, estado_apr, campos = cfg
+    cfg = APROBACION_CONFIG.get(rol, (None, None, None, None))
+    estados_vis, estado_apr, campos, estados_accion = cfg
 
     # ── Filtros ───────────────────────────────────────────
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
@@ -468,7 +469,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
                         '<div class="approval-panel">',
                         unsafe_allow_html=True,
                     )
-                    _panel_aprobacion(reg, perfil, campos, estado_apr)
+                    _panel_aprobacion(reg, perfil, campos, estado_apr, estados_accion)
                     st.markdown('</div>', unsafe_allow_html=True)
 
         # ── Exportar CSV al final del detalle ─────────────
