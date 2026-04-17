@@ -384,7 +384,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                 upd = {
                     'estado':               estado_apr,
                     campos['campo_estado']: 'aprobado',
-                    campos['campo_apr']:    perfil['id'],
+                    campos['campo_apr']:    perfil.get('nombre', perfil['id']),
                     campos['campo_fecha']:  datetime.now().isoformat(),
                 }
                 if obs_val.strip():

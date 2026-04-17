@@ -150,7 +150,7 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
                         'estado':               estado_apr,
                         campo_cant:             cant_val,
                         campos['campo_estado']: 'aprobado',
-                        campos['campo_apr']:    perfil['id'],
+                        campos['campo_apr']:    perfil.get('nombre', perfil['id']),
                         campos['campo_fecha']:  datetime.now().isoformat(),
                     }
                     if obs_val.strip():
