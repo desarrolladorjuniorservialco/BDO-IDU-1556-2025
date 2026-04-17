@@ -160,6 +160,14 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
                     st.error("No fue posible devolver. Intenta de nuevo.")
 
 
+# Mapeo filtro_tipo → capitulo_num en presupuesto_componentes_bd
+_CAPITULO_NUM: dict[str, int] = {
+    'ambiental': 31,
+    'social':    32,
+    'pmt':       33,
+}
+
+
 def panel_componentes(
     perfil: dict,
     filtro_tipo: str | None,
@@ -168,8 +176,9 @@ def panel_componentes(
     """
     Panel genérico para listar y aprobar registros de componentes transversales.
 
-    filtro_tipo: cadena que se busca en la columna 'tipo_componente' (case-insensitive).
-                 Si es None, no se aplica filtro de tipo.
+    filtro_tipo: clave del mapeo _CAPITULO_NUM ('ambiental', 'social', 'pmt').
+                 Filtra registros_componentes por capitulo_num en BD.
+                 Si es None, no se aplica filtro de capítulo.
     tabla:       tabla Supabase donde se persisten las aprobaciones.
     """
     rol = perfil['rol']
@@ -223,13 +232,8 @@ def panel_componentes(
         estados=estados_q,
         fecha_ini=fi.isoformat(),
         fecha_fin=ff.isoformat(),
+        capitulo_num=_CAPITULO_NUM.get(filtro_tipo) if filtro_tipo else None,
     )
-
-    # Filtro por tipo de componente
-    if filtro_tipo and not df.empty and 'tipo_componente' in df.columns:
-        df = df[df['tipo_componente'].str.contains(
-            re.escape(filtro_tipo), case=False, na=False
-        )]
 
     # Filtros adicionales
     def _tf(df, col, val):
