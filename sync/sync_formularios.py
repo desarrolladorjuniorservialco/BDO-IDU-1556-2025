@@ -175,6 +175,9 @@ def sync_registros_reporte_diario(supabase, token, project_id):
     """
     [D-03] TYPO en GPKG: 'feca_reporte' en lugar de 'fecha_reporte'.
     Se lee con OR para cubrir cuando lo corrijan en QField.
+    [FIX-RD-001] QField a veces almacena la cadena literal 'folio' en id_unico
+    (nombre de columna en lugar del valor). En ese caso se deriva id_unico del
+    folio para evitar la violación de la constraint unique id_unico_key (23505).
     """
     print("\n── registros_reporte_diario ──")
     if not download_gpkg(token, project_id, 'Reporte_Diario.gpkg', '/tmp/reporte_diario.gpkg'):
@@ -192,9 +195,13 @@ def sync_registros_reporte_diario(supabase, token, project_id):
 
         lat, lon = coords_from_geom(row)
 
+        # [FIX-RD-001] id_unico='folio' (literal) o None → usar el valor del folio
+        id_unico_raw = safe(row.get('id_unico'))
+        id_unico = id_unico_raw if (id_unico_raw and id_unico_raw != 'folio') else str(folio)
+
         data = {
             'folio':          str(folio),
-            'id_unico':       safe(row.get('id_unico')),
+            'id_unico':       id_unico,
             'contrato_id':    CONTRATO_ID,
             'usuario_qfield': safe(row.get('usuario')),
             'latitud':        lat,
