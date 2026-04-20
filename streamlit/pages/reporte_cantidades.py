@@ -427,8 +427,6 @@ def page_reporte_cantidades(perfil: dict) -> None:
                         f'<div class="record-field-value">{safe_float(reg.get("cant_residente")) or "—"}</div></div>'
                         f'<div><div class="record-field-label">Cant. Interventor</div>'
                         f'<div class="record-field-value">{safe_float(reg.get("cant_interventor")) or "—"}</div></div>'
-                        f'<div><div class="record-field-label">Unidad</div>'
-                        f'<div class="record-field-value">{reg.get("unidad","—")}</div></div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
