@@ -244,8 +244,8 @@ def page_anotaciones_diario(perfil: dict) -> None:
                     # Campos de actividad del reporte diario
                     _activity_fields = {
                         'Tramo':    reg.get('id_tramo'),
-                        'CIV':      int(reg.get('civ')),
-                        'PK':       int(reg.get('pk_id')),
+                        'CIV':      reg.get('civ'),
+                        'PK':       reg.get('pk_id'),
                         'Cantidad': reg.get('cantidad'),
                         'Unidad':   reg.get('unidad'),
                         'Leído':    reg.get('leido'),
