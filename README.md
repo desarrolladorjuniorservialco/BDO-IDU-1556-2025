@@ -1,6 +1,6 @@
 # BDO · IDU-1556-2025
 
-Sistema de sincronización **QFieldCloud → Supabase** para el seguimiento de obra del contrato IDU-1556-2025.
+Sistema integral de seguimiento de obra para el contrato IDU-1556-2025 Grupo 4. Integra captura en campo con QField, sincronización automática a Supabase/PostgreSQL y plataforma web Streamlit para consulta, aprobación y generación de informes.
 
 | | |
 |---|---|
@@ -10,6 +10,7 @@ Sistema de sincronización **QFieldCloud → Supabase** para el seguimiento de o
 | **Supervisión** | IDU |
 | **Vigencia** | 2025-12-26 → 2028-02-26 |
 | **Valor** | $ 40.704.606.199 COP |
+| **Localidades** | Mártires · San Cristóbal · Rafael Uribe Uribe · Santafé · Antonio Nariño |
 
 ---
 
@@ -30,21 +31,23 @@ sync/sync_qfield.py
         ├─▶  PostgreSQL (Supabase)   ← tablas, registros, estados
         └─▶  Storage (Supabase)      ← fotos comprimidas · bucket: Registro_Obra
                 │
-                ├─▶  Streamlit          dashboards y aprobaciones
-                └─▶  QGIS               SIG_IDU-1556-2025_cloud.qgs
+                ├─▶  Streamlit (BDO Web)     dashboards, aprobaciones, informes PDF
+                └─▶  QGIS                    SIG_IDU-1556-2025_cloud.qgs
 ```
+
+---
 
 ## Roles y flujo de aprobación
 
-| Rol           | Descripción                   | Acceso                                          |
-|---------------|-------------------------------|-------------------------------------------------|
-| `operativo`   | Inspectores de campo          | Crea registros en QField; anotaciones generales; lectura de sus propios registros |
-| `obra`        | Residentes de obra            | Revisión y aprobación **nivel 1** (BORRADOR/DEVUELTO → REVISADO) |
-| `interventoria` | Interventoría IDU           | Aprobación definitiva **nivel 2** (REVISADO → APROBADO) |
-| `supervision` | Supervisión IDU               | Solo lectura (todos los registros)              |
-| `admin`       | Administrador del sistema     | Aprobación nivel 2 + acceso total               |
+| Rol | Descripción | Acceso |
+|---|---|---|
+| `operativo` | Inspectores de campo | Crea registros en QField; anotaciones generales; ve sus propios registros |
+| `obra` | Residentes de obra | Revisión y aprobación **nivel 1** (BORRADOR → REVISADO) |
+| `interventoria` | Interventoría IDU | Aprobación definitiva **nivel 2** (REVISADO → APROBADO) |
+| `supervision` | Supervisión IDU | Solo lectura (todos los registros) |
+| `admin` | Administrador del sistema | Aprobación nivel 2 + acceso total |
 
-### Flujo escalonado de aprobación de cantidades y reportes
+### Flujo escalonado
 
 ```
 operativo crea registro  →  estado: BORRADOR
@@ -69,11 +72,26 @@ supervision — solo lectura en todos los estados
 
 ---
 
+## Repositorios del proyecto
+
+```
+┌─ BDO-IDU-1556-2025  (este repositorio)
+│    Scripts Python de sincronización QFieldCloud → Supabase.
+│    Plataforma web Streamlit para gestión y aprobación.
+│    GitHub Actions: ejecución automática cada 20 min.
+│
+└─ SupaBaseSQLEditor
+     Esquema SQL completo: tablas, RLS, triggers, índices.
+     Se ejecuta en el SQL Editor de Supabase o via psql.
+```
+
+---
+
 ## Estructura del repositorio
 
 ```
 BDO-IDU-1556-2025/
-├── sync/                          Paquete Python principal
+├── sync/                          Paquete Python de sincronización
 │   ├── sync_qfield.py             Orquestador (punto de entrada)
 │   ├── config.py                  Variables de entorno y constantes
 │   ├── connections.py             Login QFieldCloud + cliente Supabase
@@ -88,7 +106,30 @@ BDO-IDU-1556-2025/
 │   ├── sync_bd.py                 Tablas secundarias del reporte diario
 │   ├── sync_rf.py                 Registros fotográficos (rf_*)
 │   └── __init__.py
-├── migrations/                    Parches SQL incrementales (si aplican)
+├── streamlit/                     Plataforma web BDO
+│   ├── app.py                     Orquestador Streamlit (punto de entrada)
+│   ├── auth.py                    Autenticación Supabase Auth + rate limiting
+│   ├── config.py                  Roles, navegación y configuración de aprobaciones
+│   ├── database.py                Queries a Supabase desde Streamlit
+│   ├── sidebar.py                 Sidebar con navegación por rol
+│   ├── session_store.py           Persistencia de sesión (URL sid)
+│   ├── styles.py                  CSS global + overrides light/dark
+│   ├── ui.py                      Componentes UI reutilizables
+│   ├── pdf_generator.py           Generación de informes PDF
+│   └── pages/
+│       ├── estado_actual.py       Dashboard resumen del contrato
+│       ├── anotaciones.py         Anotaciones de campo (rol operativo)
+│       ├── anotaciones_diario.py  Reporte diario (personal, clima, maquinaria, SST)
+│       ├── reporte_cantidades.py  Cantidades de obra + flujo de aprobación
+│       ├── componente_ambiental.py Componente SST-Ambiental
+│       ├── componente_social.py   Componente Social
+│       ├── componente_pmt.py      Formulario PMT
+│       ├── seguimiento_pmts.py    Dashboard seguimiento de PMTs
+│       ├── presupuesto.py         Seguimiento presupuestal
+│       ├── mapa.py                Mapa de ejecución (Folium/Pydeck)
+│       ├── generar_pdf.py         Generación y descarga de informes
+│       └── _componentes_base.py   Componentes UI base para formularios
+├── migrations/                    Parches SQL incrementales
 ├── .github/workflows/
 │   └── sync.yml                   Workflow de automatización
 ├── requirements.txt               Dependencias Python
@@ -98,11 +139,206 @@ BDO-IDU-1556-2025/
 
 ---
 
-## Módulos — descripción detallada
+## Plataforma web — Streamlit
+
+La aplicación Streamlit es la interfaz de gestión del contrato. Se conecta directamente a Supabase usando el JWT del usuario autenticado, de modo que las políticas RLS aplican en cada consulta.
+
+### Inicio de sesión y seguridad
+
+- Autenticación con **Supabase Auth** (email + contraseña).
+- **Rate limiting server-side** por email: bloqueo de 15 minutos tras 3 intentos fallidos. El bloqueo es compartido entre todas las pestañas del servidor (`st.cache_resource` + `threading.Lock`), no solo por pestaña del navegador.
+- Los mensajes de error son genéricos (no revelan si el correo existe).
+- La contraseña nunca se almacena ni se loguea.
+- El JWT del usuario se guarda en `session_state` para operaciones de escritura con RLS activo.
+- La sesión persiste ante recarga del navegador via parámetro `?sid=` en la URL.
+- **Control de acceso doble**: el sidebar no muestra páginas no autorizadas y `_authorized()` verifica el rol en el servidor antes de renderizar.
+
+### Páginas y acceso por rol
+
+| Página | operativo | obra | interventoria | supervision | admin |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Estado Actual | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Anotaciones | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Anotaciones Diario | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Reporte Cantidades | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Componente Ambiental - SST | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Componente Social | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Componente PMT | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Seguimiento PMTs | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Mapa Ejecución | — | ✓ | ✓ | ✓ | ✓ |
+| Seguimiento Presupuesto | — | ✓ | ✓ | ✓ | ✓ |
+| Generar Informe | — | ✓ | ✓ | ✓ | ✓ |
+
+> `operativo` accede únicamente a sus propios registros — el filtro se aplica
+> en la BD por RLS (`creado_por = auth.uid()`). `obra+` ven todos los registros
+> para el flujo de revisión. `formulario_pmt` no tiene filtro por `creado_por`
+> en RLS → todos los roles ven todos los PMTs.
+
+### Flujo de aprobación en Streamlit
+
+| Rol | Acciona sobre | Estado resultante | Campos escritos |
+|---|---|---|---|
+| `obra` | BORRADOR | REVISADO | `cant_residente`, `estado_residente`, `aprobado_residente`, `fecha_residente`, `obs_residente` |
+| `interventoria` | REVISADO | APROBADO | `cant_interventor`, `estado_interventor`, `aprobado_interventor`, `fecha_interventor`, `obs_interventor` |
+| `admin` | REVISADO | APROBADO | mismos campos que interventoria |
+| `operativo` / `supervision` | — | solo lectura | — |
+
+### Módulos Streamlit
+
+**`app.py`** — Orquestador principal. Configura la página, inyecta el CSS global (con detección de tema claro/oscuro), define el `PAGE_MAP` con todas las páginas y ejecuta el loop principal con verificación de autorización en cada carga.
+
+**`auth.py`** — Autenticación. Login con Supabase Auth, validación de rol, rate limiting por email con `threading.Lock`, persistencia de sesión vía `session_store`.
+
+**`config.py`** — Constantes globales: `ROL_LABELS`, `NAV_ACCESS` (control de acceso por página), `NAV_CATEGORIES` (estructura de navegación), `PAGE_COLOR` (acento por sección) y `APROBACION_CONFIG` (campos y estados del flujo de aprobación escalonado por rol).
+
+**`database.py`** — Capa de datos. Queries a Supabase usando el cliente con JWT del usuario para que RLS aplique. Incluye `load_cantidades()` y demás funciones de carga usadas por las páginas.
+
+**`sidebar.py`** — Sidebar con header de usuario, chips de estado rápido (total/aprobados/revisados/devueltos de cantidades), navegación por categorías filtrada por rol e ítem activo resaltado.
+
+**`session_store.py`** — Persistencia de sesión entre recargas del navegador. Almacena `user`, `perfil`, `access_token` y `current_page` identificados por un `sid` único en la URL.
+
+**`styles.py`** — CSS global del sistema de diseño BDO (variables, tipografía IBM Plex, componentes de tarjeta, chips, badges) + overrides para tema claro y oscuro.
+
+**`pdf_generator.py`** — Generación de informes PDF descargables desde Streamlit.
+
+**`pages/`** — Cada archivo es una vista independiente:
+
+| Módulo | Descripción |
+|---|---|
+| `estado_actual.py` | Dashboard KPIs del contrato: avance de cantidades, estado de formularios, últimos registros |
+| `anotaciones.py` | Anotaciones generales de campo; operativo crea, roles superiores consultan |
+| `anotaciones_diario.py` | Reporte diario: datos de personal, condiciones climáticas, maquinaria y SST-Ambiental |
+| `reporte_cantidades.py` | Vista principal de cantidades de obra con filtros, detalle de fotos y panel de aprobación |
+| `componente_ambiental.py` | Registros del componente SST-Ambiental con flujo de aprobación escalonado |
+| `componente_social.py` | Registros del componente Social con flujo de aprobación escalonado |
+| `componente_pmt.py` | Formulario PMT: registro de Plan de Manejo de Tránsito por tramo |
+| `seguimiento_pmts.py` | Dashboard de seguimiento y estado de todos los PMTs del contrato |
+| `presupuesto.py` | Seguimiento presupuestal: ejecución por ítem, capítulo y tipo de infraestructura |
+| `mapa.py` | Mapa interactivo de ejecución por tramo con estado y avance georreferenciado |
+| `generar_pdf.py` | Configuración y descarga de informes periódicos en formato PDF |
+
+---
+
+## Base de datos — Supabase PostgreSQL
+
+El esquema SQL completo se mantiene en el repositorio **SupaBaseSQLEditor**. Los scripts se ejecutan en el SQL Editor de Supabase o vía `psql`.
+
+### Inicialización del esquema
+
+Para crear el esquema desde cero (entorno nuevo o reset completo):
+
+```sql
+-- 1. Elimina TODAS las tablas y funciones
+000_DROP_ALL.sql
+
+-- 2. Crea tablas + seed data + triggers contractuales
+001_TABLAS.sql
+
+-- 3. Políticas de seguridad por rol (RLS)
+002_RLS.sql
+
+-- 4. Lógica de negocio: marcar_inmutable, log_cambio_estado, crear_notificacion
+003_FUNCIONES_TRIGGERS.sql
+
+-- 5. Índices de rendimiento
+004_INDICES.sql
+
+-- 6. Solo en desarrollo: perfiles de usuario demo
+005_USUARIOS.sql
+```
+
+> `000_DROP_ALL.sql` elimina también las funciones (`get_rol`, `marcar_inmutable`,
+> `log_cambio_estado`, `crear_notificacion`, `sync_contrato_*`). Si solo se quiere
+> resetear datos sin recrear el esquema, **no ejecutar** el paso 000.
+
+### Jerarquía de tablas (orden de FK)
+
+```
+perfiles
+contratos
+  ├─▶ contratos_prorrogas
+  ├─▶ contratos_adiciones
+  ├─▶ localidades
+  ├─▶ tramos_aux_infra
+  ├─▶ tramos_aux_tramos
+  ├─▶ tramos_bd
+  ├─▶ presupuesto_aux_actividad
+  │     ├─▶ presupuesto_aux_capitulos
+  │     └─▶ presupuesto_bd
+  ├─▶ presupuesto_componentes_bd
+  ├─▶ presupuesto_componentes_aux
+  ├─▶ registros_cantidades          ← formulario principal
+  ├─▶ registros_componentes         ← formulario principal
+  ├─▶ registros_reporte_diario      ← formulario principal
+  │     ├─▶ bd_personal_obra
+  │     ├─▶ bd_condicion_climatica
+  │     ├─▶ bd_maquinaria_obra
+  │     └─▶ bd_sst_ambiental
+  ├─▶ rf_cantidades                 ← fotos (sin FK por diseño)
+  ├─▶ rf_componentes                ← fotos (sin FK por diseño)
+  ├─▶ rf_reporte_diario             ← fotos (sin FK por diseño)
+  ├─▶ formulario_pmt
+  ├─▶ historial_estados             ← auditoría (sin FK por diseño)
+  ├─▶ cierres_semanales
+  │     └─▶ cierre_registros
+  └─▶ notificaciones                ← genérico (sin FK por diseño)
+```
+
+### `001_TABLAS.sql` — DDL
+
+Define todas las tablas del dominio en snake_case respetando el orden de FK. Incluye:
+- Seed data de `contratos_aux_infra` (EP, CI, MV), `presupuesto_aux_actividad` y el registro inicial del contrato IDU-1556-2025.
+- Bloques `DO` idempotentes de migración (PATCH-001, PATCH-002).
+- Triggers de sincronización contractual:
+  - `trg_sync_prorrogas` → actualiza `contratos.prorrogas` y `contratos.plazo_actual` automáticamente.
+  - `trg_sync_adiciones` → actualiza `contratos.adiciones` y `contratos.valor_actual` automáticamente.
+
+### `002_RLS.sql` — Seguridad por fila
+
+RLS habilitado en todas las tablas. La función helper `get_rol()` evalúa el rol del usuario autenticado.
+
+| Tabla / grupo | Política |
+|---|---|
+| `perfiles` | cada usuario ve su propio perfil; admin gestiona todos |
+| `contratos`, `prorrogas`, `adiciones` | lectura: todos; escritura: admin/service_role |
+| `registros_cantidades` / `componentes` / `reporte_diario` | operativo: crea/edita sus borradores; obra: aprueba nivel 1; interventoria: aprueba nivel 2; admin: acceso total |
+| `formulario_pmt` | operativo crea; roles superiores leen todos |
+| `historial_estados` | rol ≥ obra lee; roles escriben en cambios de estado |
+| `cierres_semanales` | rol ≥ obra lee; interventoria/admin crea |
+| `notificaciones` | cada usuario ve las propias |
+| Tablas catálogo (`localidades`, `tramos_*`, `presupuesto_*`) | solo lectura (service_role escribe) |
+| `rf_*`, `bd_*` | lectura todos; escritura solo service_role |
+
+### `003_FUNCIONES_TRIGGERS.sql` — Lógica de negocio
+
+Instalados sobre `registros_cantidades`, `registros_componentes` y `registros_reporte_diario`:
+
+| Función | Trigger | Acción |
+|---|---|---|
+| `marcar_inmutable()` | `BEFORE UPDATE` | Cuando `estado → 'APROBADO'`: bloquea modificaciones posteriores y estampa `fecha_interventor` |
+| `log_cambio_estado()` | `AFTER UPDATE` | Registra cada cambio de estado en `historial_estados` con `tabla_origen`, usuario y observación |
+| `crear_notificacion()` | `AFTER INSERT OR UPDATE` | Genera entradas en `notificaciones` para todos los usuarios activos del contrato |
+
+> Los triggers contractuales (`trg_sync_prorrogas`, `trg_sync_adiciones`) están
+> definidos en `001_TABLAS.sql` junto a la DDL que los origina.
+
+### `004_INDICES.sql` — Rendimiento
+
+Índices sobre columnas de consulta frecuente en: `registros_cantidades`, `registros_componentes`, `registros_reporte_diario`, `historial_estados`, `cierres_semanales`, `notificaciones`, `contratos_prorrogas`, `contratos_adiciones`, `formulario_pmt`, `bd_personal_obra`, `bd_condicion_climatica`, `bd_maquinaria_obra`, `bd_sst_ambiental`, `rf_cantidades`, `rf_componentes`, `rf_reporte_diario`.
+
+Columnas cubiertas: `folio`, `estado`, `contrato_id`, `(contrato_id, estado)`, `id_tramo`, `fecha`, `inspector`, `item_pago`, `semana`, `destinatario`.
+
+### `005_USUARIOS.sql` — Solo desarrollo
+
+Crea perfiles de usuario demo. Flujo: crear usuario en Supabase Auth → copiar UUID → insertar en `perfiles` con ese UUID.
+
+---
+
+## Módulos de sincronización — descripción detallada
 
 ### `sync_qfield.py` — Orquestador
 
-Punto de entrada único. Autentica los servicios y llama a cada módulo en el orden correcto respetando las dependencias del esquema de base de datos.
+Punto de entrada único. Autentica los servicios y llama a cada módulo en el orden correcto respetando las dependencias del esquema.
 
 ```
 Paso 0 · Contrato         sync_contrato_excel
@@ -137,8 +373,8 @@ Paso 6 · Fotos            sync_rf_cantidades
 ```
 
 > El orden no es arbitrario: las tablas secundarias (paso 5) tienen FK a
-> `registros_reporte_diario.folio`, que debe existir antes de insertar.
-> Las fotos (paso 6) van al final porque son la operación más lenta
+> `registros_reporte_diario.folio` que debe existir antes de insertar.
+> Las fotos (paso 6) van al final: son la operación más lenta
 > (descarga + compresión Pillow + subida a Storage por cada registro).
 
 ---
@@ -198,17 +434,15 @@ Descarga fotos adjuntas desde QFieldCloud, las **comprime con Pillow** y las sub
 
 > En la práctica una foto de 5 MB tomada con celular queda entre 400–900 KB
 > (reducción de ~80-85%) sin diferencia visual perceptible para fotos de obra.
-
 > Si Pillow falla por cualquier razón, el original se sube sin comprimir.
 
 **Ruta en Storage:** `{folio}/{nombre}.jpg`
 **URL pública:** `{SUPABASE_URL}/storage/v1/object/public/Registro_Obra/{folio}/{nombre}.jpg`
 
 > Si la ruta almacenada en el GPKG apunta a un archivo fuera del proyecto
-> QField (por ejemplo `../../../Pictures/imagen.jpg`), la foto no existe
-> en QFieldCloud y no puede descargarse. El inspector debe usar fotos
-> guardadas dentro de la carpeta del proyecto o capturadas con la cámara
-> del dispositivo móvil.
+> QField (por ejemplo `../../../Pictures/imagen.jpg`), la foto no existe en
+> QFieldCloud y no puede descargarse. El inspector debe usar fotos guardadas
+> dentro de la carpeta del proyecto o capturadas con la cámara del dispositivo.
 
 ---
 
@@ -295,7 +529,7 @@ Incluye mapeo de nombres a códigos de infraestructura (`Espacio Público → EP
 
 ### `sync_bd.py` — Tablas secundarias del reporte diario
 
-Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`). Todas tienen FK a `registros_reporte_diario.folio`, por eso se ejecutan **después** del paso 4.
+Se reconstruyen completamente en cada sync (`delete_all` + `insert`). Todas tienen FK a `registros_reporte_diario.folio`, por eso se ejecutan **después** del paso 4.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -312,9 +546,9 @@ Estas tablas se reconstruyen completamente en cada sync (`delete_all` + `insert`
 
 ### `sync_rf.py` — Registros fotográficos
 
-Usa **inserción incremental**: al inicio de cada función se hace **un solo SELECT** para obtener todos los `id_unico` ya existentes en Supabase. Los registros cuyo `id_unico` ya está en la tabla se saltan sin descargar, comprimir ni intentar subir la foto. Solo los registros **nuevos** pasan por `upload_photo()` + `INSERT`.
+Usa **inserción incremental**: al inicio de cada función se hace un solo SELECT para obtener todos los `id_unico` ya existentes en Supabase. Los registros ya presentes se saltan sin descargar ni comprimir. Solo los registros **nuevos** pasan por `upload_photo()` + `INSERT`.
 
-Si el archivo ya existe en Storage (error `Duplicate`) la URL se reutiliza directamente sin re-subir — esto permite recuperar registros cuya fila de BD fue eliminada pero cuya foto sigue vigente en el bucket.
+Si el archivo ya existe en Storage (error `Duplicate`) la URL se reutiliza directamente sin re-subir — permite recuperar registros cuya fila fue eliminada pero cuya foto sigue vigente en el bucket.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -381,13 +615,19 @@ QFIELD_USER=<usuario>
 QFIELD_PASSWORD=<contraseña>
 ```
 
-**4. Ejecutar:**
+**4. Ejecutar la sincronización:**
 ```bash
 # Desde la raíz del repositorio
 python -m sync.sync_qfield
 
 # Alternativa directa
 python sync/sync_qfield.py
+```
+
+**5. Ejecutar la plataforma web:**
+```bash
+cd streamlit
+streamlit run app.py
 ```
 
 ---
@@ -408,24 +648,6 @@ También puede ejecutarse manualmente desde **Actions → Sync QFieldCloud → S
 
 ---
 
-## Repositorio del esquema SQL
-
-El DDL de la base de datos (tablas, RLS, triggers, índices) se mantiene en el repositorio separado **SupaBaseSQLEditor**. Para inicializar el esquema desde cero, ejecutar en el SQL Editor de Supabase en este orden:
-
-1. `000_DROP_ALL.sql` — elimina todas las tablas y funciones
-2. `001_TABLAS.sql` — crea tablas, seed data y triggers contractuales
-3. `002_RLS.sql` — políticas de seguridad por rol (todas las tablas)
-4. `003_FUNCIONES_TRIGGERS.sql` — lógica de negocio en BD
-5. `004_INDICES.sql` — índices de rendimiento
-6. `005_USUARIOS.sql` — solo en desarrollo
-
-> **Nota sobre roles:** Las políticas RLS deben estar alineadas con los roles
-> definidos en la plataforma: `operativo`, `obra`, `interventoria`, `supervision`, `admin`.
-> Las columnas de aprobación en BD conservan los nombres heredados (`cant_residente`,
-> `cant_interventor`, etc.) por compatibilidad con los datos existentes.
-
----
-
 ## Decisiones de diseño relevantes
 
 **`folio` vs `id_unico`**
@@ -435,10 +657,16 @@ El DDL de la base de datos (tablas, RLS, triggers, índices) se mantiene en el r
 `id_tramo`, `codigo_elemento`, `tipo_infra` y `tipo_actividad` en `registros_*` son `TEXT` sin `REFERENCES`. El sync puede insertar formularios antes de que las tablas de referencia estén completamente sincronizadas, lo que causaría error 23503. La integridad se garantiza por el orden de sync, no por FK.
 
 **`rf_*` sin FK en `id_unico`**
-`id_unico` en las tablas de fotos es el identificador propio de cada foto, no una referencia al formulario padre. La relación foto↔formulario se navega por `folio`.
+`id_unico` en las tablas de fotos es el identificador propio de cada foto, no una referencia al formulario padre. La relación foto↔formulario se navega por `folio`. Agregar FK causaba error 23503 en producción.
 
 **`historial_estados` y `notificaciones` sin FK en `registro_id`**
 Estas tablas auditan las tres tablas de formularios. Una FK a una sola tabla haría imposible auditar las otras dos. Se usa `tabla_origen TEXT CHECK(...)` para identificar la procedencia.
 
 **Contadores contractuales mantenidos por trigger**
 `contratos.prorrogas`, `.plazo_actual`, `.adiciones` y `.valor_actual` son mantenidos por `trg_sync_prorrogas` y `trg_sync_adiciones`. El sync de Excel solo escribe los campos base del contrato y el detalle de cada hoja.
+
+**`intrventoria` (typo heredado)**
+La columna se llama `intrventoria` (con typo) en el Excel `Contrato_IDU_1556_2025.xlsx` hoja `BD_CTO_INI` y en la BD. Se mantiene el nombre para garantizar compatibilidad exacta con el archivo fuente. El código de sync acepta tanto `intrventoria` como `interventoria` para tolerancia.
+
+**`foto_url` en `rf_*` visible desde Streamlit**
+Cada foto se sube al bucket `Registro_Obra` de Supabase Storage durante el sync, comprimida a JPEG quality=82 / máx 2048px. La URL pública en `foto_url` puede usarse directamente en Streamlit con `st.image(url)`.
