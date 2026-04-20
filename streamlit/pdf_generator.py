@@ -77,15 +77,16 @@ def generate_pdf_bitacora(
     from datetime import date as _date
 
     # ── Extraer DataFrames ─────────────────────────────────────
-    df_cant     = datos.get('cantidades',  pd.DataFrame())
-    df_comp     = datos.get('componentes', pd.DataFrame())
-    df_diario   = datos.get('diario',      pd.DataFrame())
-    df_clima    = datos.get('clima',       pd.DataFrame())
-    df_personal = datos.get('personal',    pd.DataFrame())
-    df_maq      = datos.get('maquinaria',  pd.DataFrame())
-    df_sst      = datos.get('sst',         pd.DataFrame())
+    df_cant     = datos.get('cantidades',   pd.DataFrame())
+    df_comp     = datos.get('componentes',  pd.DataFrame())
+    df_diario   = datos.get('diario',       pd.DataFrame())
+    df_clima    = datos.get('clima',        pd.DataFrame())
+    df_personal = datos.get('personal',     pd.DataFrame())
+    df_maq      = datos.get('maquinaria',   pd.DataFrame())
+    df_sst      = datos.get('sst',          pd.DataFrame())
+    df_anot     = datos.get('anotaciones',  pd.DataFrame())
 
-    if df_cant.empty and df_comp.empty and df_diario.empty:
+    if df_cant.empty and df_comp.empty and df_diario.empty and df_anot.empty:
         return None
 
     # ── Configuración del documento ────────────────────────────
@@ -245,7 +246,13 @@ def generate_pdf_bitacora(
         story.append(Spacer(1, 0.4 * cm))
 
     # ══════════════════════════════════════════════════════════
-    # 3. PIE: FIRMAS
+    # 3. SECCIÓN DE ANOTACIONES
+    # ══════════════════════════════════════════════════════════
+    if not df_anot.empty:
+        story.extend(_build_annotations_section(df_anot, W))
+
+    # ══════════════════════════════════════════════════════════
+    # 4. PIE: FIRMAS
     # ══════════════════════════════════════════════════════════
     story.append(HRFlowable(width=W, thickness=0.8, color=C_IDU_BLUE))
     story.append(Spacer(1, 0.3 * cm))
@@ -658,6 +665,115 @@ def _build_content_paragraphs(
             paras.append(Paragraph(_esc(text), style))
 
     return paras
+
+
+def _build_annotations_section(df_anot: pd.DataFrame, W: float) -> list:
+    """
+    Construye la sección de Anotaciones de Bitácora agrupada jerárquicamente:
+      fecha → tramo → civ → pk
+    Anotaciones sin tramo/civ/pk quedan al final de cada fecha.
+    """
+    try:
+        from reportlab.platypus import Paragraph, Spacer, HRFlowable
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib import colors as rl_colors
+        from reportlab.lib.units import cm
+    except ImportError:
+        return []
+
+    if df_anot.empty:
+        return []
+
+    C_IDU_BLUE = rl_colors.HexColor('#00A6E1')
+    C_IDU_DARK = rl_colors.HexColor('#0076B0')
+    C_TEXT     = rl_colors.HexColor('#4D4D4D')
+    C_MUTED    = rl_colors.HexColor('#7A8A99')
+
+    s_section = ParagraphStyle('anot_sec',
+        fontName='Helvetica-Bold', fontSize=8,
+        textColor=C_IDU_BLUE, spaceBefore=6, spaceAfter=3)
+    s_fecha_hdr = ParagraphStyle('anot_fecha',
+        fontName='Helvetica-Bold', fontSize=9,
+        textColor=C_IDU_DARK, spaceBefore=10, spaceAfter=4, leading=12)
+    s_sub_hdr = ParagraphStyle('anot_sub',
+        fontName='Helvetica-Bold', fontSize=8,
+        textColor=C_IDU_DARK, spaceBefore=5, spaceAfter=2,
+        leftIndent=8, leading=10)
+    s_anot = ParagraphStyle('anot_txt',
+        fontName='Helvetica', fontSize=8,
+        textColor=C_TEXT, leftIndent=16, spaceAfter=2, leading=11)
+    s_author = ParagraphStyle('anot_auth',
+        fontName='Helvetica-Oblique', fontSize=7,
+        textColor=C_MUTED, leftIndent=16, spaceAfter=5, leading=9)
+
+    # ── Normalizar campos ──────────────────────────────────────
+    df = df_anot.copy()
+    df['_fecha']  = df['fecha'].apply(_to_date)
+    df['_tramo']  = df.get('tramo',          pd.Series('', index=df.index)).apply(_norm_str)
+    df['_civ']    = df.get('civ',            pd.Series('', index=df.index)).apply(_norm_str)
+    df['_pk']     = df.get('pk',             pd.Series('', index=df.index)).apply(_norm_str)
+    df['_nombre'] = df.get('usuario_nombre', pd.Series('', index=df.index)).apply(
+        lambda v: _norm_str(v) or '—'
+    )
+    df = df[df['_fecha'].notna()].copy()
+    if df.empty:
+        return []
+
+    # Ordenar: fecha asc, sin-tramo al final de cada fecha, luego tramo/civ/pk
+    df['_sin_tramo'] = df['_tramo'].apply(lambda x: 1 if x == '' else 0)
+    df = df.sort_values(
+        ['_fecha', '_sin_tramo', '_tramo', '_civ', '_pk'],
+        na_position='last',
+    ).reset_index(drop=True)
+
+    flowables: list = []
+    flowables.append(HRFlowable(width=W, thickness=0.8,
+                                color=C_IDU_BLUE))
+    flowables.append(Spacer(1, 0.3 * cm))
+    flowables.append(Paragraph('ANOTACIONES DE BITÁCORA', s_section))
+    flowables.append(Spacer(1, 0.15 * cm))
+
+    for fecha in sorted(df['_fecha'].unique()):
+        df_f = df[df['_fecha'] == fecha]
+        flowables.append(Paragraph(_esc(_fecha_es(fecha)), s_fecha_hdr))
+
+        df_con_tramo = df_f[df_f['_tramo'] != '']
+        df_sin_tramo = df_f[df_f['_tramo'] == '']
+
+        # ── Con tramo: agrupar tramo → civ → pk ───────────────
+        for tramo in sorted(df_con_tramo['_tramo'].unique()):
+            df_t = df_con_tramo[df_con_tramo['_tramo'] == tramo]
+            for civ in sorted(df_t['_civ'].unique()):
+                df_c = df_t[df_t['_civ'] == civ]
+                sub_label = f"Tramo {tramo}"
+                if civ:
+                    sub_label += f" / CIV {civ}"
+                flowables.append(Paragraph(_esc(sub_label), s_sub_hdr))
+                for pk in sorted(df_c['_pk'].unique()):
+                    df_p = df_c[df_c['_pk'] == pk]
+                    for _, row in df_p.iterrows():
+                        texto  = _norm_str(row.get('anotacion', ''))
+                        nombre = _norm_str(row.get('_nombre', '—'))
+                        prefix = f"PK {pk}: " if pk else ''
+                        if texto:
+                            flowables.append(
+                                Paragraph(_esc(f"{prefix}{texto}"), s_anot))
+                            flowables.append(
+                                Paragraph(_esc(f"— {nombre}"), s_author))
+
+        # ── Sin tramo: al final de la fecha ───────────────────
+        if not df_sin_tramo.empty:
+            flowables.append(Paragraph(
+                'Sin ubicación específica', s_sub_hdr))
+            for _, row in df_sin_tramo.iterrows():
+                texto  = _norm_str(row.get('anotacion', ''))
+                nombre = _norm_str(row.get('_nombre', '—'))
+                if texto:
+                    flowables.append(Paragraph(_esc(texto), s_anot))
+                    flowables.append(
+                        Paragraph(_esc(f"— {nombre}"), s_author))
+
+    return flowables
 
 
 def _build_quantities_table(

@@ -18,6 +18,7 @@ import streamlit as st
 from database import (
     load_cantidades, load_componentes, load_reporte_diario, load_contrato,
     load_bd_clima, load_bd_personal, load_bd_maquinaria, load_bd_sst,
+    load_anotaciones_generales,
 )
 from pdf_generator import generate_pdf_bitacora
 from ui import kpi, section_badge
@@ -27,6 +28,7 @@ _TIPOS = {
     "Cantidades de Obra":         "cantidades",
     "Componentes Transversales":  "componentes",
     "Reporte Diario":             "diario",
+    "Anotaciones":                "anotaciones",
 }
 
 # Mapeo estado filtro → lista
@@ -46,6 +48,8 @@ _PREVIEW_COLS = {
                     'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad', 'estado'],
     "diario":      ['folio', 'usuario_qfield', 'fecha_reporte',
                     'observaciones', 'estado'],
+    "anotaciones": ['fecha', 'tramo', 'civ', 'pk', 'anotacion',
+                    'usuario_nombre', 'usuario_empresa'],
 }
 
 
@@ -134,18 +138,31 @@ def page_generar_pdf(perfil: dict) -> None:
                 fecha_ini=fi.isoformat(),
                 fecha_fin=ff.isoformat(),
             )
+        elif tipo_key == "anotaciones":
+            df_t = load_anotaciones_generales()
+            if not df_t.empty and 'fecha' in df_t.columns:
+                fechas_norm = pd.to_datetime(df_t['fecha'], errors='coerce').dt.date
+                df_t = df_t[(fechas_norm >= fi) & (fechas_norm <= ff)]
         else:
             df_t = pd.DataFrame()
 
-        # Filtros opcionales de tramo / usuario
-        if tramo_f.strip() and not df_t.empty and 'id_tramo' in df_t.columns:
-            df_t = df_t[df_t['id_tramo'].astype(str).str.contains(
-                re.escape(tramo_f.strip()), case=False, na=False
-            )]
-        if user_f.strip() and not df_t.empty and 'usuario_qfield' in df_t.columns:
-            df_t = df_t[df_t['usuario_qfield'].astype(str).str.contains(
-                re.escape(user_f.strip()), case=False, na=False
-            )]
+        # Filtros opcionales de tramo / usuario (soporta distintos nombres de columna)
+        if tramo_f.strip() and not df_t.empty:
+            tramo_col = next(
+                (c for c in ('id_tramo', 'tramo') if c in df_t.columns), None
+            )
+            if tramo_col:
+                df_t = df_t[df_t[tramo_col].astype(str).str.contains(
+                    re.escape(tramo_f.strip()), case=False, na=False
+                )]
+        if user_f.strip() and not df_t.empty:
+            user_col = next(
+                (c for c in ('usuario_qfield', 'usuario_nombre') if c in df_t.columns), None
+            )
+            if user_col:
+                df_t = df_t[df_t[user_col].astype(str).str.contains(
+                    re.escape(user_f.strip()), case=False, na=False
+                )]
 
         frames[tipo_label] = df_t
 
@@ -237,6 +254,7 @@ def page_generar_pdf(perfil: dict) -> None:
                 'personal':    df_personal,
                 'maquinaria':  df_maquinaria,
                 'sst':         df_sst,
+                'anotaciones': frames.get('Anotaciones',               pd.DataFrame()),
             }
 
             with st.spinner("Generando Bitácora PDF…"):
