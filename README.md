@@ -517,19 +517,21 @@ Incluye mapeo de nombres a códigos de infraestructura (`Espacio Público → EP
 |---|---|---|---|
 | `sync_registros_cantidades` | `Formulario_Cantidades.gpkg` (capa `Formulario_Cantidades_V2`) | `registros_cantidades` | `id_unico` |
 | `sync_registros_componentes` | `Reporte_Componentes.gpkg` | `registros_componentes` | `folio` |
-| `sync_registros_reporte_diario` | `Reporte_Diario.gpkg` (capa `Reporte_Diario`) | `registros_reporte_diario` | `folio` |
+| `sync_registros_reporte_diario` | `Reporte_Diario.gpkg` (capa `Reporte_Diario`) | `registros_reporte_diario` | `id_unico` |
 | `sync_formulario_pmt` | `Formulario_PMT.gpkg` | `formulario_pmt` | `folio` |
 
 **Notas importantes:**
-- `registros_cantidades` usa `on_conflict='id_unico'` (no `folio`) porque un mismo formulario puede tener varios ítems de pago con el mismo folio pero distinto `id_unico`.
+- `registros_cantidades` y `registros_reporte_diario` usan `on_conflict='id_unico'` (no `folio`) porque el GPKG puede tener varios ítems con el mismo folio pero distinto `id_unico` (ej. múltiples elementos pk_id/civ por sesión diaria).
+- Cuando `id_unico` en el GPKG es nulo o la cadena literal `'folio'` (error de configuración QField), se genera como `folio__pk_id` o `folio__idx` como fallback.
 - El campo `estado` **no se sobreescribe** durante el sync para no revertir registros ya aprobados por el residente o interventor.
 - Quirk [D-03]: columna `feca_reporte` (typo) en `Reporte_Diario.gpkg`; el código lee ambas variantes.
+- **[PATCH-006]**: requiere ejecutar `006_FIX_REPORTE_DIARIO_MULTI_ITEM.sql` en Supabase para eliminar `folio UNIQUE` y las FK de `bd_*`.
 
 ---
 
 ### `sync_bd.py` — Tablas secundarias del reporte diario
 
-Se reconstruyen completamente en cada sync (`delete_all` + `insert`). Todas tienen FK a `registros_reporte_diario.folio`, por eso se ejecutan **después** del paso 4.
+Se reconstruyen completamente en cada sync (`delete_all` + `insert`). El campo `folio` es un texto de referencia sin FK (eliminada en PATCH-006), por eso se ejecutan **después** del paso 4.
 
 | Función | GPKG origen | Tabla Supabase |
 |---|---|---|
@@ -580,7 +582,7 @@ Si el archivo ya existe en Storage (error `Duplicate`) la URL se reutiliza direc
 | `presupuesto_componentes_aux` | delete + insert | sin clave única |
 | `registros_cantidades` | upsert por `id_unico` | preserva estado de aprobación |
 | `registros_componentes` | upsert por `folio` | preserva estado de aprobación |
-| `registros_reporte_diario` | upsert por `folio` | preserva estado de aprobación |
+| `registros_reporte_diario` | upsert por `id_unico` | múltiples ítems por folio ([PATCH-006]) |
 | `formulario_pmt` | upsert por `folio` | preserva historial |
 | `bd_personal_obra` | delete + insert | observación diaria, se reemplaza |
 | `bd_condicion_climatica` | delete + insert | observación diaria, se reemplaza |

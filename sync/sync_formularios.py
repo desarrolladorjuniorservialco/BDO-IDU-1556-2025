@@ -175,9 +175,12 @@ def sync_registros_reporte_diario(supabase, token, project_id):
     """
     [D-03] TYPO en GPKG: 'feca_reporte' en lugar de 'fecha_reporte'.
     Se lee con OR para cubrir cuando lo corrijan en QField.
-    [FIX-RD-001] QField a veces almacena la cadena literal 'folio' en id_unico
-    (nombre de columna en lugar del valor). En ese caso se deriva id_unico del
-    folio para evitar la violación de la constraint unique id_unico_key (23505).
+    [FIX-RD-002] El GPKG tiene múltiples filas por folio (una por elemento
+    pk_id/civ). Se usa on_conflict='id_unico' para almacenar todos los ítems.
+    id_unico se deriva de folio__pk_id cuando el GPKG no provee un valor válido
+    (null o la cadena literal 'folio' por error de configuración en QField).
+    [PATCH-006] requiere que registros_reporte_diario.folio NO tenga UNIQUE.
+    Ejecutar 006_FIX_REPORTE_DIARIO_MULTI_ITEM.sql en Supabase antes de esto.
     """
     print("\n── registros_reporte_diario ──")
     if not download_gpkg(token, project_id, 'Reporte_Diario.gpkg', '/tmp/reporte_diario.gpkg'):
@@ -187,7 +190,7 @@ def sync_registros_reporte_diario(supabase, token, project_id):
         return
 
     count = omitidos = errores = 0
-    for _, row in gdf.iterrows():
+    for idx, (_, row) in enumerate(gdf.iterrows()):
         folio = safe(row.get('folio'))
         if not folio:
             omitidos += 1
@@ -195,9 +198,18 @@ def sync_registros_reporte_diario(supabase, token, project_id):
 
         lat, lon = coords_from_geom(row)
 
-        # [FIX-RD-001] id_unico='folio' (literal) o None → usar el valor del folio
+        # [FIX-RD-002] Generar id_unico robusto:
+        # 1. Usar el valor del GPKG si es válido (no nulo, no la cadena 'folio')
+        # 2. Si pk_id está disponible: folio__pk_id  (único entre ítems del mismo folio)
+        # 3. Fallback: folio__idx  (índice de la fila en el GeoDataFrame, siempre único)
         id_unico_raw = safe(row.get('id_unico'))
-        id_unico = id_unico_raw if (id_unico_raw and id_unico_raw != 'folio') else str(folio)
+        pk_val       = safe(row.get('pk_id'))
+        if id_unico_raw and id_unico_raw != 'folio':
+            id_unico = id_unico_raw
+        elif pk_val:
+            id_unico = f"{folio}__{pk_val}"
+        else:
+            id_unico = f"{folio}__{idx}"
 
         data = {
             'folio':          str(folio),
@@ -209,9 +221,9 @@ def sync_registros_reporte_diario(supabase, token, project_id):
             'fecha':          safe(row.get('fecha')),
             'id_tramo':       safe(row.get('tramo_id')),
             'civ':            safe(row.get('civ')),
-            'pk_id':          safe(row.get('pk_id')),
-            'cantidad':       safe(row.get('cantidad')),
-            'unidad':         safe(row.get('unidad')),        
+            'pk_id':          pk_val,
+            'cantidad':       safe_num(row.get('cantidad')),
+            'unidad':         safe(row.get('unidad')),
             # [D-03] typo real en GPKG: 'feca_reporte'; OR cubre corrección futura
             'fecha_reporte':  safe(row.get('feca_reporte') or row.get('fecha_reporte')),
             'observaciones':  safe(row.get('observaciones')),
@@ -220,19 +232,20 @@ def sync_registros_reporte_diario(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         try:
-            # [FIX-INM-002] SELECT previo para verificar inmutabilidad
+            # [FIX-INM-002] SELECT previo para verificar inmutabilidad (por id_unico)
             chk = supabase.table('registros_reporte_diario').select('inmutable')\
-                          .eq('folio', folio).execute()
+                          .eq('id_unico', id_unico).execute()
             if chk.data and chk.data[0].get('inmutable'):
                 omitidos += 1
                 continue
+            # [FIX-RD-002] upsert por id_unico para preservar todos los ítems del folio
             supabase.table('registros_reporte_diario').upsert(
-                data, on_conflict='folio'
+                data, on_conflict='id_unico'
             ).execute()
             count += 1
         except Exception as e:
             errores += 1
-            print(f"  ✗ {folio}: {e}")
+            print(f"  ✗ {folio} ({id_unico}): {e}")
 
     print(f"  → {count} upserted · {omitidos} sin folio · {errores} errores")
 

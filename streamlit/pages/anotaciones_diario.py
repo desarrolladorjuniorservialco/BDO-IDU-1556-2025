@@ -201,8 +201,18 @@ def page_anotaciones_diario(perfil: dict) -> None:
         fecha_rep  = str(reg.get('fecha_reporte', reg.get('fecha', '')))[:10]
         usuario    = str(reg.get('usuario_qfield', '—'))
 
+        # El GPKG puede tener múltiples ítems por folio (pk_id/civ distintos).
+        # Se incluyen en el título para distinguirlos visualmente.
+        pk_id_v = reg.get('pk_id')
+        civ_v   = reg.get('civ')
+        sufijo  = ""
+        if pk_id_v not in (None, '', 'nan', 'None'):
+            sufijo += f" · PK {pk_id_v}"
+        if civ_v not in (None, '', 'nan', 'None'):
+            sufijo += f" · CIV {civ_v}"
+
         with st.expander(
-            f"**{folio}** · {fecha_rep} · {usuario}",
+            f"**{folio}**{sufijo} · {fecha_rep} · {usuario}",
             expanded=False,
         ):
             # Determinar tabs disponibles
