@@ -241,6 +241,24 @@ def page_anotaciones_diario(perfil: dict) -> None:
                         unsafe_allow_html=True,
                     )
 
+                    # Campos de actividad del reporte diario
+                    _activity_fields = {
+                        'Tramo':    reg.get('tramo'),
+                        'CIV':      reg.get('civ'),
+                        'PK':       reg.get('pk'),
+                        'Cantidad': reg.get('cantidad'),
+                        'Unidad':   reg.get('unidad'),
+                        'Leído':    reg.get('leido'),
+                    }
+                    _pills_html = "".join(
+                        _pill(k, v) for k, v in _activity_fields.items() if v not in (None, '', 'nan', 'None')
+                    )
+                    if _pills_html:
+                        st.markdown(
+                            f'<div class="record-meta-row">{_pills_html}</div>',
+                            unsafe_allow_html=True,
+                        )
+
                     if reg.get('observaciones'):
                         st.info(str(reg['observaciones']))
 
