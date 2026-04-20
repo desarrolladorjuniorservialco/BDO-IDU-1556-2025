@@ -38,6 +38,7 @@ from pages.componente_ambiental import page_ambiental
 from pages.componente_social    import page_social
 from pages.componente_pmt       import page_componente_pmt
 from pages.seguimiento_pmts     import page_seguimiento_pmts
+from pages.correspondencia      import page_correspondencia
 
 # Logger interno — los errores van a los logs del servidor, no al usuario
 _log = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ PAGE_MAP: dict = {
     "Generar Informe":            page_generar_pdf,
     "Mapa Ejecución":             page_mapa,
     "Seguimiento Presupuesto":    page_presupuesto,
+    "Correspondencia":            page_correspondencia,
     "Reporte Cantidades":         page_reporte_cantidades,
     "Componente Ambiental - SST": page_ambiental,
     "Componente Social":          page_social,
