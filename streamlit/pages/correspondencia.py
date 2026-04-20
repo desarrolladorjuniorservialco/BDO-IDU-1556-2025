@@ -272,6 +272,15 @@ def page_correspondencia(perfil: dict) -> None:
                 f'{n_vencidas} registro(s) PENDIENTE(S) con plazo de respuesta vencido</span>',
                 unsafe_allow_html=True,
             )
+        # Exportar CSV
+        csv_bytes = df_show.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            "Exportar CSV",
+            data=csv_bytes,
+            file_name="Correspondencia_IDU-1556-2025.csv",
+            mime="text/csv",
+            help="Descargar la tabla visible como archivo CSV",
+        )
     else:
         msg = "No hay registros de correspondencia." if df_raw.empty \
               else "No hay registros que coincidan con los filtros aplicados."
@@ -280,7 +289,7 @@ def page_correspondencia(perfil: dict) -> None:
     st.divider()
 
     # ── Acciones: Nuevo y Editar ──────────────────────────────
-    can_write = perfil.get('rol') in ('obra', 'interventoria', 'admin')
+    can_write = perfil.get('rol') in ('obra', 'admin')
 
     col_new, col_sep, col_edit = st.columns([1, 0.1, 3])
 
