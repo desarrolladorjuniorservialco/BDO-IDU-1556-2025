@@ -373,3 +373,44 @@ def load_presupuesto_componentes() -> pd.DataFrame:
 def load_pmts() -> pd.DataFrame:
     """Alias de load_formulario_pmt() — compatibilidad."""
     return load_formulario_pmt()
+
+
+# ══════════════════════════════════════════════════════════════
+# LOADERS — CORRESPONDENCIA
+# ══════════════════════════════════════════════════════════════
+
+@st.cache_data(ttl=60)
+def load_correspondencia() -> pd.DataFrame:
+    """Registros de correspondencia del contrato IDU-1556-2025."""
+    def _q():
+        return (
+            get_supabase()
+            .table('correspondencia')
+            .select('*')
+            .eq('contrato_id', 'IDU-1556-2025')
+            .order('fecha', desc=True)
+            .execute()
+        )
+    return _safe_query(_q, context='load_correspondencia')
+
+
+def insert_correspondencia(data: dict) -> bool:
+    """Inserta un nuevo registro de correspondencia. Retorna True si OK."""
+    try:
+        get_supabase().table('correspondencia').insert(data).execute()
+        clear_cache()
+        return True
+    except Exception:
+        _log.exception("Error insertando correspondencia")
+        return False
+
+
+def update_correspondencia(record_id: str, data: dict) -> bool:
+    """Actualiza un registro de correspondencia. Retorna True si OK."""
+    try:
+        get_supabase().table('correspondencia').update(data).eq('id', record_id).execute()
+        clear_cache()
+        return True
+    except Exception:
+        _log.exception("Error actualizando correspondencia")
+        return False

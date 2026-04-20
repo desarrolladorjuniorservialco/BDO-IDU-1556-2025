@@ -45,6 +45,7 @@ NAV_ACCESS: dict[str, list[str]] = {
     # Solo gestión: vistas financieras y de infraestructura a nivel proyecto
     "Mapa Ejecución":             _GESTION,
     "Seguimiento Presupuesto":    _GESTION,
+    "Correspondencia":            _GESTION,
     "Generar Informe":            _GESTION,
     # ── Reportes ─────────────────────────────────────────────
     # operativo ve sus propios registros (RLS: creado_por = auth.uid())
@@ -68,7 +69,7 @@ NAV_CATEGORIES: list[dict] = [
         "label":     "General",
         "highlight": False,
         "pages":     ["Estado Actual", "Mapa Ejecución",
-                      "Seguimiento Presupuesto"],
+                      "Seguimiento Presupuesto", "Correspondencia"],
     },
     {
         "label":     "Reportes",
@@ -99,6 +100,7 @@ PAGE_COLOR: dict[str, str] = {
     "Generar Informe":            "teal",
     "Mapa Ejecución":             "teal",
     "Seguimiento Presupuesto":    "orange",
+    "Correspondencia":            "teal",
     "Reporte Cantidades":         "blue",
     "Componente Ambiental - SST": "green",
     "Componente Social":          "orange",
