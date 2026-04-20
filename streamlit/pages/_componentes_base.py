@@ -269,7 +269,7 @@ def panel_componentes(
     with ki2: kpi("Aprobados",  str(apr),  accent="kpi-green",  card_accent="accent-green")
     with ki3: kpi("Revisados",  str(rev),  accent="kpi-blue")
     with ki4: kpi("Borradores", str(bor),  accent="kpi-orange" if bor else "")
-    with ki5: kpi("Σ Cant.",    f"{suma_cant:,.3f}", card_accent="accent-teal")
+    with ki5: kpi("Σ Cant.",    f"{suma_cant:,.2f}", card_accent="accent-teal")
 
     if dev > 0:
         st.warning(f"⚠ {dev} registro(s) devuelto(s) requieren corrección del inspector")
@@ -323,6 +323,10 @@ def panel_componentes(
 
             with col_info:
                 cant = safe_float(reg.get('cantidad')) or 0
+                _cr = safe_float(reg.get("cant_residente"))
+                _ci = safe_float(reg.get("cant_interventor"))
+                _cr_str = f"{_cr:.2f}" if _cr is not None else "—"
+                _ci_str = f"{_ci:.2f}" if _ci is not None else "—"
                 st.markdown(
                     f'<div class="record-field-grid">'
                     f'<div><div class="record-field-label">Inspector</div>'
@@ -332,11 +336,11 @@ def panel_componentes(
                     f'<div><div class="record-field-label">Tipo actividad</div>'
                     f'<div class="record-field-value">{reg.get("tipo_actividad","—")}</div></div>'
                     f'<div><div class="record-field-label">Cantidad reportada</div>'
-                    f'<div class="record-field-value">{cant:.3f} {reg.get("unidad","")}</div></div>'
+                    f'<div class="record-field-value">{cant:.2f} {reg.get("unidad","")}</div></div>'
                     f'<div><div class="record-field-label">Cant. Residente</div>'
-                    f'<div class="record-field-value">{safe_float(reg.get("cant_residente")) or "—"}</div></div>'
+                    f'<div class="record-field-value">{_cr_str}</div></div>'
                     f'<div><div class="record-field-label">Cant. Interventor</div>'
-                    f'<div class="record-field-value">{safe_float(reg.get("cant_interventor")) or "—"}</div></div>'
+                    f'<div class="record-field-value">{_ci_str}</div></div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )

@@ -311,8 +311,8 @@ def page_reporte_cantidades(perfil: dict) -> None:
             accent="kpi-red" if n_dev else "",
             card_accent="accent-red" if n_dev else "")
     with ki5:
-        kpi("Σ Cant. validada", f"{suma_cant:,.3f}",
-            sub=f"Inspector: {suma_cant_i:,.3f}",
+        kpi("Σ Cant. validada", f"{suma_cant:,.2f}",
+            sub=f"Inspector: {suma_cant_i:,.2f}",
             card_accent="accent-teal")
 
     # Gráfica distribución por estado
@@ -361,9 +361,9 @@ def page_reporte_cantidades(perfil: dict) -> None:
             use_container_width=True,
             column_config={
                 'fecha_creacion':   st.column_config.DateColumn('Fecha',               format="DD/MM/YYYY"),
-                'cantidad':         st.column_config.NumberColumn('Cant. Inspector',    format="%.3f"),
-                'cant_residente':   st.column_config.NumberColumn('Cant. Residente',    format="%.3f"),
-                'cant_interventor': st.column_config.NumberColumn('Cant. Interventor',  format="%.3f"),
+                'cantidad':         st.column_config.NumberColumn('Cant. Inspector',    format="%.2f"),
+                'cant_residente':   st.column_config.NumberColumn('Cant. Residente',    format="%.2f"),
+                'cant_interventor': st.column_config.NumberColumn('Cant. Interventor',  format="%.2f"),
                 'estado':           st.column_config.TextColumn('Estado'),
             },
         )
@@ -410,6 +410,10 @@ def page_reporte_cantidades(perfil: dict) -> None:
                 col_info, col_apr = st.columns([2.2, 1])
 
                 with col_info:
+                    _cr = safe_float(reg.get("cant_residente"))
+                    _ci = safe_float(reg.get("cant_interventor"))
+                    _cr_str = f"{_cr:.2f}" if _cr is not None else "—"
+                    _ci_str = f"{_ci:.2f}" if _ci is not None else "—"
                     # Grilla de campos de info
                     st.markdown(
                         f'<div class="record-field-grid">'
@@ -422,11 +426,11 @@ def page_reporte_cantidades(perfil: dict) -> None:
                         f'<div><div class="record-field-label">Actividad / Descripción</div>'
                         f'<div class="record-field-value">{actividad[:80]}</div></div>'
                         f'<div><div class="record-field-label">Cantidad Inspector</div>'
-                        f'<div class="record-field-value">{safe_float(reg.get("cantidad")) or 0:.3f} {reg.get("unidad","")}</div></div>'
+                        f'<div class="record-field-value">{safe_float(reg.get("cantidad")) or 0:.2f} {reg.get("unidad","")}</div></div>'
                         f'<div><div class="record-field-label">Cant. Residente</div>'
-                        f'<div class="record-field-value">{safe_float(reg.get("cant_residente")) or "—"}</div></div>'
+                        f'<div class="record-field-value">{_cr_str} {reg.get("unidad","")}</div></div>'
                         f'<div><div class="record-field-label">Cant. Interventor</div>'
-                        f'<div class="record-field-value">{safe_float(reg.get("cant_interventor")) or "—"}</div></div>'
+                        f'<div class="record-field-value">{_ci_str} {reg.get("unidad","")}</div></div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
