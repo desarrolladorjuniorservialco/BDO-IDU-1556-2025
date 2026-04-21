@@ -114,14 +114,21 @@ def clear_cache() -> None:
 # HELPER INTERNO
 # ══════════════════════════════════════════════════════════════
 
-def _paginate(query_builder, page_size: int = 10000) -> list:
-    """Fetch all rows bypassing Supabase PostgREST's default 10000-row cap."""
+def _paginate(query_builder, page_size: int = 1000) -> list:
+    """
+    Fetch all rows paginando correctamente según el límite de PostgREST.
+    Se recomienda page_size = 1000 para cumplir con el límite de la API.
+    """
     rows, offset = [], 0
     while True:
+        # Pedimos bloques que no excedan el límite de la API
         batch = query_builder.range(offset, offset + page_size - 1).execute().data or []
         rows.extend(batch)
+        
+        # Si recibimos menos datos de los solicitados, significa que llegamos al final
         if len(batch) < page_size:
             break
+            
         offset += page_size
     return rows
 
