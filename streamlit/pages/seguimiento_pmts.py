@@ -82,7 +82,10 @@ def page_seguimiento_pmts(perfil: dict) -> None:
     with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=7))
     with c2: ff = st.date_input("Hasta", value=date.today())
 
-    df_comp = load_componentes(fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
+    df_comp = load_componentes()
+    if not df_comp.empty and 'fecha' in df_comp.columns:
+        fechas = pd.to_datetime(df_comp['fecha'], errors='coerce')
+        df_comp = df_comp[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
 
     if df_comp.empty:
         st.info("No hay registros de componentes en el período.")

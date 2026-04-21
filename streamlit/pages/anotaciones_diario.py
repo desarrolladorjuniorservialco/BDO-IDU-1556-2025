@@ -96,16 +96,13 @@ def page_anotaciones_diario(perfil: dict) -> None:
     # ── Formulario de filtros ──────────────────────────────
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
     with st.form("form_rd"):
-        todas_fechas = st.checkbox("Todas las fechas", value=True, key="rd_todas_fechas")
         fc1, fc2, fc3, fc4 = st.columns(4)
         with fc1:
             fi = st.date_input("Desde",
                                value=date.today() - timedelta(days=15),
-                               key="rd_fi",
-                               disabled=todas_fechas)
+                               key="rd_fi")
         with fc2:
-            ff = st.date_input("Hasta", value=date.today(), key="rd_ff",
-                               disabled=todas_fechas)
+            ff = st.date_input("Hasta", value=date.today(), key="rd_ff")
         with fc3:
             opts_est = (["Todos"] + estados_vis) if estados_vis else (
                 ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
@@ -127,11 +124,13 @@ def page_anotaciones_diario(perfil: dict) -> None:
     if estados_vis and estado_f == "Todos":
         estados_q = estados_vis
 
-    df = load_reporte_diario(
-        estados=estados_q,
-        fecha_ini=None if todas_fechas else fi.isoformat(),
-        fecha_fin=None if todas_fechas else ff.isoformat(),
-    )
+    df = load_reporte_diario(estados=estados_q)
+
+    # Filtro de fecha en Python sobre fecha_reporte (maneja NULLs sin excluirlos si no hay filtro)
+    if not df.empty and 'fecha_reporte' in df.columns:
+        fechas = pd.to_datetime(df['fecha_reporte'], errors='coerce')
+        mask = (fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff))
+        df = df[mask | fechas.isna()]
 
     if buscar.strip() and not df.empty:
         b = re.escape(buscar.strip())

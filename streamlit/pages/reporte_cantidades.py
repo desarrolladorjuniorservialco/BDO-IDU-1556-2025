@@ -254,11 +254,12 @@ def page_reporte_cantidades(perfil: dict) -> None:
     if estados_vis and estado_f == "Todos":
         estados_q = estados_vis
 
-    df = load_cantidades(
-        estados=estados_q,
-        fecha_ini=fi.isoformat(),
-        fecha_fin=ff.isoformat(),
-    )
+    df = load_cantidades(estados=estados_q)
+
+    if not df.empty and 'fecha' in df.columns:
+        fechas = pd.to_datetime(df['fecha'], errors='coerce')
+        mask = (fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff))
+        df = df[mask | fechas.isna()]
 
     # Búsqueda libre
     if buscar.strip() and not df.empty:

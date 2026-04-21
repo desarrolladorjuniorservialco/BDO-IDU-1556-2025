@@ -230,10 +230,13 @@ def panel_componentes(
 
     df = load_componentes(
         estados=estados_q,
-        fecha_ini=fi.isoformat(),
-        fecha_fin=ff.isoformat(),
         capitulo_num=_CAPITULO_NUM.get(filtro_tipo) if filtro_tipo else None,
     )
+
+    if not df.empty and 'fecha' in df.columns:
+        fechas = pd.to_datetime(df['fecha'], errors='coerce')
+        mask = (fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff))
+        df = df[mask | fechas.isna()]
 
     # Filtros adicionales
     def _tf(df, col, val):

@@ -121,23 +121,20 @@ def page_generar_pdf(perfil: dict) -> None:
     for tipo_label in tipos_sel:
         tipo_key = _TIPOS[tipo_label]
         if tipo_key == "cantidades":
-            df_t = load_cantidades(
-                estados=estados_q,
-                fecha_ini=fi.isoformat(),
-                fecha_fin=ff.isoformat(),
-            )
+            df_t = load_cantidades(estados=estados_q)
+            if not df_t.empty and 'fecha' in df_t.columns:
+                fechas = pd.to_datetime(df_t['fecha'], errors='coerce')
+                df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "componentes":
-            df_t = load_componentes(
-                estados=estados_q,
-                fecha_ini=fi.isoformat(),
-                fecha_fin=ff.isoformat(),
-            )
+            df_t = load_componentes(estados=estados_q)
+            if not df_t.empty and 'fecha' in df_t.columns:
+                fechas = pd.to_datetime(df_t['fecha'], errors='coerce')
+                df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "diario":
-            df_t = load_reporte_diario(
-                estados=estados_q,
-                fecha_ini=fi.isoformat(),
-                fecha_fin=ff.isoformat(),
-            )
+            df_t = load_reporte_diario(estados=estados_q)
+            if not df_t.empty and 'fecha_reporte' in df_t.columns:
+                fechas = pd.to_datetime(df_t['fecha_reporte'], errors='coerce')
+                df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "anotaciones":
             df_t = load_anotaciones_generales()
             if not df_t.empty and 'fecha' in df_t.columns:

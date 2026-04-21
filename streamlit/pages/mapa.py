@@ -141,16 +141,20 @@ def page_mapa(perfil: dict) -> None:
     estados_q = None if estado_f == "Todos" else [estado_f]
 
     # -- Carga de datos --
-    df_cant   = (load_cantidades(estados=estados_q,
-                                 fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
-                 if show_cant else pd.DataFrame())
-    df_comp   = (load_componentes(estados=estados_q,
-                                  fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
-                 if show_comp else pd.DataFrame())
-    df_diario = (load_reporte_diario(estados=estados_q,
-                                     fecha_ini=fi.isoformat(), fecha_fin=ff.isoformat())
-                 if show_diario else pd.DataFrame())
+    def _date_filter(df, col, fi, ff):
+        if df.empty or col not in df.columns:
+            return df
+        fechas = pd.to_datetime(df[col], errors='coerce')
+        return df[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
+
+    df_cant   = (load_cantidades(estados=estados_q) if show_cant else pd.DataFrame())
+    df_comp   = (load_componentes(estados=estados_q) if show_comp else pd.DataFrame())
+    df_diario = (load_reporte_diario(estados=estados_q) if show_diario else pd.DataFrame())
     df_pmt    = load_formulario_pmt() if show_pmt else pd.DataFrame()
+
+    df_cant   = _date_filter(df_cant,   'fecha',         fi, ff)
+    df_comp   = _date_filter(df_comp,   'fecha',         fi, ff)
+    df_diario = _date_filter(df_diario, 'fecha_reporte', fi, ff)
 
     # -- Filtros de texto --
     base_cols = ['folio', 'id_tramo', 'civ', 'usuario_qfield']

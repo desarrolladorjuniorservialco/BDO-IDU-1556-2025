@@ -148,8 +148,6 @@ def _safe_query(query_fn, context: str = "query") -> pd.DataFrame:
 @st.cache_data(ttl=60)
 def load_cantidades(
     estados: list[str] | None = None,
-    fecha_ini: str | None = None,
-    fecha_fin: str | None = None,
 ) -> pd.DataFrame:
     """Registros de medición de cantidades de obra."""
     def _q():
@@ -157,11 +155,7 @@ def load_cantidades(
         query = sb.table('registros_cantidades').select('*')
         if estados:
             query = query.in_('estado', estados)
-        if fecha_ini:
-            query = query.gte('fecha', fecha_ini)
-        if fecha_fin:
-            query = query.lte('fecha', fecha_fin)
-        return _paginate(query.order('fecha', desc=True))
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_cantidades')
 
@@ -169,8 +163,6 @@ def load_cantidades(
 @st.cache_data(ttl=60)
 def load_componentes(
     estados: list[str] | None = None,
-    fecha_ini: str | None = None,
-    fecha_fin: str | None = None,
     capitulo_num: int | None = None,
 ) -> pd.DataFrame:
     """Registros de componentes transversales."""
@@ -179,13 +171,9 @@ def load_componentes(
         query = sb.table('registros_componentes').select('*')
         if estados:
             query = query.in_('estado', estados)
-        if fecha_ini:
-            query = query.gte('fecha', fecha_ini)
-        if fecha_fin:
-            query = query.lte('fecha', fecha_fin)
         if capitulo_num is not None:
             query = query.eq('capitulo_num', capitulo_num)
-        return _paginate(query.order('fecha', desc=True))
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_componentes')
 
@@ -193,8 +181,6 @@ def load_componentes(
 @st.cache_data(ttl=60)
 def load_reporte_diario(
     estados: list[str] | None = None,
-    fecha_ini: str | None = None,
-    fecha_fin: str | None = None,
 ) -> pd.DataFrame:
     """Registros del reporte diario de obra."""
     def _q():
@@ -202,11 +188,7 @@ def load_reporte_diario(
         query = sb.table('registros_reporte_diario').select('*')
         if estados:
             query = query.in_('estado', estados)
-        if fecha_ini:
-            query = query.gte('fecha_reporte', fecha_ini)
-        if fecha_fin:
-            query = query.lte('fecha_reporte', fecha_fin)
-        return _paginate(query.order('fecha_reporte', desc=True))
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_reporte_diario')
 
