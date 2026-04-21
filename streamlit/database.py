@@ -114,8 +114,8 @@ def clear_cache() -> None:
 # HELPER INTERNO
 # ══════════════════════════════════════════════════════════════
 
-def _paginate(query_builder, page_size: int = 1500) -> list:
-    """Fetch all rows bypassing Supabase PostgREST's default 1500-row cap."""
+def _paginate(query_builder, page_size: int = 1499) -> list:
+    """Fetch all rows bypassing Supabase PostgREST's default 1499-row cap."""
     rows, offset = [], 0
     while True:
         batch = query_builder.range(offset, offset + page_size - 1).execute().data or []
