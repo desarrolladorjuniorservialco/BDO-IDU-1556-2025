@@ -17,7 +17,11 @@ import plotly.express as px
 import pandas as pd
 import streamlit as st
 
-from database import load_presupuesto, load_cantidades
+from database import (
+    load_presupuesto, load_cantidades,
+    load_tramos_bd, load_tramos_bd_historial,
+    update_tramo_ejecutado,
+)
 from ui import kpi, section_badge, safe_float
 
 
@@ -314,3 +318,240 @@ def page_presupuesto(perfil: dict) -> None:
 
     else:
         st.dataframe(df_filt, hide_index=True, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # SECCIÓN: DASHBOARDS META FÍSICA
+    # ══════════════════════════════════════════════════════════════
+    st.divider()
+
+    df_tramos = load_tramos_bd()
+
+    if df_tramos.empty:
+        st.info("Sin datos de meta física. Verifica la tabla 'tramos_bd' en Supabase.")
+        return
+
+    tramo_col = 'id_tramo'
+    mf_col    = 'meta_fisica'
+
+    # Fallback: derivar meta_fisica desde cicloruta_km / esp_publico_m2
+    if mf_col not in df_tramos.columns or df_tramos[mf_col].isna().all():
+        df_tramos = df_tramos.copy()
+        df_tramos['meta_fisica'] = df_tramos.apply(
+            lambda r: r.get('cicloruta_km') if r.get('infraestructura') == 'CI'
+                      else r.get('esp_publico_m2'),
+            axis=1,
+        )
+        df_tramos['und'] = df_tramos['infraestructura'].map(
+            {'CI': 'km', 'EP': 'm²', 'MV': 'ml'}
+        )
+
+    df_tramos[mf_col] = pd.to_numeric(df_tramos[mf_col], errors='coerce').fillna(0)
+    df_tramos = df_tramos[df_tramos[mf_col] > 0].copy()
+
+    if df_tramos.empty:
+        st.warning("Ningún tramo tiene meta física registrada en 'tramos_bd'.")
+        return
+
+    # ejecutado viene directamente de tramos_bd (ingresado por rol obra)
+    df_tramos['ejecutado'] = pd.to_numeric(
+        df_tramos.get('ejecutado', 0), errors='coerce'
+    ).fillna(0)
+
+    und_mf         = df_tramos['und'].mode().iloc[0] if 'und' in df_tramos.columns else 'u'
+    meta_total     = df_tramos[mf_col].sum()
+    ejecutado_total = df_tramos['ejecutado'].sum()
+    pct_general    = round(ejecutado_total / meta_total * 100, 1) if meta_total > 0 else 0.0
+    pendiente      = max(meta_total - ejecutado_total, 0)
+
+    df_tramos['pct_avance'] = df_tramos.apply(
+        lambda r: round(r['ejecutado'] / r[mf_col] * 100, 1) if r[mf_col] > 0 else 0.0,
+        axis=1,
+    )
+
+    # ── Dashboard 1: Avance Meta Física General ────────────────
+    section_badge("Seguimiento de Avance Meta Física General", "blue")
+
+    gk1, gk2, gk3 = st.columns(3)
+    with gk1:
+        kpi("Meta Física Total",
+            f"{meta_total:,.1f} {und_mf}",
+            sub=f"{len(df_tramos)} tramos",
+            card_accent="accent-blue")
+    with gk2:
+        kpi("Ejecutado",
+            f"{ejecutado_total:,.1f} {und_mf}",
+            sub=f"{pct_general}% del total",
+            accent="kpi-green" if pct_general >= 70 else ("kpi-orange" if pct_general >= 40 else "kpi-red"),
+            card_accent="accent-green" if pct_general >= 70 else "accent-orange")
+    with gk3:
+        kpi("Pendiente",
+            f"{pendiente:,.1f} {und_mf}",
+            sub=f"{100 - pct_general:.1f}% por completar",
+            card_accent="accent-red" if pct_general < 30 else "")
+
+    st.markdown(
+        f'<div class="timeline-container">'
+        f'<div class="timeline-label-row">'
+        f'<span class="timeline-label">Avance general de meta física</span>'
+        f'<span class="timeline-pct">{pct_general}%</span>'
+        f'</div>'
+        f'<div class="timeline-bar-wrap">'
+        f'<div class="timeline-bar-fill" '
+        f'style="width:{min(pct_general,100):.1f}%; '
+        f'background:{"#198754" if pct_general>=70 else "#FD7E14" if pct_general>=40 else "#B02A37"};">'
+        f'<span class="timeline-bar-text">{pct_general}%</span>'
+        f'</div></div>'
+        f'<div class="timeline-dates">'
+        f'<span class="timeline-date-item">Ejecutado: {ejecutado_total:,.1f} {und_mf}</span>'
+        f'<span class="timeline-date-item">Pendiente: {pendiente:,.1f} {und_mf}</span>'
+        f'<span class="timeline-date-item">Meta total: {meta_total:,.1f} {und_mf}</span>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.divider()
+
+    # ── Dashboards 2 y 3: Por Tramo (dos columnas) ─────────────
+    section_badge("Seguimiento de Avance Meta Física por Tramo", "teal")
+
+    col_chart, col_table = st.columns([3, 2], gap="large")
+
+    with col_chart:
+        st.markdown("#### Avance por tramo")
+        fig_tramos = go.Figure()
+        fig_tramos.add_trace(go.Bar(
+            name='Meta física',
+            x=df_tramos[tramo_col].astype(str),
+            y=df_tramos[mf_col],
+            marker_color='#002D57',
+        ))
+        fig_tramos.add_trace(go.Bar(
+            name='Ejecutado',
+            x=df_tramos[tramo_col].astype(str),
+            y=df_tramos['ejecutado'],
+            marker_color='#198754',
+        ))
+        fig_tramos.update_layout(
+            barmode='group',
+            height=380,
+            margin=dict(l=0, r=0, t=10, b=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family='Barlow'),
+            legend=dict(orientation='h', y=1.1, font=dict(size=11)),
+            yaxis=dict(
+                title=f'Cantidad ({und_mf})',
+                gridcolor='rgba(150,150,150,0.15)',
+            ),
+            xaxis=dict(tickfont=dict(size=10)),
+        )
+        st.plotly_chart(fig_tramos, use_container_width=True,
+                        config={'displayModeBar': False})
+
+    with col_table:
+        st.markdown("#### Meta física completada por tramo")
+        df_tabla = df_tramos[[tramo_col, mf_col, 'ejecutado', 'pct_avance']].copy()
+        df_tabla = df_tabla.rename(columns={
+            tramo_col:   'Tramo',
+            mf_col:      f'Meta ({und_mf})',
+            'ejecutado': f'Ejecutado ({und_mf})',
+            'pct_avance':'Avance (%)',
+        })
+        st.dataframe(
+            df_tabla,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                'Tramo':                  st.column_config.TextColumn('Tramo'),
+                f'Meta ({und_mf})':       st.column_config.NumberColumn(
+                    f'Meta ({und_mf})',       format="%.1f"),
+                f'Ejecutado ({und_mf})':  st.column_config.NumberColumn(
+                    f'Ejecutado ({und_mf})',  format="%.1f"),
+                'Avance (%)':             st.column_config.ProgressColumn(
+                    'Avance (%)', format="%.1f%%", min_value=0, max_value=100),
+            },
+        )
+
+    # ── Edición de ejecutado (solo rol obra) ───────────────────
+    es_obra = perfil.get('rol') == 'obra'
+    if es_obra:
+        st.divider()
+        section_badge("Registrar Avance de Meta Física", "orange")
+        st.caption("Solo visible para el rol Obra. Los cambios quedan registrados en el historial de auditoría.")
+
+        with st.expander("Actualizar ejecutado por tramo", expanded=False):
+            with st.form("form_meta_fisica"):
+                filas = []
+                for _, row in df_tramos.iterrows():
+                    tid   = row[tramo_col]
+                    label = str(row.get('tramo_descripcion') or tid)
+                    meta  = float(row[mf_col])
+                    ejec  = float(row['ejecutado'])
+                    nuevo = st.number_input(
+                        f"{label} — meta: {meta:,.1f} {und_mf}",
+                        min_value=0.0,
+                        max_value=float(meta) if meta > 0 else 1e9,
+                        value=ejec,
+                        step=0.01,
+                        format="%.2f",
+                        key=f"mf_ejec_{tid}",
+                    )
+                    filas.append((tid, ejec, nuevo))
+
+                guardar = st.form_submit_button("Guardar cambios", type="primary",
+                                                use_container_width=True)
+
+            if guardar:
+                token   = st.session_state.get('_access_token', '')
+                errores = []
+                guardados = 0
+                for tid, ant, nuevo in filas:
+                    if abs(nuevo - ant) < 1e-6:
+                        continue
+                    ok = update_tramo_ejecutado(tid, ant, nuevo, perfil, token)
+                    if ok:
+                        guardados += 1
+                    else:
+                        errores.append(tid)
+                if guardados:
+                    st.success(f"{guardados} tramo(s) actualizado(s) correctamente.")
+                if errores:
+                    st.error(f"Error al guardar: {', '.join(errores)}")
+                if not guardados and not errores:
+                    st.info("Sin cambios que guardar.")
+
+    # ── Historial de modificaciones ────────────────────────────
+    st.divider()
+    section_badge("Historial de Modificaciones — Meta Física", "gray")
+
+    import pytz as _pytz
+    _bog = _pytz.timezone('America/Bogota')
+
+    df_hist = load_tramos_bd_historial()
+    if df_hist.empty:
+        st.info("Sin modificaciones registradas aún.")
+    else:
+        if 'modificado_en' in df_hist.columns:
+            df_hist['modificado_en'] = (
+                pd.to_datetime(df_hist['modificado_en'], utc=True)
+                .dt.tz_convert(_bog)
+                .dt.strftime('%Y-%m-%d %H:%M:%S')
+            )
+        cols_hist = [c for c in [
+            'modificado_en', 'id_tramo', 'modificado_nombre',
+            'ejecutado_ant', 'ejecutado_nuevo',
+        ] if c in df_hist.columns]
+        st.dataframe(
+            df_hist[cols_hist],
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                'modificado_en':     st.column_config.TextColumn('Fecha (UTC-5)'),
+                'id_tramo':          st.column_config.TextColumn('Tramo'),
+                'modificado_nombre': st.column_config.TextColumn('Usuario'),
+                'ejecutado_ant':     st.column_config.NumberColumn(
+                    'Anterior', format="%.2f"),
+                'ejecutado_nuevo':   st.column_config.NumberColumn(
+                    'Nuevo',    format="%.2f"),
+            },
+        )

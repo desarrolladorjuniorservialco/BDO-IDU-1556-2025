@@ -353,6 +353,57 @@ def load_presupuesto_componentes() -> pd.DataFrame:
     return _safe_query(_q, context='load_presupuesto_componentes')
 
 
+@st.cache_data(ttl=300)
+def load_tramos_bd() -> pd.DataFrame:
+    """Tramos de obra con meta física y avance ejecutado."""
+    def _q():
+        return _paginate(get_supabase().table('tramos_bd').select('*'))
+    return _safe_query(_q, context='load_tramos_bd')
+
+
+@st.cache_data(ttl=60)
+def load_tramos_bd_historial() -> pd.DataFrame:
+    """Historial de modificaciones al campo ejecutado de tramos_bd."""
+    def _q():
+        return _paginate(
+            get_supabase()
+            .table('tramos_bd_historial')
+            .select('*')
+            .order('modificado_en', desc=True)
+        )
+    return _safe_query(_q, context='load_tramos_bd_historial')
+
+
+def update_tramo_ejecutado(
+    id_tramo: str,
+    ejecutado_ant: float | None,
+    ejecutado_nuevo: float,
+    perfil: dict,
+    access_token: str,
+) -> bool:
+    """
+    Actualiza tramos_bd.ejecutado e inserta un registro de auditoría
+    en tramos_bd_historial. Usa el cliente con JWT del usuario (RLS activo).
+    """
+    try:
+        client = get_user_client(access_token)
+        client.table('tramos_bd').update(
+            {'ejecutado': ejecutado_nuevo}
+        ).eq('id_tramo', id_tramo).execute()
+        client.table('tramos_bd_historial').insert({
+            'id_tramo':          id_tramo,
+            'ejecutado_ant':     ejecutado_ant,
+            'ejecutado_nuevo':   ejecutado_nuevo,
+            'modificado_por':    perfil.get('id'),
+            'modificado_nombre': perfil.get('nombre', ''),
+        }).execute()
+        clear_cache()
+        return True
+    except Exception:
+        _log.exception("Error actualizando ejecutado para tramo %s", id_tramo)
+        return False
+
+
 @st.cache_data(ttl=120)
 def load_pmts() -> pd.DataFrame:
     """Alias de load_formulario_pmt() — compatibilidad."""
