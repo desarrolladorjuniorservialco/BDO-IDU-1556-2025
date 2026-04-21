@@ -332,7 +332,7 @@ def page_mapa(perfil: dict) -> None:
         fig = go.Figure(traces)
         fig.update_layout(
             mapbox=dict(
-                style="carto-positron",
+                style="open-street-map",
                 center=dict(lat=center_lat, lon=center_lon),
                 zoom=13,
             ),
