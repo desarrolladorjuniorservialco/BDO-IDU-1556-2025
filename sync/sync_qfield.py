@@ -96,40 +96,46 @@ def main():
     supabase   = get_supabase()
     project_id = get_project_id(token)
 
+    def _run(nombre, fn, *args):
+        try:
+            fn(*args)
+        except Exception as exc:
+            print(f"\n  ✗ [{nombre}] error no controlado: {exc}")
+
     # 0. Contrato (debe ir primero: otras tablas referencian contratos.id)
-    sync_contrato_excel(supabase, token, project_id)
+    _run('sync_contrato_excel',             sync_contrato_excel,             supabase, token, project_id)
 
     # 1. Tablas lookup (catálogos sin dependencias de formularios)
-    sync_tramos_aux_infra(supabase, token, project_id)
-    sync_tramos_aux_tramos(supabase, token, project_id)
-    sync_presupuesto_aux_actividad(supabase, token, project_id)
-    sync_presupuesto_aux_capitulos(supabase, token, project_id)
+    _run('sync_tramos_aux_infra',           sync_tramos_aux_infra,           supabase, token, project_id)
+    _run('sync_tramos_aux_tramos',          sync_tramos_aux_tramos,          supabase, token, project_id)
+    _run('sync_presupuesto_aux_actividad',  sync_presupuesto_aux_actividad,  supabase, token, project_id)
+    _run('sync_presupuesto_aux_capitulos',  sync_presupuesto_aux_capitulos,  supabase, token, project_id)
 
     # 2. Referencia geográfica
-    sync_localidades(supabase, token, project_id)
-    sync_tramos_bd(supabase, token, project_id)
+    _run('sync_localidades',                sync_localidades,                supabase, token, project_id)
+    _run('sync_tramos_bd',                  sync_tramos_bd,                  supabase, token, project_id)
 
     # 3. Presupuesto
-    sync_presupuesto_bd(supabase, token, project_id)
-    sync_presupuesto_componentes_bd(supabase, token, project_id)
-    sync_presupuesto_componentes_aux(supabase, token, project_id)
+    _run('sync_presupuesto_bd',             sync_presupuesto_bd,             supabase, token, project_id)
+    _run('sync_presupuesto_componentes_bd', sync_presupuesto_componentes_bd, supabase, token, project_id)
+    _run('sync_presupuesto_componentes_aux',sync_presupuesto_componentes_aux,supabase, token, project_id)
 
     # 4. Formularios principales
-    sync_registros_cantidades(supabase, token, project_id)
-    sync_registros_componentes(supabase, token, project_id)
-    sync_registros_reporte_diario(supabase, token, project_id)
-    sync_formulario_pmt(supabase, token, project_id)
+    _run('sync_registros_cantidades',       sync_registros_cantidades,       supabase, token, project_id)
+    _run('sync_registros_componentes',      sync_registros_componentes,      supabase, token, project_id)
+    _run('sync_registros_reporte_diario',   sync_registros_reporte_diario,   supabase, token, project_id)
+    _run('sync_formulario_pmt',             sync_formulario_pmt,             supabase, token, project_id)
 
     # 5. Tablas secundarias del reporte diario
-    sync_bd_personal(supabase, token, project_id)
-    sync_bd_climatica(supabase, token, project_id)
-    sync_bd_maquinaria(supabase, token, project_id)
-    sync_bd_sst(supabase, token, project_id)
+    _run('sync_bd_personal',               sync_bd_personal,                supabase, token, project_id)
+    _run('sync_bd_climatica',              sync_bd_climatica,               supabase, token, project_id)
+    _run('sync_bd_maquinaria',             sync_bd_maquinaria,              supabase, token, project_id)
+    _run('sync_bd_sst',                    sync_bd_sst,                     supabase, token, project_id)
 
     # 6. Registros fotográficos (dependen de los formularios principales)
-    sync_rf_cantidades(supabase, token, project_id)
-    sync_rf_componentes(supabase, token, project_id)
-    sync_rf_reporte_diario(supabase, token, project_id)
+    _run('sync_rf_cantidades',             sync_rf_cantidades,              supabase, token, project_id)
+    _run('sync_rf_componentes',            sync_rf_componentes,             supabase, token, project_id)
+    _run('sync_rf_reporte_diario',         sync_rf_reporte_diario,          supabase, token, project_id)
 
     print(f"\n{'='*60}")
     print(f"✓ Sincronización completa")
