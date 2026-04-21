@@ -320,8 +320,11 @@ def page_presupuesto(perfil: dict) -> None:
         st.dataframe(df_filt, hide_index=True, use_container_width=True)
 
     # ══════════════════════════════════════════════════════════════
-    # SECCIÓN: DASHBOARDS META FÍSICA
+    # SECCIÓN: DASHBOARDS META FÍSICA (separado por tipo)
     # ══════════════════════════════════════════════════════════════
+    import pytz as _pytz
+    _bog = _pytz.timezone('America/Bogota')
+
     st.divider()
 
     df_tramos = load_tramos_bd()
@@ -333,7 +336,7 @@ def page_presupuesto(perfil: dict) -> None:
     tramo_col = 'id_tramo'
     mf_col    = 'meta_fisica'
 
-    # Fallback: derivar meta_fisica desde cicloruta_km / esp_publico_m2
+    # Fallback: derivar meta_fisica y und desde cicloruta_km / esp_publico_m2
     if mf_col not in df_tramos.columns or df_tramos[mf_col].isna().all():
         df_tramos = df_tramos.copy()
         df_tramos['meta_fisica'] = df_tramos.apply(
@@ -341,135 +344,163 @@ def page_presupuesto(perfil: dict) -> None:
                       else r.get('esp_publico_m2'),
             axis=1,
         )
+    if 'und' not in df_tramos.columns or df_tramos['und'].isna().all():
         df_tramos['und'] = df_tramos['infraestructura'].map(
             {'CI': 'km', 'EP': 'm²', 'MV': 'ml'}
         )
 
     df_tramos[mf_col] = pd.to_numeric(df_tramos[mf_col], errors='coerce').fillna(0)
+    df_tramos['ejecutado'] = pd.to_numeric(
+        df_tramos.get('ejecutado', 0), errors='coerce'
+    ).fillna(0)
+    df_tramos['pct_avance'] = df_tramos.apply(
+        lambda r: round(r['ejecutado'] / r[mf_col] * 100, 1) if r[mf_col] > 0 else 0.0,
+        axis=1,
+    )
     df_tramos = df_tramos[df_tramos[mf_col] > 0].copy()
 
     if df_tramos.empty:
         st.warning("Ningún tramo tiene meta física registrada en 'tramos_bd'.")
         return
 
-    # ejecutado viene directamente de tramos_bd (ingresado por rol obra)
-    df_tramos['ejecutado'] = pd.to_numeric(
-        df_tramos.get('ejecutado', 0), errors='coerce'
-    ).fillna(0)
+    # Catálogo de tipos: código → nombre, unidad, colores
+    TIPOS = {
+        'MV': {'nombre': 'Malla Vial',     'und': 'ml', 'color_meta': '#002D57', 'color_ejec': '#1976D2'},
+        'EP': {'nombre': 'Espacio Público', 'und': 'm²', 'color_meta': '#5C3D99', 'color_ejec': '#9C27B0'},
+        'CI': {'nombre': 'Ciclorruta',     'und': 'km', 'color_meta': '#1B5E20', 'color_ejec': '#198754'},
+    }
 
-    und_mf         = df_tramos['und'].mode().iloc[0] if 'und' in df_tramos.columns else 'u'
-    meta_total     = df_tramos[mf_col].sum()
-    ejecutado_total = df_tramos['ejecutado'].sum()
-    pct_general    = round(ejecutado_total / meta_total * 100, 1) if meta_total > 0 else 0.0
-    pendiente      = max(meta_total - ejecutado_total, 0)
-
-    df_tramos['pct_avance'] = df_tramos.apply(
-        lambda r: round(r['ejecutado'] / r[mf_col] * 100, 1) if r[mf_col] > 0 else 0.0,
-        axis=1,
-    )
-
-    # ── Dashboard 1: Avance Meta Física General ────────────────
+    # ── Dashboard 1: Indicadores acumulados por tipo ───────────
     section_badge("Seguimiento de Avance Meta Física General", "blue")
 
-    gk1, gk2, gk3 = st.columns(3)
-    with gk1:
-        kpi("Meta Física Total",
-            f"{meta_total:,.1f} {und_mf}",
-            sub=f"{len(df_tramos)} tramos",
-            card_accent="accent-blue")
-    with gk2:
-        kpi("Ejecutado",
-            f"{ejecutado_total:,.1f} {und_mf}",
-            sub=f"{pct_general}% del total",
-            accent="kpi-green" if pct_general >= 70 else ("kpi-orange" if pct_general >= 40 else "kpi-red"),
-            card_accent="accent-green" if pct_general >= 70 else "accent-orange")
-    with gk3:
-        kpi("Pendiente",
-            f"{pendiente:,.1f} {und_mf}",
-            sub=f"{100 - pct_general:.1f}% por completar",
-            card_accent="accent-red" if pct_general < 30 else "")
-
-    st.markdown(
-        f'<div class="timeline-container">'
-        f'<div class="timeline-label-row">'
-        f'<span class="timeline-label">Avance general de meta física</span>'
-        f'<span class="timeline-pct">{pct_general}%</span>'
-        f'</div>'
-        f'<div class="timeline-bar-wrap">'
-        f'<div class="timeline-bar-fill" '
-        f'style="width:{min(pct_general,100):.1f}%; '
-        f'background:{"#198754" if pct_general>=70 else "#FD7E14" if pct_general>=40 else "#B02A37"};">'
-        f'<span class="timeline-bar-text">{pct_general}%</span>'
-        f'</div></div>'
-        f'<div class="timeline-dates">'
-        f'<span class="timeline-date-item">Ejecutado: {ejecutado_total:,.1f} {und_mf}</span>'
-        f'<span class="timeline-date-item">Pendiente: {pendiente:,.1f} {und_mf}</span>'
-        f'<span class="timeline-date-item">Meta total: {meta_total:,.1f} {und_mf}</span>'
-        f'</div></div>',
-        unsafe_allow_html=True,
-    )
+    cols_tipo = st.columns(len(TIPOS), gap="medium")
+    for col_ui, (codigo, info) in zip(cols_tipo, TIPOS.items()):
+        df_t  = df_tramos[df_tramos['infraestructura'] == codigo]
+        meta  = df_t[mf_col].sum()
+        ejec  = df_t['ejecutado'].sum()
+        pend  = max(meta - ejec, 0)
+        pct   = round(ejec / meta * 100, 1) if meta > 0 else 0.0
+        n_tr  = len(df_t)
+        bar_color = '#198754' if pct >= 70 else '#FD7E14' if pct >= 40 else '#B02A37'
+        with col_ui:
+            kpi(
+                info['nombre'],
+                f"{ejec:,.1f} / {meta:,.1f} {info['und']}",
+                sub=f"{n_tr} tramo(s) · Pendiente: {pend:,.1f} {info['und']}",
+                accent="kpi-green" if pct >= 70 else ("kpi-orange" if pct >= 40 else "kpi-red"),
+                card_accent="accent-green" if pct >= 70 else (
+                    "accent-orange" if pct >= 40 else "accent-red"),
+            )
+            st.markdown(
+                f'<div class="timeline-container" style="margin-top:6px;">'
+                f'<div class="timeline-label-row">'
+                f'<span class="timeline-label">Avance</span>'
+                f'<span class="timeline-pct">{pct}%</span>'
+                f'</div>'
+                f'<div class="timeline-bar-wrap">'
+                f'<div class="timeline-bar-fill" style="width:{min(pct,100):.1f}%;background:{bar_color};">'
+                f'<span class="timeline-bar-text">{pct}%</span>'
+                f'</div></div></div>',
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
-    # ── Dashboards 2 y 3: Por Tramo (dos columnas) ─────────────
+    # ── Dashboard 2: Detalle por tramo separado por tipo (tabs) ─
     section_badge("Seguimiento de Avance Meta Física por Tramo", "teal")
 
-    col_chart, col_table = st.columns([3, 2], gap="large")
+    tab_labels = [f"{info['nombre']}" for info in TIPOS.values()]
+    tabs = st.tabs(tab_labels)
 
-    with col_chart:
-        st.markdown("#### Avance por tramo")
-        fig_tramos = go.Figure()
-        fig_tramos.add_trace(go.Bar(
-            name='Meta física',
-            x=df_tramos[tramo_col].astype(str),
-            y=df_tramos[mf_col],
-            marker_color='#002D57',
-        ))
-        fig_tramos.add_trace(go.Bar(
-            name='Ejecutado',
-            x=df_tramos[tramo_col].astype(str),
-            y=df_tramos['ejecutado'],
-            marker_color='#198754',
-        ))
-        fig_tramos.update_layout(
-            barmode='group',
-            height=380,
-            margin=dict(l=0, r=0, t=10, b=0),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Barlow'),
-            legend=dict(orientation='h', y=1.1, font=dict(size=11)),
-            yaxis=dict(
-                title=f'Cantidad ({und_mf})',
-                gridcolor='rgba(150,150,150,0.15)',
-            ),
-            xaxis=dict(tickfont=dict(size=10)),
-        )
-        st.plotly_chart(fig_tramos, use_container_width=True,
-                        config={'displayModeBar': False})
+    # Tabla consolidada de avance (todos los tipos) para CSV global
+    _csv_avance_frames = []
 
-    with col_table:
-        st.markdown("#### Meta física completada por tramo")
-        df_tabla = df_tramos[[tramo_col, mf_col, 'ejecutado', 'pct_avance']].copy()
-        df_tabla = df_tabla.rename(columns={
-            tramo_col:   'Tramo',
-            mf_col:      f'Meta ({und_mf})',
-            'ejecutado': f'Ejecutado ({und_mf})',
-            'pct_avance':'Avance (%)',
-        })
-        st.dataframe(
-            df_tabla,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                'Tramo':                  st.column_config.TextColumn('Tramo'),
-                f'Meta ({und_mf})':       st.column_config.NumberColumn(
-                    f'Meta ({und_mf})',       format="%.1f"),
-                f'Ejecutado ({und_mf})':  st.column_config.NumberColumn(
-                    f'Ejecutado ({und_mf})',  format="%.1f"),
-                'Avance (%)':             st.column_config.ProgressColumn(
-                    'Avance (%)', format="%.1f%%", min_value=0, max_value=100),
-            },
+    for tab, (codigo, info) in zip(tabs, TIPOS.items()):
+        df_t = df_tramos[df_tramos['infraestructura'] == codigo].copy()
+        und  = info['und']
+
+        with tab:
+            if df_t.empty:
+                st.info(f"Sin tramos registrados para {info['nombre']}.")
+                continue
+
+            col_ch, col_tb = st.columns([3, 2], gap="large")
+
+            with col_ch:
+                st.markdown(f"#### Avance por tramo — {info['nombre']}")
+                fig_t = go.Figure()
+                fig_t.add_trace(go.Bar(
+                    name='Meta física',
+                    x=df_t[tramo_col].astype(str),
+                    y=df_t[mf_col],
+                    marker_color=info['color_meta'],
+                ))
+                fig_t.add_trace(go.Bar(
+                    name='Ejecutado',
+                    x=df_t[tramo_col].astype(str),
+                    y=df_t['ejecutado'],
+                    marker_color=info['color_ejec'],
+                ))
+                fig_t.update_layout(
+                    barmode='group',
+                    height=360,
+                    margin=dict(l=0, r=0, t=10, b=0),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font=dict(family='Barlow'),
+                    legend=dict(orientation='h', y=1.12, font=dict(size=11)),
+                    yaxis=dict(
+                        title=f'Cantidad ({und})',
+                        gridcolor='rgba(150,150,150,0.15)',
+                    ),
+                    xaxis=dict(tickfont=dict(size=10)),
+                )
+                st.plotly_chart(fig_t, use_container_width=True,
+                                config={'displayModeBar': False})
+
+            with col_tb:
+                st.markdown(f"#### Completado por tramo")
+                df_show = df_t[[tramo_col, mf_col, 'ejecutado', 'pct_avance']].copy()
+                df_show.columns = [
+                    'Tramo', f'Meta ({und})', f'Ejecutado ({und})', 'Avance (%)'
+                ]
+                st.dataframe(
+                    df_show,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        'Tramo':               st.column_config.TextColumn('Tramo'),
+                        f'Meta ({und})':       st.column_config.NumberColumn(
+                            f'Meta ({und})',      format="%.2f"),
+                        f'Ejecutado ({und})':  st.column_config.NumberColumn(
+                            f'Ejecutado ({und})', format="%.2f"),
+                        'Avance (%)':          st.column_config.ProgressColumn(
+                            'Avance (%)', format="%.1f%%", min_value=0, max_value=100),
+                    },
+                )
+                # CSV por tipo
+                st.download_button(
+                    f"Descargar CSV — {info['nombre']}",
+                    data=df_show.to_csv(index=False).encode('utf-8'),
+                    file_name=f"MetaFisica_{codigo}_IDU-1556-2025.csv",
+                    mime="text/csv",
+                    key=f"csv_mf_{codigo}",
+                )
+
+            # Acumular para CSV global
+            df_csv_tipo = df_t[[tramo_col, mf_col, 'ejecutado', 'pct_avance']].copy()
+            df_csv_tipo.insert(0, 'tipo', info['nombre'])
+            df_csv_tipo.insert(0, 'und', und)
+            _csv_avance_frames.append(df_csv_tipo)
+
+    # CSV consolidado (todos los tipos)
+    if _csv_avance_frames:
+        df_csv_global = pd.concat(_csv_avance_frames, ignore_index=True)
+        st.download_button(
+            "Descargar CSV — Avance completo (todos los tipos)",
+            data=df_csv_global.to_csv(index=False).encode('utf-8'),
+            file_name="MetaFisica_TodosTipos_IDU-1556-2025.csv",
+            mime="text/csv",
         )
 
     # ── Edición de ejecutado (solo rol obra) ───────────────────
@@ -482,28 +513,34 @@ def page_presupuesto(perfil: dict) -> None:
         with st.expander("Actualizar ejecutado por tramo", expanded=False):
             with st.form("form_meta_fisica"):
                 filas = []
-                for _, row in df_tramos.iterrows():
-                    tid   = row[tramo_col]
-                    label = str(row.get('tramo_descripcion') or tid)
-                    meta  = float(row[mf_col])
-                    ejec  = float(row['ejecutado'])
-                    nuevo = st.number_input(
-                        f"{label} — meta: {meta:,.1f} {und_mf}",
-                        min_value=0.0,
-                        max_value=float(meta) if meta > 0 else 1e9,
-                        value=ejec,
-                        step=0.01,
-                        format="%.2f",
-                        key=f"mf_ejec_{tid}",
-                    )
-                    filas.append((tid, ejec, nuevo))
+                for codigo, info in TIPOS.items():
+                    df_t = df_tramos[df_tramos['infraestructura'] == codigo]
+                    if df_t.empty:
+                        continue
+                    st.markdown(f"**{info['nombre']}** ({info['und']})")
+                    for _, row in df_t.iterrows():
+                        tid   = row[tramo_col]
+                        label = str(row.get('tramo_descripcion') or tid)
+                        meta  = float(row[mf_col])
+                        ejec  = float(row['ejecutado'])
+                        nuevo = st.number_input(
+                            f"{label} — meta: {meta:,.2f} {info['und']}",
+                            min_value=0.0,
+                            max_value=float(meta) if meta > 0 else 1e9,
+                            value=ejec,
+                            step=0.01,
+                            format="%.2f",
+                            key=f"mf_ejec_{tid}",
+                        )
+                        filas.append((tid, ejec, nuevo))
+                    st.markdown("---")
 
                 guardar = st.form_submit_button("Guardar cambios", type="primary",
                                                 use_container_width=True)
 
             if guardar:
-                token   = st.session_state.get('_access_token', '')
-                errores = []
+                token     = st.session_state.get('_access_token', '')
+                errores   = []
                 guardados = 0
                 for tid, ant, nuevo in filas:
                     if abs(nuevo - ant) < 1e-6:
@@ -524,34 +561,49 @@ def page_presupuesto(perfil: dict) -> None:
     st.divider()
     section_badge("Historial de Modificaciones — Meta Física", "gray")
 
-    import pytz as _pytz
-    _bog = _pytz.timezone('America/Bogota')
-
     df_hist = load_tramos_bd_historial()
     if df_hist.empty:
         st.info("Sin modificaciones registradas aún.")
     else:
+        # Convertir timestamp a UTC-5
         if 'modificado_en' in df_hist.columns:
-            df_hist['modificado_en'] = (
+            df_hist['Fecha (UTC-5)'] = (
                 pd.to_datetime(df_hist['modificado_en'], utc=True)
                 .dt.tz_convert(_bog)
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
             )
-        cols_hist = [c for c in [
-            'modificado_en', 'id_tramo', 'modificado_nombre',
-            'ejecutado_ant', 'ejecutado_nuevo',
-        ] if c in df_hist.columns]
+
+        # Enriquecer con nombre del tipo si se puede cruzar con df_tramos
+        if 'id_tramo' in df_hist.columns and 'infraestructura' in df_tramos.columns:
+            tipo_map = (
+                df_tramos[['id_tramo', 'infraestructura']]
+                .drop_duplicates('id_tramo')
+                .set_index('id_tramo')['infraestructura']
+                .map({k: v['nombre'] for k, v in TIPOS.items()})
+            )
+            df_hist['Tipo'] = df_hist['id_tramo'].map(tipo_map)
+
+        cols_hist = ['Fecha (UTC-5)', 'Tipo', 'id_tramo', 'modificado_nombre',
+                     'ejecutado_ant', 'ejecutado_nuevo']
+        cols_hist = [c for c in cols_hist if c in df_hist.columns]
+
+        st.download_button(
+            "Descargar CSV — Historial de modificaciones",
+            data=df_hist[cols_hist].to_csv(index=False).encode('utf-8'),
+            file_name="Historial_MetaFisica_IDU-1556-2025.csv",
+            mime="text/csv",
+        )
+
         st.dataframe(
             df_hist[cols_hist],
             hide_index=True,
             use_container_width=True,
             column_config={
-                'modificado_en':     st.column_config.TextColumn('Fecha (UTC-5)'),
-                'id_tramo':          st.column_config.TextColumn('Tramo'),
-                'modificado_nombre': st.column_config.TextColumn('Usuario'),
-                'ejecutado_ant':     st.column_config.NumberColumn(
-                    'Anterior', format="%.2f"),
-                'ejecutado_nuevo':   st.column_config.NumberColumn(
-                    'Nuevo',    format="%.2f"),
+                'Fecha (UTC-5)':      st.column_config.TextColumn('Fecha (UTC-5)'),
+                'Tipo':               st.column_config.TextColumn('Tipo'),
+                'id_tramo':           st.column_config.TextColumn('Tramo'),
+                'modificado_nombre':  st.column_config.TextColumn('Usuario'),
+                'ejecutado_ant':      st.column_config.NumberColumn('Anterior', format="%.2f"),
+                'ejecutado_nuevo':    st.column_config.NumberColumn('Nuevo',    format="%.2f"),
             },
         )
