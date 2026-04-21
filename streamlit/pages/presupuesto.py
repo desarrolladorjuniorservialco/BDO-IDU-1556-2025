@@ -227,7 +227,7 @@ def page_presupuesto(perfil: dict) -> None:
             f'</div>'
             f'<div class="timeline-bar-wrap">'
             f'<div class="timeline-bar-fill" '
-            f'style="width:{min(pct_e,100):.1f}%; background:{"#198754" if pct_e>=70 else "#FD7E14" if pct_e>=40 else "#B02A37"};">'
+            f'style="width:{min(pct_e,100):.1f}%; background:{"#6D8E2D" if pct_e>=70 else "#FD7E14" if pct_e>=40 else "#ED1C24"};">'
             f'<span class="timeline-bar-text">{pct_e}%</span>'
             f'</div></div>'
             f'<div class="timeline-dates">'
@@ -262,7 +262,7 @@ def page_presupuesto(perfil: dict) -> None:
                 name='Ejecutado',
                 x=df_grp['componente'],
                 y=df_grp['valor_ejecutado'],
-                marker_color='#198754',
+                marker_color='#6D8E2D',
             ))
         fig.update_layout(
             barmode='group',
@@ -270,7 +270,7 @@ def page_presupuesto(perfil: dict) -> None:
             margin=dict(l=0, r=0, t=10, b=0),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Barlow'),
+            font=dict(family='IBM Plex Sans'),
             legend=dict(orientation='h', y=1.12, font=dict(size=11)),
             yaxis=dict(
                 title='Valor ($)',
@@ -363,11 +363,14 @@ def page_presupuesto(perfil: dict) -> None:
         st.warning("Ningún tramo tiene meta física registrada en 'tramos_bd'.")
         return
 
-    # Catálogo de tipos: código → nombre, unidad, colores
+    # Catálogo de tipos: código → nombre, unidad, colores IDU
+    # color_meta: Azul Institucional Bogotá (uniforme = autoridad/plan)
+    # color_ejec: acento diferenciador por tipo dentro de la paleta IDU
+    # card_accent: clase CSS del sistema de diseño para la barra lateral del KPI
     TIPOS = {
-        'MV': {'nombre': 'Malla Vial',     'und': 'ml', 'color_meta': '#002D57', 'color_ejec': '#1976D2'},
-        'EP': {'nombre': 'Espacio Público', 'und': 'm²', 'color_meta': '#5C3D99', 'color_ejec': '#9C27B0'},
-        'CI': {'nombre': 'Ciclorruta',     'und': 'km', 'color_meta': '#1B5E20', 'color_ejec': '#198754'},
+        'MV': {'nombre': 'Malla Vial',     'und': 'ml', 'color_meta': '#002D57', 'color_ejec': '#0076B0', 'card_accent': 'accent-teal'},
+        'EP': {'nombre': 'Espacio Público', 'und': 'm²', 'color_meta': '#002D57', 'color_ejec': '#6D8E2D', 'card_accent': 'accent-green'},
+        'CI': {'nombre': 'Ciclorruta',     'und': 'km', 'color_meta': '#002D57', 'color_ejec': '#E6BC00', 'card_accent': 'accent-blue'},
     }
 
     # ── Dashboard 1: Indicadores acumulados por tipo ───────────
@@ -381,15 +384,15 @@ def page_presupuesto(perfil: dict) -> None:
         pend  = max(meta - ejec, 0)
         pct   = round(ejec / meta * 100, 1) if meta > 0 else 0.0
         n_tr  = len(df_t)
-        bar_color = '#198754' if pct >= 70 else '#FD7E14' if pct >= 40 else '#B02A37'
+        # Semáforo IDU: completado=#6D8E2D · atrasado=#FD7E14 · crítico=#ED1C24
+        bar_color = '#6D8E2D' if pct >= 70 else '#FD7E14' if pct >= 40 else '#ED1C24'
         with col_ui:
             kpi(
                 info['nombre'],
                 f"{ejec:,.1f} / {meta:,.1f} {info['und']}",
                 sub=f"{n_tr} tramo(s) · Pendiente: {pend:,.1f} {info['und']}",
                 accent="kpi-green" if pct >= 70 else ("kpi-orange" if pct >= 40 else "kpi-red"),
-                card_accent="accent-green" if pct >= 70 else (
-                    "accent-orange" if pct >= 40 else "accent-red"),
+                card_accent=info['card_accent'],
             )
             st.markdown(
                 f'<div class="timeline-container" style="margin-top:6px;">'
@@ -428,18 +431,25 @@ def page_presupuesto(perfil: dict) -> None:
 
             with col_ch:
                 st.markdown(f"#### Avance por tramo — {info['nombre']}")
+                _desc = df_t.get('tramo_descripcion', df_t[tramo_col]).fillna(df_t[tramo_col]).astype(str)
+                _ids  = df_t[tramo_col].astype(str)
+                _tip  = (_ids + '<br>' + _desc).tolist()
                 fig_t = go.Figure()
                 fig_t.add_trace(go.Bar(
                     name='Meta física',
                     x=df_t[tramo_col].astype(str),
                     y=df_t[mf_col],
                     marker_color=info['color_meta'],
+                    customdata=_tip,
+                    hovertemplate='<b>%{customdata}</b><br>Meta: %{y:,.2f} ' + und + '<extra></extra>',
                 ))
                 fig_t.add_trace(go.Bar(
                     name='Ejecutado',
                     x=df_t[tramo_col].astype(str),
                     y=df_t['ejecutado'],
                     marker_color=info['color_ejec'],
+                    customdata=_tip,
+                    hovertemplate='<b>%{customdata}</b><br>Ejecutado: %{y:,.2f} ' + und + '<extra></extra>',
                 ))
                 fig_t.update_layout(
                     barmode='group',
@@ -447,7 +457,7 @@ def page_presupuesto(perfil: dict) -> None:
                     margin=dict(l=0, r=0, t=10, b=0),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(family='Barlow'),
+                    font=dict(family='IBM Plex Sans'),
                     legend=dict(orientation='h', y=1.12, font=dict(size=11)),
                     yaxis=dict(
                         title=f'Cantidad ({und})',
@@ -459,7 +469,6 @@ def page_presupuesto(perfil: dict) -> None:
                                 config={'displayModeBar': False})
 
             with col_tb:
-                st.markdown(f"#### Completado por tramo")
                 df_show = df_t[[tramo_col, mf_col, 'ejecutado', 'pct_avance']].copy()
                 df_show.columns = [
                     'Tramo', f'Meta ({und})', f'Ejecutado ({und})', 'Avance (%)'
@@ -517,10 +526,14 @@ def page_presupuesto(perfil: dict) -> None:
                     df_t = df_tramos[df_tramos['infraestructura'] == codigo]
                     if df_t.empty:
                         continue
-                    st.markdown(f"**{info['nombre']}** ({info['und']})")
+                    st.markdown(
+                        f'<div class="mf-tipo-header">{info["nombre"]} · {info["und"]}</div>',
+                        unsafe_allow_html=True,
+                    )
                     for _, row in df_t.iterrows():
                         tid   = row[tramo_col]
-                        label = str(row.get('tramo_descripcion') or tid)
+                        desc  = str(row.get('tramo_descripcion') or '')
+                        label = f"[{tid}] {desc}".strip() if desc else f"[{tid}]"
                         meta  = float(row[mf_col])
                         ejec  = float(row['ejecutado'])
                         nuevo = st.number_input(
