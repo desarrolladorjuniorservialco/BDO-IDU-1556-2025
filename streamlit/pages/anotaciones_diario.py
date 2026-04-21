@@ -208,7 +208,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
     st.markdown(f"**{n_total} reporte(s)**")
 
     # ── Lista de reportes ──────────────────────────────────
-    for _, reg in df.iterrows():
+    for _row_idx, (_, reg) in enumerate(df.iterrows()):
         folio      = str(reg.get('folio', '—'))
         est_actual = str(reg.get('estado', ''))
         fecha_rep  = str(reg.get('fecha_reporte', reg.get('fecha', '')))[:10]
@@ -316,7 +316,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
                     if hist:
                         st.markdown(hist, unsafe_allow_html=True)
 
-                    _panel_aprobacion_rd(reg, perfil, campos, estado_apr, estados_accion)
+                    _panel_aprobacion_rd(reg, perfil, campos, estado_apr, estados_accion, _row_idx)
             t += 1
 
             # ── Tab Clima ──────────────────────────────────
@@ -393,7 +393,8 @@ def page_anotaciones_diario(perfil: dict) -> None:
 
 def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                           campos: dict | None, estado_apr: str | None,
-                          estados_accion: list | None) -> None:
+                          estados_accion: list | None,
+                          row_idx: int = 0) -> None:
     """Panel de aprobación/devolución para reporte diario."""
     est_actual = str(reg.get('estado', '')).upper()
     if not campos or not estados_accion or est_actual not in estados_accion:
@@ -401,6 +402,8 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
         return
 
     reg_id = str(reg.get('id', ''))
+    # Incluir row_idx para garantizar unicidad cuando varios registros comparten id
+    wkey = f"{row_idx}_{reg_id}"
 
     st.markdown(
         '<div class="approval-panel-title">Validación</div>',
@@ -409,7 +412,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
 
     obs_val = st.text_area(
         "Observación",
-        key=f"obs_rd_{reg_id}",
+        key=f"obs_rd_{wkey}",
         height=80,
         max_chars=1000,
         placeholder="Opcional para aprobar · Obligatoria para devolver",
@@ -418,7 +421,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
 
     b1, b2 = st.columns(2)
     with b1:
-        if st.button("Aprobar", key=f"apr_rd_{reg_id}",
+        if st.button("Aprobar", key=f"apr_rd_{wkey}",
                      use_container_width=True, type="primary"):
             try:
                 sb  = get_user_client(st.session_state.get('_access_token', ''))
@@ -440,7 +443,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
                 st.error("No fue posible actualizar. Intenta de nuevo.")
 
     with b2:
-        if st.button("Devolver", key=f"dev_rd_{reg_id}",
+        if st.button("Devolver", key=f"dev_rd_{wkey}",
                      use_container_width=True):
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")

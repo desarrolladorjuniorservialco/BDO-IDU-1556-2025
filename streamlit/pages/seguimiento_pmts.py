@@ -3,12 +3,12 @@ pages/seguimiento_pmts.py — Seguimiento de Planes de Manejo de Tránsito
 Estado, vigencia y registro histórico de los PMTs del proyecto.
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 import plotly.express as px
 import streamlit as st
 
-from database import load_pmts, load_componentes
+from database import load_pmts
 from ui import kpi, section_badge
 
 
@@ -74,23 +74,3 @@ def page_seguimiento_pmts(perfil: dict) -> None:
     else:
         st.dataframe(df_pmt, hide_index=True, use_container_width=True)
 
-    # ── Registros de campo asociados ──────────────────────
-    st.divider()
-    st.markdown("#### Registros de Campo del Período")
-
-    c1, c2 = st.columns(2)
-    with c1: fi = st.date_input("Desde", value=date.today() - timedelta(days=7))
-    with c2: ff = st.date_input("Hasta", value=date.today())
-
-    df_comp = load_componentes()
-    if not df_comp.empty and 'fecha' in df_comp.columns:
-        fechas = pd.to_datetime(df_comp['fecha'], errors='coerce')
-        df_comp = df_comp[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
-
-    if df_comp.empty:
-        st.info("No hay registros de componentes en el período.")
-    else:
-        cols = ['folio', 'usuario_qfield', 'id_tramo',
-                'tipo_componente', 'estado', 'fecha']
-        cols = [c for c in cols if c in df_comp.columns]
-        st.dataframe(df_comp[cols], hide_index=True, use_container_width=True)

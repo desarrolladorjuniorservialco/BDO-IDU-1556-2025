@@ -141,6 +141,25 @@ def _safe_query(query_fn, context: str = "query") -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def _chunked_in_query(table: str, column: str, values: list,
+                      chunk_size: int = 200) -> pd.DataFrame:
+    """
+    Ejecuta SELECT * WHERE column IN (values) en lotes para evitar URLs
+    demasiado largas (límite ~8 KB de PostgREST con listas grandes).
+    """
+    if not values:
+        return pd.DataFrame()
+    frames: list[pd.DataFrame] = []
+    sb = get_supabase()
+    for i in range(0, len(values), chunk_size):
+        chunk = values[i: i + chunk_size]
+        def _q(c=chunk):
+            return _paginate(sb.table(table).select('*').in_(column, c))
+        frames.append(_safe_query(_q, context=f'{table}.{column} chunk {i}'))
+    non_empty = [f for f in frames if not f.empty]
+    return pd.concat(non_empty, ignore_index=True) if non_empty else pd.DataFrame()
+
+
 # ══════════════════════════════════════════════════════════════
 # LOADERS — FORMULARIOS DE CAMPO
 # ══════════════════════════════════════════════════════════════
@@ -245,71 +264,43 @@ def load_adiciones() -> pd.DataFrame:
 @st.cache_data(ttl=120)
 def load_bd_personal(folios: tuple) -> pd.DataFrame:
     """Personal de obra vinculado a folios de reporte diario."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('bd_personal_obra').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_bd_personal')
+    return _chunked_in_query('bd_personal_obra', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_bd_clima(folios: tuple) -> pd.DataFrame:
     """Condición climática vinculada a folios de reporte diario."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('bd_condicion_climatica').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_bd_clima')
+    return _chunked_in_query('bd_condicion_climatica', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_bd_maquinaria(folios: tuple) -> pd.DataFrame:
     """Maquinaria en obra vinculada a folios de reporte diario."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('bd_maquinaria_obra').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_bd_maquinaria')
+    return _chunked_in_query('bd_maquinaria_obra', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_bd_sst(folios: tuple) -> pd.DataFrame:
     """Datos SST/Ambiental vinculados a folios de reporte diario."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('bd_sst_ambiental').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_bd_sst')
+    return _chunked_in_query('bd_sst_ambiental', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_fotos_cantidades(folios: tuple) -> pd.DataFrame:
     """Fotos de registros de cantidades."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('rf_cantidades').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_fotos_cantidades')
+    return _chunked_in_query('rf_cantidades', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_fotos_componentes(folios: tuple) -> pd.DataFrame:
     """Fotos de registros de componentes."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('rf_componentes').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_fotos_componentes')
+    return _chunked_in_query('rf_componentes', 'folio', list(folios))
 
 
 @st.cache_data(ttl=120)
 def load_fotos_reporte(folios: tuple) -> pd.DataFrame:
     """Fotos del reporte diario."""
-    if not folios:
-        return pd.DataFrame()
-    def _q():
-        return _paginate(get_supabase().table('rf_reporte_diario').select('*').in_('folio', list(folios)))
-    return _safe_query(_q, context='load_fotos_reporte')
+    return _chunked_in_query('rf_reporte_diario', 'folio', list(folios))
 
 
 @st.cache_data(ttl=30)
