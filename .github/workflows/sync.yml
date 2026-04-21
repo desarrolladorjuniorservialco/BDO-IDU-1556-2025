@@ -2,9 +2,10 @@ name: Sync QFieldCloud → Supabase
 
 on:
   schedule:
+    - cron: '0 14 * * 1-6'  # 9:00 AM COT (UTC-5)
+    - cron: '0 18 * * 1-6'  # 1:00 PM COT (UTC-5)
+    - cron: '0 22 * * 1-6'  # 5:00 PM COT (UTC-5)
 
-    - cron: '*/20 11-23 * * 1-6'
-  
   # Permite correr manualmente desde GitHub
   workflow_dispatch:
 
@@ -12,7 +13,7 @@ jobs:
   sync:
     name: Sincronizar registros y fotos
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repositorio
