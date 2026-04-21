@@ -13,8 +13,6 @@ def sync_bd_personal(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    delete_all(supabase, 'bd_personal_obra')
-
     rows = []
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
@@ -28,11 +26,15 @@ def sync_bd_personal(supabase, token, project_id):
             'latitud':            lat,
         }
         if data.get('folio'):
-            rows.append(data)
+            rows.append({k: v for k, v in data.items() if v is not None})
 
-    if rows:
-        supabase.table('bd_personal_obra').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+    try:
+        delete_all(supabase, 'bd_personal_obra')
+        if rows:
+            supabase.table('bd_personal_obra').insert(rows).execute()
+        print(f"  → {len(rows)} insertados")
+    except Exception as e:
+        print(f"  ✗ Error en bd_personal_obra: {e}")
 
 
 def sync_bd_climatica(supabase, token, project_id):
@@ -46,8 +48,6 @@ def sync_bd_climatica(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    delete_all(supabase, 'bd_condicion_climatica')
-
     rows = []
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
@@ -60,11 +60,15 @@ def sync_bd_climatica(supabase, token, project_id):
             'latitud':       lat,
         }
         if data.get('folio'):
-            rows.append(data)
+            rows.append({k: v for k, v in data.items() if v is not None})
 
-    if rows:
-        supabase.table('bd_condicion_climatica').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+    try:
+        delete_all(supabase, 'bd_condicion_climatica')
+        if rows:
+            supabase.table('bd_condicion_climatica').insert(rows).execute()
+        print(f"  → {len(rows)} insertados")
+    except Exception as e:
+        print(f"  ✗ Error en bd_condicion_climatica: {e}")
 
 
 def sync_bd_maquinaria(supabase, token, project_id):
@@ -77,8 +81,6 @@ def sync_bd_maquinaria(supabase, token, project_id):
     gdf = read_layer('/tmp/maquinaria.gpkg')
     if gdf is None or gdf.empty:
         return
-
-    delete_all(supabase, 'bd_maquinaria_obra')
 
     rows = []
     for _, row in gdf.iterrows():
@@ -100,11 +102,15 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'latitud':               lat,
         }
         if data.get('folio'):
-            rows.append(data)
+            rows.append({k: v for k, v in data.items() if v is not None})
 
-    if rows:
-        supabase.table('bd_maquinaria_obra').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+    try:
+        delete_all(supabase, 'bd_maquinaria_obra')
+        if rows:
+            supabase.table('bd_maquinaria_obra').insert(rows).execute()
+        print(f"  → {len(rows)} insertados")
+    except Exception as e:
+        print(f"  ✗ Error en bd_maquinaria_obra: {e}")
 
 
 def sync_bd_sst(supabase, token, project_id):
@@ -118,8 +124,6 @@ def sync_bd_sst(supabase, token, project_id):
     gdf = read_layer('/tmp/sst.gpkg', 'BBD_SST-Ambiental')
     if gdf is None or gdf.empty:
         return
-
-    delete_all(supabase, 'bd_sst_ambiental')
 
     rows = []
     for _, row in gdf.iterrows():
@@ -136,8 +140,12 @@ def sync_bd_sst(supabase, token, project_id):
             'extintor':          safe_num(row.get('extintor')),
         }
         if data.get('folio'):
-            rows.append(data)
+            rows.append({k: v for k, v in data.items() if v is not None})
 
-    if rows:
-        supabase.table('bd_sst_ambiental').insert(rows).execute()
-    print(f"  → {len(rows)} insertados")
+    try:
+        delete_all(supabase, 'bd_sst_ambiental')
+        if rows:
+            supabase.table('bd_sst_ambiental').insert(rows).execute()
+        print(f"  → {len(rows)} insertados")
+    except Exception as e:
+        print(f"  ✗ Error en bd_sst_ambiental: {e}")

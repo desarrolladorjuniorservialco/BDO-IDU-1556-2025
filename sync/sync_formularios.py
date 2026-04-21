@@ -26,12 +26,23 @@ def sync_registros_cantidades(supabase, token, project_id):
         return
 
     nuevos = omitidos = errores = 0
-    for _, row in gdf.iterrows():
-        folio    = safe(row.get('folio'))
-        id_unico = safe(row.get('id_unico'))
-        if not folio or not id_unico:
+    for idx, (_, row) in enumerate(gdf.iterrows()):
+        folio = safe(row.get('folio'))
+        if not folio:
             omitidos += 1
             continue
+
+        # [FIX-CAN-001] Fallback id_unico igual que reporte_diario: si el GPKG
+        # devuelve null o la cadena literal 'folio' (error de config QField),
+        # se genera folio__fid o folio__idx en lugar de omitir la fila.
+        id_unico_raw = safe(row.get('id_unico'))
+        fid_val      = safe(row.get('fid'))
+        if id_unico_raw and id_unico_raw != 'folio':
+            id_unico = id_unico_raw
+        elif fid_val:
+            id_unico = f"{folio}__{fid_val}"
+        else:
+            id_unico = f"{folio}__{idx}"
 
         lat, lon = coords_from_geom(row)
 
