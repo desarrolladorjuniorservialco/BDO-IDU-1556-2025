@@ -277,6 +277,19 @@ def panel_componentes(
     st.divider()
     st.markdown(f"**{total} registro(s) en el período**")
 
+    if not df.empty:
+        _csv_cols_comp = [c for c in [
+            'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
+            'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad',
+            'cant_residente', 'cant_interventor', 'estado',
+        ] if c in df.columns]
+        st.download_button(
+            "Exportar CSV",
+            data=df[_csv_cols_comp].to_csv(index=False).encode('utf-8'),
+            file_name=f"Componente_{filtro_tipo or 'registros'}_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+        )
+
     if df.empty:
         st.info("Sin registros para los filtros seleccionados.")
         return

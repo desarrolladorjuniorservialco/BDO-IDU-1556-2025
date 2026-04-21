@@ -91,6 +91,18 @@ def page_anotaciones(perfil: dict) -> None:
     # ── Historial ──────────────────────────────────────────────
     df = load_anotaciones_generales()
 
+    if not df.empty:
+        _csv_cols_ag = [c for c in [
+            'fecha', 'tramo', 'civ', 'pk', 'anotacion',
+            'usuario_nombre', 'usuario_rol', 'usuario_empresa', 'created_at',
+        ] if c in df.columns]
+        st.download_button(
+            "Exportar CSV",
+            data=df[_csv_cols_ag].to_csv(index=False).encode('utf-8'),
+            file_name="Anotaciones_Generales.csv",
+            mime="text/csv",
+        )
+
     chat_container = st.container(height=500)
     with chat_container:
         if df.empty:

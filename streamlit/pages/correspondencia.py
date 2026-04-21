@@ -227,6 +227,16 @@ def page_correspondencia(perfil: dict) -> None:
         if f_fecha_fin:
             df = df[df['fecha'].astype(str) <= f_fecha_fin.isoformat()]
 
+    if not df.empty:
+        _csv_cols_corresp = [c for c in _COLS_DISPLAY if c in df.columns]
+        st.download_button(
+            "Exportar CSV",
+            data=df[_csv_cols_corresp].to_csv(index=False).encode('utf-8'),
+            file_name="Correspondencia_IDU-1556-2025.csv",
+            mime="text/csv",
+            help="Descargar la tabla visible como archivo CSV",
+        )
+
     # ── Tabla con resaltado de filas vencidas ─────────────────
     if not df.empty:
         df_marked = _highlight_vencidas(df)
@@ -272,15 +282,6 @@ def page_correspondencia(perfil: dict) -> None:
                 f'{n_vencidas} registro(s) PENDIENTE(S) con plazo de respuesta vencido</span>',
                 unsafe_allow_html=True,
             )
-        # Exportar CSV
-        csv_bytes = df_show.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            "Exportar CSV",
-            data=csv_bytes,
-            file_name="Correspondencia_IDU-1556-2025.csv",
-            mime="text/csv",
-            help="Descargar la tabla visible como archivo CSV",
-        )
     else:
         msg = "No hay registros de correspondencia." if df_raw.empty \
               else "No hay registros que coincidan con los filtros aplicados."

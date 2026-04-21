@@ -142,6 +142,17 @@ def page_anotaciones_diario(perfil: dict) -> None:
         st.info("No hay reportes diarios para los filtros seleccionados.")
         return
 
+    _csv_cols_rd = [c for c in [
+        'folio', 'fecha_reporte', 'fecha', 'usuario_qfield', 'estado',
+        'civ', 'pk_id', 'id_tramo', 'cantidad', 'unidad', 'observaciones',
+    ] if c in df.columns]
+    st.download_button(
+        "Exportar CSV",
+        data=df[_csv_cols_rd].to_csv(index=False).encode('utf-8'),
+        file_name=f"ReporteDiario_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+        mime="text/csv",
+    )
+
     # ── Indicadores acumulados ─────────────────────────────
     n_total = len(df)
     n_apr   = len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0

@@ -288,6 +288,19 @@ def page_reporte_cantidades(perfil: dict) -> None:
         st.info("No hay registros para los filtros seleccionados.")
         return
 
+    _csv_cols_rc = [c for c in [
+        'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
+        'codigo_elemento', 'tipo_actividad', 'item_pago', 'item_descripcion',
+        'cantidad', 'unidad', 'cant_residente', 'cant_interventor',
+        'obs_residente', 'obs_interventor', 'estado',
+    ] if c in df.columns]
+    st.download_button(
+        "Exportar CSV",
+        data=df[_csv_cols_rc].to_csv(index=False).encode('utf-8'),
+        file_name=f"Cantidades_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+        mime="text/csv",
+    )
+
     # ── Indicadores acumulados ─────────────────────────────
     n_total   = len(df)
     n_apr     = len(df[df['estado'] == 'APROBADO'])  if 'estado' in df else 0
@@ -366,14 +379,6 @@ def page_reporte_cantidades(perfil: dict) -> None:
                 'cant_interventor': st.column_config.NumberColumn('Cant. Interventor',  format="%.2f"),
                 'estado':           st.column_config.TextColumn('Estado'),
             },
-        )
-
-        csv = df[cols_show].to_csv(index=False).encode('utf-8')
-        st.download_button(
-            "Exportar CSV",
-            data=csv,
-            file_name=f"Cantidades_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
-            mime="text/csv",
         )
 
     else:
@@ -474,18 +479,3 @@ def page_reporte_cantidades(perfil: dict) -> None:
                     _panel_aprobacion(reg, perfil, campos, estado_apr, estados_accion)
                     st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── Exportar CSV al final del detalle ─────────────
-        st.divider()
-        cols_csv = [c for c in [
-            'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
-            'codigo_elemento', 'tipo_actividad', 'item_pago', 'item_descripcion',
-            'cantidad', 'unidad', 'cant_residente', 'cant_interventor',
-            'obs_residente', 'obs_interventor', 'estado',
-        ] if c in df.columns]
-        csv = df[cols_csv].to_csv(index=False).encode('utf-8')
-        st.download_button(
-            "Exportar CSV",
-            data=csv,
-            file_name=f"Cantidades_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-        )

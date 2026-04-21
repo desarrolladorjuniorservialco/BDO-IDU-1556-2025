@@ -175,6 +175,19 @@ def page_presupuesto(perfil: dict) -> None:
                 mask |= df_filt[col].astype(str).str.contains(b, case=False, na=False)
         df_filt = df_filt[mask]
 
+    if not df_filt.empty:
+        _csv_cols_ps = [c for c in [
+            'componente', 'item_pago', 'descripcion', 'und',
+            'cantidad_contrato', 'valor_unitario', 'valor_total',
+            'cantidad_ejecutada', 'valor_ejecutado', 'pct_ejecutado',
+        ] if c in df_filt.columns]
+        st.download_button(
+            "Exportar CSV",
+            data=df_filt[_csv_cols_ps].to_csv(index=False).encode('utf-8'),
+            file_name="Presupuesto_IDU-1556-2025.csv",
+            mime="text/csv",
+        )
+
     # ── KPIs financieros ───────────────────────────────────
     if 'valor_total' in df_filt.columns:
         total_c = df_filt['valor_total'].apply(safe_float).sum()
@@ -299,12 +312,5 @@ def page_presupuesto(perfil: dict) -> None:
             },
         )
 
-        csv = df_filt[cols_show].to_csv(index=False).encode('utf-8')
-        st.download_button(
-            "Exportar CSV",
-            data=csv,
-            file_name="Presupuesto_IDU-1556-2025.csv",
-            mime="text/csv",
-        )
     else:
         st.dataframe(df_filt, hide_index=True, use_container_width=True)
