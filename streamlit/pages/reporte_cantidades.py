@@ -289,7 +289,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
         return
 
     _csv_cols_rc = [c for c in [
-        'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
+        'folio', 'fecha', 'usuario_qfield', 'id_tramo', 'civ',
         'codigo_elemento', 'tipo_actividad', 'item_pago', 'item_descripcion',
         'cantidad', 'unidad', 'cant_residente', 'cant_interventor',
         'obs_residente', 'obs_interventor', 'estado',
@@ -363,7 +363,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
     if vista == "Tabla resumen":
         # ── Vista tabla ────────────────────────────────────
         cols_show = [c for c in [
-            'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
+            'folio', 'fecha', 'usuario_qfield', 'id_tramo', 'civ',
             'codigo_elemento', 'tipo_actividad', 'item_pago', 'item_descripcion',
             'cantidad', 'unidad', 'cant_residente', 'cant_interventor', 'estado',
         ] if c in df.columns]
@@ -373,7 +373,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
             hide_index=True,
             use_container_width=True,
             column_config={
-                'fecha_creacion':   st.column_config.DateColumn('Fecha',               format="DD/MM/YYYY"),
+                'fecha':            st.column_config.DateColumn('Fecha',               format="DD/MM/YYYY"),
                 'cantidad':         st.column_config.NumberColumn('Cant. Inspector',    format="%.2f"),
                 'cant_residente':   st.column_config.NumberColumn('Cant. Residente',    format="%.2f"),
                 'cant_interventor': st.column_config.NumberColumn('Cant. Interventor',  format="%.2f"),
@@ -392,7 +392,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
             est_actual  = str(reg.get('estado', ''))
             actividad   = str(reg.get('tipo_actividad', reg.get('item_descripcion', '—')))
             tramo       = str(reg.get('id_tramo', '—'))
-            fecha_c     = str(reg.get('fecha_creacion', reg.get('fecha_inicio', '')))[:10]
+            fecha_c     = str(reg.get('fecha', reg.get('fecha_inicio', '')))[:10]
             usuario     = str(reg.get('usuario_qfield', '—'))
 
             with st.expander(

@@ -215,12 +215,12 @@ def page_mapa(perfil: dict) -> None:
 
     # -- Exportar CSV por capa --
     _exp_cols = [c for c in [
-        'folio', 'fecha_creacion', 'id_tramo', 'civ',
+        'folio', 'fecha', 'id_tramo', 'civ',
         'tipo_actividad', 'item_pago', 'cantidad', 'unidad', 'estado',
         'latitud', 'longitud',
     ] if c in geo_cant.columns]
     _exp_comp_cols = [c for c in [
-        'folio', 'fecha_creacion', 'id_tramo', 'tipo_componente',
+        'folio', 'fecha', 'id_tramo', 'tipo_componente',
         'tipo_actividad', 'cantidad', 'unidad', 'estado',
         'latitud', 'longitud',
     ] if c in geo_comp.columns]
@@ -359,7 +359,7 @@ def page_mapa(perfil: dict) -> None:
                 st.info("Sin registros de cantidades con coordenadas.")
             else:
                 cols = [c for c in [
-                    'folio', 'fecha_creacion', 'id_tramo', 'civ',
+                    'folio', 'fecha', 'id_tramo', 'civ',
                     'tipo_actividad', 'item_pago', 'cantidad', 'unidad',
                     'estado', 'latitud', 'longitud',
                 ] if c in geo_cant.columns]
@@ -370,7 +370,7 @@ def page_mapa(perfil: dict) -> None:
                 st.info("Sin registros de componentes con coordenadas.")
             else:
                 cols = [c for c in [
-                    'folio', 'fecha_creacion', 'id_tramo', 'tipo_componente',
+                    'folio', 'fecha', 'id_tramo', 'tipo_componente',
                     'tipo_actividad', 'cantidad', 'unidad', 'estado',
                     'latitud', 'longitud',
                 ] if c in geo_comp.columns]

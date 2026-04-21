@@ -88,6 +88,6 @@ def page_seguimiento_pmts(perfil: dict) -> None:
         st.info("No hay registros de componentes en el período.")
     else:
         cols = ['folio', 'usuario_qfield', 'id_tramo',
-                'tipo_componente', 'estado', 'fecha_creacion']
+                'tipo_componente', 'estado', 'fecha']
         cols = [c for c in cols if c in df_comp.columns]
         st.dataframe(df_comp[cols], hide_index=True, use_container_width=True)

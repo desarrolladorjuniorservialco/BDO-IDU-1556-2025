@@ -403,8 +403,8 @@ def _collect_groups(
     tuples: set = set()
 
     sources = [
-        (df_cant,   'fecha_creacion'),
-        (df_comp,   'fecha_creacion'),
+        (df_cant,   'fecha'),
+        (df_comp,   'fecha'),
         (df_diario, 'fecha_reporte'),
     ]
 
@@ -818,7 +818,7 @@ def _build_quantities_table(
     # ── Recolectar filas ───────────────────────────────────────
     rows_data = []
 
-    sub_cant = _filter_by_group(df_cant, fecha, 'fecha_creacion', tramo_id, civ)
+    sub_cant = _filter_by_group(df_cant, fecha, 'fecha', tramo_id, civ)
     for _, r in sub_cant.iterrows():
         rows_data.append({
             'pk':          _norm_str(r.get('pk', r.get('civ_pk', ''))),
@@ -829,7 +829,7 @@ def _build_quantities_table(
             'obs':         _norm_str(r.get('observaciones', '')),
         })
 
-    sub_comp = _filter_by_group(df_comp, fecha, 'fecha_creacion', tramo_id, civ)
+    sub_comp = _filter_by_group(df_comp, fecha, 'fecha', tramo_id, civ)
     for _, r in sub_comp.iterrows():
         rows_data.append({
             'pk':          _norm_str(r.get('pk', r.get('civ_pk', ''))),

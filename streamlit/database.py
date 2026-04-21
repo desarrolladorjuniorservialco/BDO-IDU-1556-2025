@@ -158,10 +158,10 @@ def load_cantidades(
         if estados:
             query = query.in_('estado', estados)
         if fecha_ini:
-            query = query.gte('fecha_creacion', fecha_ini)
+            query = query.gte('fecha', fecha_ini)
         if fecha_fin:
-            query = query.lte('fecha_creacion', fecha_fin)
-        return _paginate(query.order('fecha_creacion', desc=True))
+            query = query.lte('fecha', fecha_fin)
+        return _paginate(query.order('fecha', desc=True))
 
     return _safe_query(_q, context='load_cantidades')
 
@@ -180,12 +180,12 @@ def load_componentes(
         if estados:
             query = query.in_('estado', estados)
         if fecha_ini:
-            query = query.gte('fecha_creacion', fecha_ini)
+            query = query.gte('fecha', fecha_ini)
         if fecha_fin:
-            query = query.lte('fecha_creacion', fecha_fin)
+            query = query.lte('fecha', fecha_fin)
         if capitulo_num is not None:
             query = query.eq('capitulo_num', capitulo_num)
-        return _paginate(query.order('fecha_creacion', desc=True))
+        return _paginate(query.order('fecha', desc=True))
 
     return _safe_query(_q, context='load_componentes')
 
@@ -203,10 +203,10 @@ def load_reporte_diario(
         if estados:
             query = query.in_('estado', estados)
         if fecha_ini:
-            query = query.gte('fecha_creacion', fecha_ini)
+            query = query.gte('fecha_reporte', fecha_ini)
         if fecha_fin:
-            query = query.lte('fecha_creacion', fecha_fin)
-        return _paginate(query.order('fecha_creacion', desc=True))
+            query = query.lte('fecha_reporte', fecha_fin)
+        return _paginate(query.order('fecha_reporte', desc=True))
 
     return _safe_query(_q, context='load_reporte_diario')
 

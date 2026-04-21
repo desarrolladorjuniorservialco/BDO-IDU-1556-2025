@@ -96,13 +96,16 @@ def page_anotaciones_diario(perfil: dict) -> None:
     # ── Formulario de filtros ──────────────────────────────
     st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
     with st.form("form_rd"):
+        todas_fechas = st.checkbox("Todas las fechas", value=True, key="rd_todas_fechas")
         fc1, fc2, fc3, fc4 = st.columns(4)
         with fc1:
             fi = st.date_input("Desde",
                                value=date.today() - timedelta(days=15),
-                               key="rd_fi")
+                               key="rd_fi",
+                               disabled=todas_fechas)
         with fc2:
-            ff = st.date_input("Hasta", value=date.today(), key="rd_ff")
+            ff = st.date_input("Hasta", value=date.today(), key="rd_ff",
+                               disabled=todas_fechas)
         with fc3:
             opts_est = (["Todos"] + estados_vis) if estados_vis else (
                 ["Todos", "BORRADOR", "REVISADO", "APROBADO", "DEVUELTO"]
@@ -126,8 +129,8 @@ def page_anotaciones_diario(perfil: dict) -> None:
 
     df = load_reporte_diario(
         estados=estados_q,
-        fecha_ini=fi.isoformat(),
-        fecha_fin=ff.isoformat(),
+        fecha_ini=None if todas_fechas else fi.isoformat(),
+        fecha_fin=None if todas_fechas else ff.isoformat(),
     )
 
     if buscar.strip() and not df.empty:

@@ -279,7 +279,7 @@ def panel_componentes(
 
     if not df.empty:
         _csv_cols_comp = [c for c in [
-            'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo', 'civ',
+            'folio', 'fecha', 'usuario_qfield', 'id_tramo', 'civ',
             'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad',
             'cant_residente', 'cant_interventor', 'estado',
         ] if c in df.columns]
@@ -297,7 +297,7 @@ def panel_componentes(
     # ── Vista solo lectura (operativo, supervision sin estados_accion) ──────
     if not campos and not estados_accion:
         cols = [c for c in [
-            'folio', 'fecha_creacion', 'usuario_qfield', 'id_tramo',
+            'folio', 'fecha', 'usuario_qfield', 'id_tramo',
             'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad', 'estado',
         ] if c in df.columns]
         st.dataframe(df[cols], hide_index=True, use_container_width=True)
@@ -312,7 +312,7 @@ def panel_componentes(
         tipo_label = str(reg.get('tipo_componente', reg.get('tipo_actividad', '—')))
         folio      = str(reg.get('folio', '—'))
         tramo      = str(reg.get('id_tramo', '—'))
-        fecha_c    = str(reg.get('fecha_creacion', ''))[:10]
+        fecha_c    = str(reg.get('fecha', ''))[:10]
         usuario    = str(reg.get('usuario_qfield', '—'))
         est_actual = str(reg.get('estado', ''))
 
