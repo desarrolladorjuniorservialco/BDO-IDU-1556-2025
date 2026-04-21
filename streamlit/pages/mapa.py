@@ -213,6 +213,65 @@ def page_mapa(perfil: dict) -> None:
             unsafe_allow_html=True,
         )
 
+    # -- Exportar CSV por capa --
+    _exp_cols = [c for c in [
+        'folio', 'fecha_creacion', 'id_tramo', 'civ',
+        'tipo_actividad', 'item_pago', 'cantidad', 'unidad', 'estado',
+        'latitud', 'longitud',
+    ] if c in geo_cant.columns]
+    _exp_comp_cols = [c for c in [
+        'folio', 'fecha_creacion', 'id_tramo', 'tipo_componente',
+        'tipo_actividad', 'cantidad', 'unidad', 'estado',
+        'latitud', 'longitud',
+    ] if c in geo_comp.columns]
+    _exp_d_cols = [c for c in [
+        'folio', 'fecha_reporte', 'usuario_qfield',
+        'observaciones', 'estado', 'latitud', 'longitud',
+    ] if c in geo_diario.columns]
+    _exp_pmt_cols = [c for c in [
+        'folio', 'descripcion', 'civ',
+        'inicio_vigencia', 'fin_vigencia', 'usuario',
+        'latitud', 'longitud',
+    ] if c in geo_pmt.columns]
+
+    _ec1, _ec2, _ec3, _ec4 = st.columns(4)
+    with _ec1:
+        if not geo_cant.empty and _exp_cols:
+            st.download_button(
+                "CSV Cantidades",
+                data=geo_cant[_exp_cols].to_csv(index=False).encode('utf-8'),
+                file_name=f"Cantidades_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    with _ec2:
+        if not geo_comp.empty and _exp_comp_cols:
+            st.download_button(
+                "CSV Componentes",
+                data=geo_comp[_exp_comp_cols].to_csv(index=False).encode('utf-8'),
+                file_name=f"Componentes_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    with _ec3:
+        if not geo_diario.empty and _exp_d_cols:
+            st.download_button(
+                "CSV Diario",
+                data=geo_diario[_exp_d_cols].to_csv(index=False).encode('utf-8'),
+                file_name=f"Diario_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+    with _ec4:
+        if not geo_pmt.empty and _exp_pmt_cols:
+            st.download_button(
+                "CSV PMT",
+                data=geo_pmt[_exp_pmt_cols].to_csv(index=False).encode('utf-8'),
+                file_name=f"PMT_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
     all_empty = geo_cant.empty and geo_comp.empty and geo_diario.empty and geo_pmt.empty
     if all_empty:
         st.info("No hay registros con coordenadas para los filtros seleccionados.")

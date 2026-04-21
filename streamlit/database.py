@@ -161,7 +161,7 @@ def load_cantidades(
             query = query.gte('fecha_creacion', fecha_ini)
         if fecha_fin:
             query = query.lte('fecha_creacion', fecha_fin)
-        return query.order('fecha_creacion', desc=True).execute()
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_cantidades')
 
@@ -185,7 +185,7 @@ def load_componentes(
             query = query.lte('fecha_creacion', fecha_fin)
         if capitulo_num is not None:
             query = query.eq('capitulo_num', capitulo_num)
-        return query.order('fecha_creacion', desc=True).execute()
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_componentes')
 
@@ -231,7 +231,7 @@ def load_presupuesto() -> pd.DataFrame:
     """Ítems de presupuesto (presupuesto_bd)."""
     def _q():
         sb = get_supabase()
-        return sb.table('presupuesto_bd').select('*').execute()
+        return _paginate(sb.table('presupuesto_bd').select('*'))
 
     return _safe_query(_q, context='load_presupuesto')
 
@@ -241,11 +241,10 @@ def load_prorrogas() -> pd.DataFrame:
     """Prórrogas del contrato IDU-1556-2025."""
     def _q():
         sb = get_supabase()
-        return (sb.table('contratos_prorrogas')
+        return _paginate(sb.table('contratos_prorrogas')
                   .select('*')
                   .eq('contrato_id', 'IDU-1556-2025')
-                  .order('numero')
-                  .execute())
+                  .order('numero'))
     return _safe_query(_q, context='load_prorrogas')
 
 
@@ -254,11 +253,10 @@ def load_adiciones() -> pd.DataFrame:
     """Adiciones presupuestales del contrato IDU-1556-2025."""
     def _q():
         sb = get_supabase()
-        return (sb.table('contratos_adiciones')
+        return _paginate(sb.table('contratos_adiciones')
                   .select('*')
                   .eq('contrato_id', 'IDU-1556-2025')
-                  .order('numero')
-                  .execute())
+                  .order('numero'))
     return _safe_query(_q, context='load_adiciones')
 
 
@@ -268,7 +266,7 @@ def load_bd_personal(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('bd_personal_obra').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('bd_personal_obra').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_bd_personal')
 
 
@@ -278,7 +276,7 @@ def load_bd_clima(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('bd_condicion_climatica').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('bd_condicion_climatica').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_bd_clima')
 
 
@@ -288,7 +286,7 @@ def load_bd_maquinaria(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('bd_maquinaria_obra').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('bd_maquinaria_obra').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_bd_maquinaria')
 
 
@@ -298,7 +296,7 @@ def load_bd_sst(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('bd_sst_ambiental').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('bd_sst_ambiental').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_bd_sst')
 
 
@@ -308,7 +306,7 @@ def load_fotos_cantidades(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('rf_cantidades').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('rf_cantidades').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_fotos_cantidades')
 
 
@@ -318,7 +316,7 @@ def load_fotos_componentes(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('rf_componentes').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('rf_componentes').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_fotos_componentes')
 
 
@@ -328,7 +326,7 @@ def load_fotos_reporte(folios: tuple) -> pd.DataFrame:
     if not folios:
         return pd.DataFrame()
     def _q():
-        return get_supabase().table('rf_reporte_diario').select('*').in_('folio', list(folios)).execute()
+        return _paginate(get_supabase().table('rf_reporte_diario').select('*').in_('folio', list(folios)))
     return _safe_query(_q, context='load_fotos_reporte')
 
 
@@ -368,10 +366,9 @@ def load_formulario_pmt() -> pd.DataFrame:
     """Formularios PMT registrados en campo."""
     def _q():
         sb = get_supabase()
-        return (sb.table('formulario_pmt')
+        return _paginate(sb.table('formulario_pmt')
                   .select('*')
-                  .eq('contrato_id', 'IDU-1556-2025')
-                  .execute())
+                  .eq('contrato_id', 'IDU-1556-2025'))
     return _safe_query(_q, context='load_formulario_pmt')
 
 
@@ -379,7 +376,7 @@ def load_formulario_pmt() -> pd.DataFrame:
 def load_presupuesto_componentes() -> pd.DataFrame:
     """Presupuesto de componentes transversales (con precio_unitario)."""
     def _q():
-        return get_supabase().table('presupuesto_componentes_bd').select('*').execute()
+        return _paginate(get_supabase().table('presupuesto_componentes_bd').select('*'))
     return _safe_query(_q, context='load_presupuesto_componentes')
 
 
@@ -397,13 +394,12 @@ def load_pmts() -> pd.DataFrame:
 def load_correspondencia() -> pd.DataFrame:
     """Registros de correspondencia del contrato IDU-1556-2025."""
     def _q():
-        return (
+        return _paginate(
             get_supabase()
             .table('correspondencia')
             .select('*')
             .eq('contrato_id', 'IDU-1556-2025')
             .order('fecha', desc=True)
-            .execute()
         )
     return _safe_query(_q, context='load_correspondencia')
 

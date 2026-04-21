@@ -15,6 +15,7 @@ SEGURIDAD:
 
 import base64
 import logging
+import re
 from datetime import date, datetime, timezone, timedelta
 
 import streamlit as st
@@ -88,27 +89,75 @@ def page_anotaciones(perfil: dict) -> None:
     section_badge("Anotaciones Generales", "purple")
     st.markdown("### Bitácora General")
 
-    # ── Historial ──────────────────────────────────────────────
+    # ── Filtros ────────────────────────────────────────────────
+    st.markdown('<div class="filter-form-wrap"><div class="filter-form-title">Filtros</div>', unsafe_allow_html=True)
+    with st.form("form_anotaciones_filtros"):
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            f_fi = st.date_input("Desde",
+                                 value=date.today() - timedelta(days=30),
+                                 key="ag_fi")
+        with fc2:
+            f_ff = st.date_input("Hasta", value=date.today(), key="ag_ff")
+        with fc3:
+            f_usuario = st.text_input("Usuario", key="ag_f_user",
+                                      placeholder="Nombre del autor")
+        with fc4:
+            f_buscar = st.text_input("Buscar en anotación", key="ag_f_bus",
+                                     placeholder="Texto libre")
+        fa1, fa2 = st.columns(2)
+        with fa1:
+            f_tramo = st.text_input("Tramo", key="ag_f_tramo", placeholder="ID de tramo")
+        with fa2:
+            f_civ = st.text_input("CIV", key="ag_f_civ", placeholder="Código CIV")
+        st.form_submit_button("Aplicar filtros", type="primary",
+                              use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Carga y filtrado ───────────────────────────────────────
     df = load_anotaciones_generales()
 
-    if not df.empty:
+    df_filt = df.copy() if not df.empty else df
+
+    if not df_filt.empty:
+        if 'fecha' in df_filt.columns:
+            df_filt = df_filt[df_filt['fecha'].astype(str) >= f_fi.isoformat()]
+            df_filt = df_filt[df_filt['fecha'].astype(str) <= f_ff.isoformat()]
+        if f_usuario.strip() and 'usuario_nombre' in df_filt.columns:
+            df_filt = df_filt[df_filt['usuario_nombre'].astype(str)
+                              .str.contains(re.escape(f_usuario.strip()), case=False, na=False)]
+        if f_tramo.strip() and 'tramo' in df_filt.columns:
+            df_filt = df_filt[df_filt['tramo'].astype(str)
+                              .str.contains(re.escape(f_tramo.strip()), case=False, na=False)]
+        if f_civ.strip() and 'civ' in df_filt.columns:
+            df_filt = df_filt[df_filt['civ'].astype(str)
+                              .str.contains(re.escape(f_civ.strip()), case=False, na=False)]
+        if f_buscar.strip() and 'anotacion' in df_filt.columns:
+            df_filt = df_filt[df_filt['anotacion'].astype(str)
+                              .str.contains(re.escape(f_buscar.strip()), case=False, na=False)]
+
+    # ── Exportar CSV ───────────────────────────────────────────
+    if not df_filt.empty:
         _csv_cols_ag = [c for c in [
             'fecha', 'tramo', 'civ', 'pk', 'anotacion',
             'usuario_nombre', 'usuario_rol', 'usuario_empresa', 'created_at',
-        ] if c in df.columns]
+        ] if c in df_filt.columns]
         st.download_button(
             "Exportar CSV",
-            data=df[_csv_cols_ag].to_csv(index=False).encode('utf-8'),
-            file_name="Anotaciones_Generales.csv",
+            data=df_filt[_csv_cols_ag].to_csv(index=False).encode('utf-8'),
+            file_name=f"Anotaciones_{f_fi.strftime('%Y%m%d')}_{f_ff.strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
 
+    st.markdown(f"**{len(df_filt)} anotación(es)**")
+
+    # ── Historial ──────────────────────────────────────────────
     chat_container = st.container(height=500)
     with chat_container:
-        if df.empty:
-            st.caption("Aún no hay anotaciones registradas.")
+        if df_filt.empty:
+            st.caption("No hay anotaciones para los filtros seleccionados.")
         else:
-            rows  = list(df.iterrows())
+            rows  = list(df_filt.iterrows())
             total = len(rows)
             for i, (_, row) in enumerate(rows):
                 nombre  = str(row.get('usuario_nombre', '—'))
