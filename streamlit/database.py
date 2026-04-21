@@ -114,10 +114,10 @@ def clear_cache() -> None:
 # HELPER INTERNO
 # ══════════════════════════════════════════════════════════════
 
-def _paginate(query_builder, page_size: int = 1000) -> list:
+def _paginate(query_builder, page_size: int = 1500) -> list:
     """
     Fetch all rows paginando correctamente según el límite de PostgREST.
-    Se recomienda page_size = 1000 para cumplir con el límite de la API.
+    Se recomienda page_size = 1500 para cumplir con el límite de la API.
     """
     rows, offset = [], 0
     while True:
