@@ -114,14 +114,28 @@ def clear_cache() -> None:
 # HELPER INTERNO
 # ══════════════════════════════════════════════════════════════
 
+def _paginate(query_builder, page_size: int = 1000) -> list:
+    """Fetch all rows bypassing Supabase PostgREST's default 1000-row cap."""
+    rows, offset = [], 0
+    while True:
+        batch = query_builder.range(offset, offset + page_size - 1).execute().data or []
+        rows.extend(batch)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    return rows
+
+
 def _safe_query(query_fn, context: str = "query") -> pd.DataFrame:
     """
     Ejecuta una función de consulta y retorna DataFrame.
     Loguea errores internamente; retorna DataFrame vacío en caso de fallo.
+    Acepta que query_fn retorne un objeto con .data o una lista (de _paginate).
     """
     try:
         result = query_fn()
-        return pd.DataFrame(result.data) if result.data else pd.DataFrame()
+        data = result if isinstance(result, list) else (result.data or [])
+        return pd.DataFrame(data) if data else pd.DataFrame()
     except Exception:
         _log.exception("Error en consulta Supabase: %s", context)
         return pd.DataFrame()
@@ -192,7 +206,7 @@ def load_reporte_diario(
             query = query.gte('fecha_creacion', fecha_ini)
         if fecha_fin:
             query = query.lte('fecha_creacion', fecha_fin)
-        return query.order('fecha_creacion', desc=True).execute()
+        return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_reporte_diario')
 
