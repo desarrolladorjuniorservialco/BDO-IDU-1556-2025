@@ -61,7 +61,12 @@ def _clean_expired() -> None:
             del s['data'][k]
 
 
-def create_session(user: object, perfil: dict, access_token: str) -> str:
+def create_session(
+    user: object,
+    perfil: dict,
+    access_token: str,
+    refresh_token: str = '',
+) -> str:
     """
     Registra una nueva sesión y retorna el session_id.
     Llamar justo después de un login exitoso.
@@ -71,11 +76,12 @@ def create_session(user: object, perfil: dict, access_token: str) -> str:
     s   = _store()
     with s['lock']:
         s['data'][sid] = {
-            'user':         user,
-            'perfil':       perfil,
-            'access_token': access_token,
-            'current_page': None,
-            'expires_at':   datetime.now() + timedelta(hours=_SESSION_TTL_HOURS),
+            'user':          user,
+            'perfil':        perfil,
+            'access_token':  access_token,
+            'refresh_token': refresh_token,
+            'current_page':  None,
+            'expires_at':    datetime.now() + timedelta(hours=_SESSION_TTL_HOURS),
         }
     return sid
 

@@ -236,16 +236,20 @@ def login() -> None:
 
             # ── Escribir sesión ────────────────────────────
             _resetear_intentos(email)
-            access_token = None
+            access_token  = None
+            refresh_token = None
             if resp.session:
-                access_token = resp.session.access_token
+                access_token  = resp.session.access_token
+                refresh_token = resp.session.refresh_token
 
-            sid = create_session(resp.user, perfil, access_token or '')
+            sid = create_session(resp.user, perfil, access_token or '', refresh_token or '')
             st.session_state['user']          = resp.user
             st.session_state['perfil']        = perfil
             st.session_state['_access_token'] = access_token
             st.session_state['_session_id']   = sid
             st.query_params['sid'] = sid
+            if refresh_token:
+                st.query_params['rt'] = refresh_token
             st.rerun()
 
         except Exception:
