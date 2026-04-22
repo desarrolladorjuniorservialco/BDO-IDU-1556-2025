@@ -160,11 +160,11 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
                     st.error("No fue posible devolver. Intenta de nuevo.")
 
 
-# Mapeo filtro_tipo → capitulo_num en presupuesto_componentes_bd
-_CAPITULO_NUM: dict[str, int] = {
-    'ambiental': 31,
-    'social':    32,
-    'pmt':       33,
+# Mapeo filtro_tipo → valor exacto del campo componente en registros_componentes
+_COMPONENTE_VALOR: dict[str, str] = {
+    'ambiental': 'Ambiental- SST',
+    'social':    'Social',
+    'pmt':       'PMT',
 }
 
 
@@ -176,9 +176,9 @@ def panel_componentes(
     """
     Panel genérico para listar y aprobar registros de componentes transversales.
 
-    filtro_tipo: clave del mapeo _CAPITULO_NUM ('ambiental', 'social', 'pmt').
-                 Filtra registros_componentes por capitulo_num en BD.
-                 Si es None, no se aplica filtro de capítulo.
+    filtro_tipo: clave del mapeo _COMPONENTE_VALOR ('ambiental', 'social', 'pmt').
+                 Filtra registros_componentes por componente en BD.
+                 Si es None, no se aplica filtro de componente.
     tabla:       tabla Supabase donde se persisten las aprobaciones.
     """
     rol = perfil['rol']
@@ -230,7 +230,7 @@ def panel_componentes(
 
     df = load_componentes(
         estados=estados_q,
-        capitulo_num=_CAPITULO_NUM.get(filtro_tipo) if filtro_tipo else None,
+        componente=_COMPONENTE_VALOR.get(filtro_tipo) if filtro_tipo else None,
     )
 
     if not df.empty and 'fecha' in df.columns:

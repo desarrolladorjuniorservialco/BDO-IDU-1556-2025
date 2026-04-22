@@ -182,7 +182,7 @@ def load_cantidades(
 @st.cache_data(ttl=60)
 def load_componentes(
     estados: list[str] | None = None,
-    capitulo_num: int | None = None,
+    componente: str | None = None,
 ) -> pd.DataFrame:
     """Registros de componentes transversales."""
     def _q():
@@ -190,8 +190,8 @@ def load_componentes(
         query = sb.table('registros_componentes').select('*')
         if estados:
             query = query.in_('estado', estados)
-        if capitulo_num is not None:
-            query = query.eq('capitulo_num', capitulo_num)
+        if componente is not None:
+            query = query.eq('componente', componente)
         return _paginate(query.order('fecha_creacion', desc=True))
 
     return _safe_query(_q, context='load_componentes')
