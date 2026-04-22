@@ -892,6 +892,37 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .info-pill.teal   { background: var(--accent-teal-lt);   color: var(--accent-teal);   border-color: var(--accent-teal-lt); }
 
 /* ════════════════════════════════════════════
+   META FÍSICA — sección presupuesto
+   ════════════════════════════════════════════ */
+
+/* Header de grupo de tipo (MV / EP / CI) en formulario de edición */
+.mf-tipo-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--idu-blue);
+    border-top: 1px solid var(--border);
+    padding-top: 0.8rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+/* Punto indicador Amarillo Bogotá antes del nombre del tipo */
+.mf-tipo-header::before {
+    content: '';
+    display: inline-block;
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--idu-yellow);
+}
+
+/* ════════════════════════════════════════════
    BARRA DE EJECUCION PRESUPUESTAL
    ════════════════════════════════════════════ */
 .presup-bar-wrap {

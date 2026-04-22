@@ -16,7 +16,9 @@ SEGURIDAD:
 
 import inspect
 import logging
+import os
 
+import psutil
 import streamlit as st
 
 # ── Infraestructura ────────────────────────────────────────
@@ -24,7 +26,8 @@ from styles        import CSS, CSS_LIGHT_OVERRIDE, CSS_DARK_OVERRIDE
 from auth          import login
 from sidebar       import sidebar
 from config        import NAV_ACCESS
-from session_store import restore_session
+from database      import get_supabase
+from session_store import restore_session, create_session
 
 # ── Páginas ────────────────────────────────────────────────
 from pages.estado_actual        import page_estado_actual
@@ -42,6 +45,66 @@ from pages.correspondencia      import page_correspondencia
 
 # Logger interno — los errores van a los logs del servidor, no al usuario
 _log = logging.getLogger(__name__)
+
+
+_ROLES_VALIDOS = frozenset({
+    'operativo', 'obra', 'interventoria', 'supervision', 'admin',
+})
+
+
+def _restore_from_refresh_token(rt: str) -> bool:
+    """
+    Restaura la sesión usando el refresh_token de Supabase cuando el store
+    en memoria quedó vacío (reinicio del servidor en Streamlit Cloud).
+    El refresh_token rota en cada uso: actualiza el parámetro 'rt' en la URL
+    con el nuevo valor emitido por Supabase.
+    Retorna True si la restauración fue exitosa.
+    """
+    if not rt:
+        return False
+    try:
+        sb   = get_supabase()
+        resp = sb.auth.refresh_session(rt)
+        if not resp.user or not resp.session:
+            return False
+
+        perfil_r = (
+            sb.table('perfiles')
+            .select('id, nombre, rol, empresa')
+            .eq('id', resp.user.id)
+            .execute()
+        )
+        if not perfil_r.data:
+            return False
+
+        perfil = perfil_r.data[0]
+        if perfil.get('rol') not in _ROLES_VALIDOS:
+            return False
+
+        access_token  = resp.session.access_token
+        refresh_token = resp.session.refresh_token or ''
+        sid = create_session(resp.user, perfil, access_token, refresh_token)
+
+        st.session_state['user']          = resp.user
+        st.session_state['perfil']        = perfil
+        st.session_state['_access_token'] = access_token
+        st.session_state['_session_id']   = sid
+        st.query_params['sid'] = sid
+        if refresh_token:
+            st.query_params['rt'] = refresh_token
+        return True
+    except Exception:
+        _log.exception("Error al restaurar sesión con refresh_token")
+        return False
+
+
+@st.cache_resource
+def _get_process() -> psutil.Process:
+    return psutil.Process(os.getpid())
+
+
+def _consumo_ram_mb() -> float:
+    return _get_process().memory_info().rss / (1024 ** 2)
 
 # ══════════════════════════════════════════════════════════════
 # CONFIGURACIÓN DE PÁGINA
@@ -120,7 +183,10 @@ def _perfil_integro(perfil: dict) -> bool:
 def main() -> None:
     # ── 1. Restaurar sesión desde URL (recarga del navegador) ──
     if 'user' not in st.session_state:
-        sid = st.query_params.get('sid', '')
+        sid      = st.query_params.get('sid', '')
+        rt       = st.query_params.get('rt', '')
+        restored = False
+
         if sid:
             data = restore_session(sid)
             if data:
@@ -130,9 +196,19 @@ def main() -> None:
                 st.session_state['_session_id']   = sid
                 if data.get('current_page'):
                     st.session_state['current_page'] = data['current_page']
-            else:
-                # Sesión expirada o inválida — limpiar la URL antes de mostrar login
-                st.query_params.clear()
+                restored = True
+
+        # Fallback: el store en memoria quedó vacío (reinicio del servidor).
+        # Intentar re-autenticar silenciosamente con el refresh_token de Supabase.
+        if not restored and rt:
+            restored = _restore_from_refresh_token(rt)
+            if restored:
+                st.rerun()
+                return
+
+        if not restored and (sid or rt):
+            # Sesión inválida o expirada sin posibilidad de recuperación.
+            st.query_params.clear()
 
     # ── 2. Verificar sesión ────────────────────────────────
     if 'user' not in st.session_state or 'perfil' not in st.session_state:
@@ -151,6 +227,12 @@ def main() -> None:
 
     # ── 4. Renderizar sidebar y obtener página activa ──────
     page = sidebar(perfil)
+
+    with st.sidebar:
+        st.divider()
+        st.markdown("### 📊 Monitoreo del Sistema")
+        st.metric(label="Consumo de RAM", value=f"{_consumo_ram_mb():.2f} MB")
+        st.caption("Límite en Streamlit Cloud: ~1000 MB")
 
     # ── 5. Verificar autorización (server-side) ────────────
     if not _authorized(perfil, page):

@@ -254,7 +254,7 @@ def page_estado_actual() -> None:
         st.dataframe(
             df_pro[cols_pro],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={k: v for k, v in col_cfg.items() if k in cols_pro},
         )
 
@@ -299,7 +299,7 @@ def page_estado_actual() -> None:
         st.dataframe(
             df_adi[cols_adi],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={k: v for k, v in col_cfg_adi.items() if k in cols_adi},
         )
 

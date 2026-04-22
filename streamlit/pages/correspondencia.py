@@ -70,7 +70,7 @@ def _dialog_nueva(perfil: dict) -> None:
             fecha_resp    = st.date_input("Fecha Respuesta", value=None)
         link = st.text_input("Link (URL del documento)")
 
-        submitted = st.form_submit_button("Guardar", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Guardar", type="primary", width="stretch")
 
     if submitted:
         campos_vacios = not emisor.strip() or not receptor.strip() or \
@@ -133,7 +133,7 @@ def _dialog_editar(row: dict, perfil: dict) -> None:
             fecha_resp  = st.date_input("Fecha Respuesta",    value=_parse_date(row.get('fecha_respuesta')))
         link = st.text_input("Link (URL del documento)", value=row.get('link') or '')
 
-        submitted = st.form_submit_button("Guardar cambios", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Guardar cambios", type="primary", width="stretch")
 
     if submitted:
         campos_vacios = not emisor.strip() or not receptor.strip() or \
@@ -206,7 +206,7 @@ def page_correspondencia(perfil: dict) -> None:
             f_fecha_ini  = st.date_input("Fecha desde", value=None)
             f_fecha_fin  = st.date_input("Fecha hasta",  value=None)
         aplicar = st.form_submit_button(
-            "Aplicar filtros", type="primary", use_container_width=True
+            "Aplicar filtros", type="primary", width="stretch"
         )
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -255,7 +255,7 @@ def page_correspondencia(perfil: dict) -> None:
         st.dataframe(
             styled,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 'emisor':                st.column_config.TextColumn('Emisor'),
                 'receptor':              st.column_config.TextColumn('Receptor'),
@@ -296,7 +296,7 @@ def page_correspondencia(perfil: dict) -> None:
 
     with col_new:
         if can_write:
-            if st.button("＋ Nuevo", type="primary", use_container_width=True,
+            if st.button("＋ Nuevo", type="primary", width="stretch",
                          help="Registrar nueva correspondencia"):
                 _dialog_nueva(perfil)
         else:
@@ -314,7 +314,7 @@ def page_correspondencia(perfil: dict) -> None:
             if sel != '— seleccionar registro —':
                 match = df[df['consecutivo'].astype(str) == sel]
                 if not match.empty and st.button(
-                    f"Editar · {sel}", key="btn_edit_corresp", use_container_width=True
+                    f"Editar · {sel}", key="btn_edit_corresp", width="stretch"
                 ):
                     # Tomar el dato completo del df_raw para tener el id y auditoría
                     row_full = df_raw[df_raw['consecutivo'].astype(str) == sel].iloc[0].to_dict()
