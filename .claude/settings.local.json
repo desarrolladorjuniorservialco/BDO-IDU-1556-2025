@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.\\(html|css|js|gpkg|json|md|txt\\)$\")"
+      "Bash(grep -E \"\\\\.\\(html|css|js|gpkg|json|md|txt\\)$\")",
+      "Bash(python -m pytest tests/test_componentes_filtro.py -v)",
+      "Bash(where python3 *)",
+      "Bash(find /c/Python* -name \"python*\" -type f)",
+      "Bash(python3 -m pytest tests/test_componentes_filtro.py -v)",
+      "PowerShell($pythonPath = \"C:\\\\Users\\\\USUARIO\\\\AppData\\\\Local\\\\Python\\\\Python314\\\\python.exe\"; if \\(Test-Path $pythonPath\\) { Write-Host \"Found at: $pythonPath\" } else { Write-Host \"Not found\"; Get-ChildItem \"C:\\\\Users\\\\USUARIO\\\\AppData\\\\Local\\\\Python\\\\\" -Recurse -Name \"python.exe\" | Select-Object -First 5 })",
+      "PowerShell($pythonPath = \"C:\\\\Users\\\\USUARIO\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe\"; cd \"C:\\\\Users\\\\USUARIO\\\\Documents\\\\Servialco\\\\Repositorios_GITHUB\\\\BDO-IDU-1556-2025\\\\streamlit\"; & $pythonPath -m pytest tests/test_componentes_filtro.py -v 2>&1)",
+      "PowerShell($pythonPath = \"C:\\\\Users\\\\USUARIO\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe\"; & $pythonPath -m pip install pytest 2>&1 | tail -5)",
+      "PowerShell($pythonPath = \"C:\\\\Users\\\\USUARIO\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe\"; & $pythonPath -m pip install pytest 2>&1 | Select-Object -Last 10)",
+      "Bash(python -m pytest tests/test_componentes_filtro.py::TestLoadComponentesFirma -v)",
+      "Bash(where python *)",
+      "Bash(\"C:/Users/USUARIO/AppData/Local/Python/bin/python3.exe\" -m pytest tests/test_componentes_filtro.py::TestLoadComponentesFirma -v)",
+      "Bash(\"C:/Users/USUARIO/AppData/Local/Python/bin/python3.exe\" -m pytest tests/test_componentes_filtro.py::TestComponenteValorMapping -v)"
     ]
   }
 }
