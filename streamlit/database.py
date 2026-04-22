@@ -428,10 +428,10 @@ def load_correspondencia() -> pd.DataFrame:
     return _safe_query(_q, context='load_correspondencia')
 
 
-def insert_correspondencia(data: dict) -> bool:
+def insert_correspondencia(data: dict, access_token: str = '') -> bool:
     """Inserta un nuevo registro de correspondencia. Retorna True si OK."""
     try:
-        get_supabase().table('correspondencia').insert(data).execute()
+        get_user_client(access_token).table('correspondencia').insert(data).execute()
         clear_cache()
         return True
     except Exception:
@@ -439,10 +439,10 @@ def insert_correspondencia(data: dict) -> bool:
         return False
 
 
-def update_correspondencia(record_id: str, data: dict) -> bool:
+def update_correspondencia(record_id: str, data: dict, access_token: str = '') -> bool:
     """Actualiza un registro de correspondencia. Retorna True si OK."""
     try:
-        get_supabase().table('correspondencia').update(data).eq('id', record_id).execute()
+        get_user_client(access_token).table('correspondencia').update(data).eq('id', record_id).execute()
         clear_cache()
         return True
     except Exception:

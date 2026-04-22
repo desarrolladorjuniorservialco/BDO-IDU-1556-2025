@@ -248,8 +248,6 @@ def login() -> None:
             st.session_state['_access_token'] = access_token
             st.session_state['_session_id']   = sid
             st.query_params['sid'] = sid
-            if refresh_token:
-                st.query_params['rt'] = refresh_token
             st.rerun()
 
         except Exception:

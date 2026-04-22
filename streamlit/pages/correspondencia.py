@@ -95,7 +95,8 @@ def _dialog_nueva(perfil: dict) -> None:
             'creado_por':            perfil['id'],
             'creado_en':             datetime.utcnow().isoformat(),
         }
-        if insert_correspondencia(data):
+        token = st.session_state.get('_access_token', '')
+        if insert_correspondencia(data, token):
             st.success("Correspondencia registrada exitosamente.")
             st.rerun()
         else:
@@ -158,7 +159,8 @@ def _dialog_editar(row: dict, perfil: dict) -> None:
             'modificado_en':         datetime.utcnow().isoformat(),
             'modificado_por_nombre': perfil.get('nombre', ''),
         }
-        if update_correspondencia(row['id'], data):
+        token = st.session_state.get('_access_token', '')
+        if update_correspondencia(row['id'], data, token):
             st.success("Correspondencia actualizada.")
             st.rerun()
         else:
