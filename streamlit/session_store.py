@@ -85,6 +85,7 @@ def restore_session(sid: str) -> dict | None:
     Retorna una copia de los datos de sesión si el sid es válido y no expiró.
     Retorna None si no existe o la sesión caducó.
     """
+    _clean_expired()
     s = _store()
     with s['lock']:
         data = s['data'].get(sid)

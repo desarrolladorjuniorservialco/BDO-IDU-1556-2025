@@ -46,8 +46,13 @@ from pages.correspondencia      import page_correspondencia
 _log = logging.getLogger(__name__)
 
 
+@st.cache_resource
+def _get_process() -> psutil.Process:
+    return psutil.Process(os.getpid())
+
+
 def _consumo_ram_mb() -> float:
-    return psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)
+    return _get_process().memory_info().rss / (1024 ** 2)
 
 # ══════════════════════════════════════════════════════════════
 # CONFIGURACIÓN DE PÁGINA
