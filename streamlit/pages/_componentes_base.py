@@ -118,7 +118,7 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
     b1, b2 = st.columns(2)
     with b1:
         if st.button("Aprobar", key=f"comp_apr_{reg_id}",
-                     use_container_width=True, type="primary"):
+                     width="stretch", type="primary"):
             try:
                 sb  = get_user_client(st.session_state.get('_access_token', ''))
                 upd = {
@@ -140,7 +140,7 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
 
     with b2:
         if st.button("Devolver", key=f"comp_dev_{reg_id}",
-                     use_container_width=True):
+                     width="stretch"):
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:
@@ -214,7 +214,7 @@ def panel_componentes(
         with fa2:
             act_f = st.text_input("Tipo actividad", key=f"comp_{filtro_tipo}_act")
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     _sess_key = f"comp_loaded_{filtro_tipo or 'all'}"
@@ -303,7 +303,7 @@ def panel_componentes(
             'folio', 'fecha', 'usuario_qfield', 'id_tramo',
             'tipo_componente', 'tipo_actividad', 'cantidad', 'unidad', 'estado',
         ] if c in df.columns]
-        st.dataframe(df[cols], hide_index=True, use_container_width=True)
+        st.dataframe(df[cols], hide_index=True, width="stretch")
         return
 
     # ── Vista con aprobación ───────────────────────────────
@@ -384,7 +384,7 @@ def panel_componentes(
                         f_cols = st.columns(min(len(urls), 4))
                         for i, url in enumerate(urls[:4]):
                             with f_cols[i]:
-                                st.image(url, use_column_width=True)
+                                st.image(url, width="stretch")
                     else:
                         st.caption("Sin fotos registradas")
 

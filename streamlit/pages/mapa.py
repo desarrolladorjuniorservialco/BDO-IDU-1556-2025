@@ -130,7 +130,7 @@ def page_mapa(perfil: dict) -> None:
             show_pmt    = st.checkbox("Formularios PMT",     value=True, key="map_pmt")
 
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not aplicar and 'mapa_loaded' not in st.session_state:
@@ -246,7 +246,7 @@ def page_mapa(perfil: dict) -> None:
                 data=geo_cant[_exp_cols].to_csv(index=False).encode('utf-8'),
                 file_name=f"Cantidades_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
     with _ec2:
         if not geo_comp.empty and _exp_comp_cols:
@@ -255,7 +255,7 @@ def page_mapa(perfil: dict) -> None:
                 data=geo_comp[_exp_comp_cols].to_csv(index=False).encode('utf-8'),
                 file_name=f"Componentes_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
     with _ec3:
         if not geo_diario.empty and _exp_d_cols:
@@ -264,7 +264,7 @@ def page_mapa(perfil: dict) -> None:
                 data=geo_diario[_exp_d_cols].to_csv(index=False).encode('utf-8'),
                 file_name=f"Diario_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
     with _ec4:
         if not geo_pmt.empty and _exp_pmt_cols:
@@ -273,7 +273,7 @@ def page_mapa(perfil: dict) -> None:
                 data=geo_pmt[_exp_pmt_cols].to_csv(index=False).encode('utf-8'),
                 file_name=f"PMT_geo_{fi.strftime('%Y%m%d')}_{ff.strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
 
     all_empty = geo_cant.empty and geo_comp.empty and geo_diario.empty and geo_pmt.empty
@@ -347,7 +347,7 @@ def page_mapa(perfil: dict) -> None:
                 font=dict(size=10, family='Barlow', color='#4D4D4D'),
             ),
         )
-        st.plotly_chart(fig, use_container_width=True,
+        st.plotly_chart(fig, width="stretch",
                         config={'displayModeBar': True, 'scrollZoom': True})
 
     st.divider()
@@ -367,7 +367,7 @@ def page_mapa(perfil: dict) -> None:
                     'tipo_actividad', 'item_pago', 'cantidad', 'unidad',
                     'estado', 'latitud', 'longitud',
                 ] if c in geo_cant.columns]
-                st.dataframe(geo_cant[cols], hide_index=True, use_container_width=True)
+                st.dataframe(geo_cant[cols], hide_index=True, width="stretch")
 
         with tab_comp:
             if geo_comp.empty:
@@ -378,7 +378,7 @@ def page_mapa(perfil: dict) -> None:
                     'tipo_actividad', 'cantidad', 'unidad', 'estado',
                     'latitud', 'longitud',
                 ] if c in geo_comp.columns]
-                st.dataframe(geo_comp[cols], hide_index=True, use_container_width=True)
+                st.dataframe(geo_comp[cols], hide_index=True, width="stretch")
 
         with tab_d:
             if geo_diario.empty:
@@ -388,7 +388,7 @@ def page_mapa(perfil: dict) -> None:
                     'folio', 'fecha_reporte', 'usuario_qfield',
                     'observaciones', 'estado', 'latitud', 'longitud',
                 ] if c in geo_diario.columns]
-                st.dataframe(geo_diario[cols], hide_index=True, use_container_width=True)
+                st.dataframe(geo_diario[cols], hide_index=True, width="stretch")
 
         with tab_pmt:
             if geo_pmt.empty:
@@ -399,4 +399,4 @@ def page_mapa(perfil: dict) -> None:
                     'inicio_vigencia', 'fin_vigencia',
                     'usuario', 'latitud', 'longitud',
                 ] if c in geo_pmt.columns]
-                st.dataframe(geo_pmt[cols], hide_index=True, use_container_width=True)
+                st.dataframe(geo_pmt[cols], hide_index=True, width="stretch")

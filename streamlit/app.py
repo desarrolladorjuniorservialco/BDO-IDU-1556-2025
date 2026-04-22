@@ -16,7 +16,9 @@ SEGURIDAD:
 
 import inspect
 import logging
+import os
 
+import psutil
 import streamlit as st
 
 # ── Infraestructura ────────────────────────────────────────
@@ -42,6 +44,10 @@ from pages.correspondencia      import page_correspondencia
 
 # Logger interno — los errores van a los logs del servidor, no al usuario
 _log = logging.getLogger(__name__)
+
+
+def _consumo_ram_mb() -> float:
+    return psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)
 
 # ══════════════════════════════════════════════════════════════
 # CONFIGURACIÓN DE PÁGINA
@@ -151,6 +157,12 @@ def main() -> None:
 
     # ── 4. Renderizar sidebar y obtener página activa ──────
     page = sidebar(perfil)
+
+    with st.sidebar:
+        st.divider()
+        st.markdown("### 📊 Monitoreo del Sistema")
+        st.metric(label="Consumo de RAM", value=f"{_consumo_ram_mb():.2f} MB")
+        st.caption("Límite en Streamlit Cloud: ~1000 MB")
 
     # ── 5. Verificar autorización (server-side) ────────────
     if not _authorized(perfil, page):

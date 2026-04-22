@@ -106,7 +106,7 @@ def page_generar_pdf(perfil: dict) -> None:
             user_f  = st.text_input("Filtrar por Usuario / Inspector", key="inf_user")
 
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not aplicar and 'inf_loaded' not in st.session_state:
@@ -199,7 +199,7 @@ def page_generar_pdf(perfil: dict) -> None:
             st.dataframe(
                 df_prev[cols_p].head(10) if cols_p else df_prev.head(10),
                 hide_index=True,
-                use_container_width=True,
+                width="stretch",
             )
             if len(df_prev) > 10:
                 st.caption(f"Mostrando 10 de {len(df_prev)} registros")
@@ -218,7 +218,7 @@ def page_generar_pdf(perfil: dict) -> None:
         generar = st.button(
             f"Generar {formato if not disabled else 'Informe'}",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             disabled=disabled,
         )
     with col_msg:
@@ -300,7 +300,7 @@ def page_generar_pdf(perfil: dict) -> None:
                 file_name=nombre,
                 mime="text/csv",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
             )
 
         # ── Excel ──────────────────────────────────────────
@@ -319,7 +319,7 @@ def page_generar_pdf(perfil: dict) -> None:
                     file_name=nombre,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
             except ImportError:
                 st.error("openpyxl no está instalado:")

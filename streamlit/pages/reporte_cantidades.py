@@ -139,7 +139,7 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
     b1, b2 = st.columns(2)
     with b1:
         if st.button("Aprobar", key=f"rc_apr_{reg_id}",
-                     use_container_width=True, type="primary"):
+                     width="stretch", type="primary"):
             token = st.session_state.get('_access_token', '')
             if not token:
                 st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
@@ -171,7 +171,7 @@ def _panel_aprobacion(reg: pd.Series, perfil: dict,
 
     with b2:
         if st.button("Devolver", key=f"rc_dev_{reg_id}",
-                     use_container_width=True):
+                     width="stretch"):
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:
@@ -241,7 +241,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
         with fa5:
             user_f  = st.text_input("Inspector / Usuario", key="rc_user")
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not aplicar and 'rc_loaded' not in st.session_state:
@@ -351,7 +351,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
             xaxis=dict(title=''),
             yaxis=dict(title='Registros', gridcolor='rgba(150,150,150,0.2)'),
         )
-        st.plotly_chart(fig_e, use_container_width=True,
+        st.plotly_chart(fig_e, width="stretch",
                         config={'displayModeBar': False})
 
     st.divider()
@@ -372,7 +372,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
         st.dataframe(
             df[cols_show],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 'fecha':            st.column_config.DateColumn('Fecha',               format="DD/MM/YYYY"),
                 'cantidad':         st.column_config.NumberColumn('Cant. Inspector',    format="%.2f"),
@@ -468,7 +468,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
                             f_cols = st.columns(min(len(urls), 4))
                             for i, url in enumerate(urls[:4]):
                                 with f_cols[i]:
-                                    st.image(url, use_column_width=True)
+                                    st.image(url, width="stretch")
                         else:
                             st.caption("Sin fotos registradas")
 

@@ -66,11 +66,11 @@ def page_seguimiento_pmts(perfil: dict) -> None:
         )
         col_fig, col_tbl = st.columns([1, 2])
         with col_fig:
-            st.plotly_chart(fig_pmt, use_container_width=True,
+            st.plotly_chart(fig_pmt, width="stretch",
                             config={'displayModeBar': False})
         with col_tbl:
             st.markdown("#### Listado de PMTs")
-            st.dataframe(df_pmt, hide_index=True, use_container_width=True)
+            st.dataframe(df_pmt, hide_index=True, width="stretch")
     else:
-        st.dataframe(df_pmt, hide_index=True, use_container_width=True)
+        st.dataframe(df_pmt, hide_index=True, width="stretch")
 

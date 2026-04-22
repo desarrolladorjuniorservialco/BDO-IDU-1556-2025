@@ -165,7 +165,7 @@ def page_presupuesto(perfil: dict) -> None:
         with ff2:
             buscar = st.text_input("Buscar ítem / descripción", key="ps_bus")
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     df_filt = df.copy()
@@ -278,7 +278,7 @@ def page_presupuesto(perfil: dict) -> None:
             ),
             xaxis=dict(tickfont=dict(size=10)),
         )
-        st.plotly_chart(fig, use_container_width=True,
+        st.plotly_chart(fig, width="stretch",
                         config={'displayModeBar': False})
 
     st.divider()
@@ -294,7 +294,7 @@ def page_presupuesto(perfil: dict) -> None:
         st.dataframe(
             df_filt[cols_show],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 'componente':          st.column_config.TextColumn('Componente'),
                 'item_pago':           st.column_config.TextColumn('Ítem Pago'),
@@ -317,7 +317,7 @@ def page_presupuesto(perfil: dict) -> None:
         )
 
     else:
-        st.dataframe(df_filt, hide_index=True, use_container_width=True)
+        st.dataframe(df_filt, hide_index=True, width="stretch")
 
     # ══════════════════════════════════════════════════════════════
     # SECCIÓN: DASHBOARDS META FÍSICA (separado por tipo)
@@ -465,7 +465,7 @@ def page_presupuesto(perfil: dict) -> None:
                     ),
                     xaxis=dict(tickfont=dict(size=10)),
                 )
-                st.plotly_chart(fig_t, use_container_width=True,
+                st.plotly_chart(fig_t, width="stretch",
                                 config={'displayModeBar': False})
 
             with col_tb:
@@ -476,7 +476,7 @@ def page_presupuesto(perfil: dict) -> None:
                 st.dataframe(
                     df_show,
                     hide_index=True,
-                    use_container_width=True,
+                    width="stretch",
                     column_config={
                         'Tramo':               st.column_config.TextColumn('Tramo'),
                         f'Meta ({und})':       st.column_config.NumberColumn(
@@ -549,7 +549,7 @@ def page_presupuesto(perfil: dict) -> None:
                     st.markdown("---")
 
                 guardar = st.form_submit_button("Guardar cambios", type="primary",
-                                                use_container_width=True)
+                                                width="stretch")
 
             if guardar:
                 token     = st.session_state.get('_access_token', '')
@@ -610,7 +610,7 @@ def page_presupuesto(perfil: dict) -> None:
         st.dataframe(
             df_hist[cols_hist],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 'Fecha (UTC-5)':      st.column_config.TextColumn('Fecha (UTC-5)'),
                 'Tipo':               st.column_config.TextColumn('Tipo'),

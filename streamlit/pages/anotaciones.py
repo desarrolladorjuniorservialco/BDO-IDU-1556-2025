@@ -111,7 +111,7 @@ def page_anotaciones(perfil: dict) -> None:
         with fa2:
             f_civ = st.text_input("CIV", key="ag_f_civ", placeholder="Código CIV")
         st.form_submit_button("Aplicar filtros", type="primary",
-                              use_container_width=True)
+                              width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Carga y filtrado ───────────────────────────────────────

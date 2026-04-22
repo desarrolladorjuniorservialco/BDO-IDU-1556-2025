@@ -109,14 +109,14 @@ def sidebar(perfil: dict) -> str:
                         unsafe_allow_html=True,
                     )
                 else:
-                    if st.button(page, key=f"nav_{page}", use_container_width=True):
+                    if st.button(page, key=f"nav_{page}", width="stretch"):
                         st.session_state['current_page'] = page
                         update_page(st.session_state.get('_session_id', ''), page)
                         st.rerun()
 
         # ── Cerrar sesión ──────────────────────────────────
         st.divider()
-        if st.button("Cerrar sesión", use_container_width=True):
+        if st.button("Cerrar sesión", width="stretch"):
             logout()
 
     return selected

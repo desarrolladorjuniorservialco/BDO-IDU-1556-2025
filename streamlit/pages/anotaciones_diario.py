@@ -111,7 +111,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
         with fc4:
             buscar = st.text_input("Buscar: folio / usuario / observación", key="rd_bus")
         aplicar = st.form_submit_button("Aplicar filtros", type="primary",
-                                        use_container_width=True)
+                                        width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not aplicar and 'rd_loaded' not in st.session_state:
@@ -306,7 +306,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
                             f_cols = st.columns(min(len(urls), 4))
                             for i, url in enumerate(urls[:4]):
                                 with f_cols[i]:
-                                    st.image(url, use_column_width=True)
+                                    st.image(url, width="stretch")
                         else:
                             st.caption("Sin fotos registradas")
 
@@ -349,7 +349,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
                     ] if c in sub.columns]
                     if maq_cols:
                         st.dataframe(sub[maq_cols],
-                                     hide_index=True, use_container_width=True)
+                                     hide_index=True, width="stretch")
                 t += 1
 
             # ── Tab Personal ───────────────────────────────
@@ -422,7 +422,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
     b1, b2 = st.columns(2)
     with b1:
         if st.button("Aprobar", key=f"apr_rd_{wkey}",
-                     use_container_width=True, type="primary"):
+                     width="stretch", type="primary"):
             try:
                 sb  = get_user_client(st.session_state.get('_access_token', ''))
                 upd = {
@@ -444,7 +444,7 @@ def _panel_aprobacion_rd(reg: pd.Series, perfil: dict,
 
     with b2:
         if st.button("Devolver", key=f"dev_rd_{wkey}",
-                     use_container_width=True):
+                     width="stretch"):
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:

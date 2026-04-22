@@ -179,7 +179,7 @@ def login() -> None:
             max_chars=_MAX_PASSWORD,
         )
         st.markdown("<br>", unsafe_allow_html=True)
-        submit = st.button("Ingresar al sistema", use_container_width=True, type="primary")
+        submit = st.button("Ingresar al sistema", width="stretch", type="primary")
 
         if not submit:
             return
