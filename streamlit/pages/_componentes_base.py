@@ -201,9 +201,9 @@ _panel_aprobacion_comp = panel_aprobacion
 
 # Mapeo filtro_tipo → valor exacto del campo componente en registros_componentes
 _COMPONENTE_VALOR: dict[str, str] = {
-    'ambiental': 'Ambiental- SST',
-    'social':    'Social',
-    'pmt':       'PMT',
+    'ambiental-sst': 'Ambiental-SST',
+    'social':        'Social',
+    'pmt':           'PMT',
 }
 
 
