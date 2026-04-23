@@ -1,4 +1,4 @@
-name: Sync QFieldCloud → Supabase
+name: Sync IDU-1556-2025 → Supabase
 
 on:
   schedule:
@@ -6,12 +6,11 @@ on:
     - cron: '0 18 * * 1-6'  # 1:00 PM COT (UTC-5)
     - cron: '0 22 * * 1-6'  # 5:00 PM COT (UTC-5)
 
-  # Permite correr manualmente desde GitHub
   workflow_dispatch:
 
 jobs:
   sync:
-    name: Sincronizar registros y fotos
+    name: Sincronizar IDU-1556-2025
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -30,11 +29,13 @@ jobs:
 
       - name: Ejecutar sync
         env:
+          # Secrets compartidos (mismos para todos los contratos de la empresa)
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:         ${{ secrets.SUPABASE_KEY }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          QFIELD_USER:          ${{ secrets.QFIELD_USER }}
-          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD }}
-          QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME }}
-          CONTRATO_ID:          ${{ secrets.CONTRATO_ID }}
+          # Secrets específicos de este contrato
+          QFIELD_USER:          ${{ secrets.QFIELD_USER_1556 }}
+          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD_1556 }}
+          QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME_1556 }}
+          CONTRATO_ID:          ${{ secrets.CONTRATO_ID_1556 }}
         run: python sync/sync_qfield.py
