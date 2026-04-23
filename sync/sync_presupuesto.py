@@ -1,3 +1,4 @@
+from .config import CONTRATO_ID
 from .utils import safe, safe_num
 from .gpkg import download_gpkg, read_layer
 
@@ -12,6 +13,7 @@ def sync_presupuesto_bd(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
+            'contrato_id':    CONTRATO_ID,
             'tipo_actividad': safe(row.get('tipo_actividad')),
             'capitulo_num':   safe(row.get('capitulo_num')),
             'capitulo':       safe(row.get('capitulo')),
@@ -23,7 +25,9 @@ def sync_presupuesto_bd(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('codigo_idu'):
-            supabase.table('presupuesto_bd').upsert(data, on_conflict='codigo_idu').execute()
+            supabase.table('presupuesto_bd').upsert(
+                data, on_conflict='contrato_id,codigo_idu'
+            ).execute()
             count += 1
     print(f"  → {count} upserted")
 
@@ -42,6 +46,7 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
+            'contrato_id':     CONTRATO_ID,
             'capitulo_num':    safe(row.get('capitulo_num')),
             'capitulo':        safe(row.get('capitulo')),
             # [D-09] typo real en GPKG: 'compenente'; OR para versión corregida futura
@@ -56,7 +61,9 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('codigo_idu'):
-            supabase.table('presupuesto_componentes_bd').upsert(data, on_conflict='codigo_idu').execute()
+            supabase.table('presupuesto_componentes_bd').upsert(
+                data, on_conflict='contrato_id,codigo_idu'
+            ).execute()
             count += 1
     print(f"  → {count} upserted")
 
@@ -75,12 +82,13 @@ def sync_presupuesto_componentes_aux(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    # delete + insert (sin UNIQUE en la tabla)
-    supabase.table('presupuesto_componentes_aux').delete().neq('id', 0).execute()
+    # delete + insert scoped to this contract (no UNIQUE en la tabla)
+    supabase.table('presupuesto_componentes_aux').delete().eq('contrato_id', CONTRATO_ID).execute()
 
     rows = []
     for _, row in gdf.iterrows():
         data = {
+            'contrato_id':    CONTRATO_ID,
             'codigo_idu':     safe(row.get('codigo_idu')),
             # [D-09] mismo typo posible: 'compenente'
             'componente':     safe(row.get('compenente') or row.get('componente')),

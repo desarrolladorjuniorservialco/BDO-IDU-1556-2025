@@ -1,5 +1,6 @@
+from .config import CONTRATO_ID
 from .utils import safe, safe_num, coords_from_geom
-from .gpkg import download_gpkg, read_layer, delete_all
+from .gpkg import download_gpkg, read_layer
 
 
 def sync_bd_personal(supabase, token, project_id):
@@ -17,6 +18,7 @@ def sync_bd_personal(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+            'contrato_id':        CONTRATO_ID,
             'folio':              safe(row.get('folio')),
             'inspectores':        safe_num(row.get('inspectores')),
             'personal_operativo': safe_num(row.get('personal_operativo') or row.get('personaloperativo')),
@@ -29,7 +31,7 @@ def sync_bd_personal(supabase, token, project_id):
             rows.append({k: v for k, v in data.items() if v is not None})
 
     try:
-        delete_all(supabase, 'bd_personal_obra')
+        supabase.table('bd_personal_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
         if rows:
             supabase.table('bd_personal_obra').insert(rows).execute()
         print(f"  → {len(rows)} insertados")
@@ -52,6 +54,7 @@ def sync_bd_climatica(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+            'contrato_id':   CONTRATO_ID,
             'folio':         safe(row.get('folio')),
             'estado_clima':  safe(row.get('estado_clima') or row.get('estadoclima')),
             'hora':          safe(row.get('hora')),
@@ -63,7 +66,7 @@ def sync_bd_climatica(supabase, token, project_id):
             rows.append({k: v for k, v in data.items() if v is not None})
 
     try:
-        delete_all(supabase, 'bd_condicion_climatica')
+        supabase.table('bd_condicion_climatica').delete().eq('contrato_id', CONTRATO_ID).execute()
         if rows:
             supabase.table('bd_condicion_climatica').insert(rows).execute()
         print(f"  → {len(rows)} insertados")
@@ -86,6 +89,7 @@ def sync_bd_maquinaria(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+            'contrato_id':           CONTRATO_ID,
             'folio':                 safe(row.get('folio')),
             'operarios':             safe_num(row.get('operarios')),
             'volquetas':             safe_num(row.get('volquetas')),
@@ -105,7 +109,7 @@ def sync_bd_maquinaria(supabase, token, project_id):
             rows.append({k: v for k, v in data.items() if v is not None})
 
     try:
-        delete_all(supabase, 'bd_maquinaria_obra')
+        supabase.table('bd_maquinaria_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
         if rows:
             supabase.table('bd_maquinaria_obra').insert(rows).execute()
         print(f"  → {len(rows)} insertados")
@@ -129,6 +133,7 @@ def sync_bd_sst(supabase, token, project_id):
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
         data = {
+            'contrato_id':       CONTRATO_ID,
             'folio':             safe(row.get('folio')),
             'observaciones':     safe(row.get('observaciones')),
             'longitud':          lon,
@@ -143,7 +148,7 @@ def sync_bd_sst(supabase, token, project_id):
             rows.append({k: v for k, v in data.items() if v is not None})
 
     try:
-        delete_all(supabase, 'bd_sst_ambiental')
+        supabase.table('bd_sst_ambiental').delete().eq('contrato_id', CONTRATO_ID).execute()
         if rows:
             supabase.table('bd_sst_ambiental').insert(rows).execute()
         print(f"  → {len(rows)} insertados")

@@ -1,3 +1,4 @@
+from .config import CONTRATO_ID
 from .utils import safe
 from .gpkg import download_gpkg, read_layer
 
@@ -41,7 +42,8 @@ def sync_tramos_aux_infra(supabase, token, project_id):
     for codigo, nombre in sorted(pares.items()):
         try:
             supabase.table('tramos_aux_infra').upsert(
-                {'codigo': codigo, 'nombre': nombre}, on_conflict='codigo'
+                {'contrato_id': CONTRATO_ID, 'codigo': codigo, 'nombre': nombre},
+                on_conflict='contrato_id,codigo'
             ).execute()
             count += 1
             print(f"  · {codigo} → {nombre}")
@@ -68,7 +70,8 @@ def sync_tramos_aux_tramos(supabase, token, project_id):
             continue
         try:
             supabase.table('tramos_aux_tramos').upsert(
-                {'codigo': codigo, 'descripcion': descripcion}, on_conflict='codigo'
+                {'contrato_id': CONTRATO_ID, 'codigo': codigo, 'descripcion': descripcion},
+                on_conflict='contrato_id,codigo'
             ).execute()
             count += 1
         except Exception as e:
@@ -91,7 +94,8 @@ def sync_presupuesto_aux_actividad(supabase, token, project_id):
     for v in sorted(valores):
         try:
             supabase.table('presupuesto_aux_actividad').upsert(
-                {'tipo_actividad': v}, on_conflict='tipo_actividad'
+                {'contrato_id': CONTRATO_ID, 'tipo_actividad': v},
+                on_conflict='contrato_id,tipo_actividad'
             ).execute()
             count += 1
         except Exception as e:
@@ -118,8 +122,9 @@ def sync_presupuesto_aux_capitulos(supabase, token, project_id):
             continue
         try:
             supabase.table('presupuesto_aux_capitulos').upsert(
-                {'tipo_actividad': tipo, 'capitulo_num': cap_num, 'capitulo': capitulo},
-                on_conflict='tipo_actividad,capitulo_num'
+                {'contrato_id': CONTRATO_ID, 'tipo_actividad': tipo,
+                 'capitulo_num': cap_num, 'capitulo': capitulo},
+                on_conflict='contrato_id,tipo_actividad,capitulo_num'
             ).execute()
             count += 1
         except Exception as e:
