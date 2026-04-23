@@ -2,40 +2,54 @@
 sync_rf.py — Sincronización de registros fotográficos (RF)
 
 Estrategia incremental (evita reprocesos):
-  1. Al inicio de cada función se hace UN SOLO SELECT para obtener todos los
-     id_unico ya existentes en Supabase → O(1) en vez de O(N) queries.
-  2. Registros ya existentes se saltan SIN descargar, comprimir ni intentar
-     subir la foto (elimina errores "Duplicate" y carga computacional inútil).
+  1. Al inicio de cada función se hace UN SOLO SELECT para obtener los
+     id_unico ya existentes en Supabase (ventana incremental o full).
+  2. Registros ya existentes se saltan SIN descargar ni comprimir la foto.
   3. Solo registros NUEVOS pasan por upload_photo() + INSERT.
+  4. En modo incremental, registros fuera de la ventana se re-intentan;
+     si ya existen (violación UNIQUE), se ignoran silenciosamente.
 
-Comparado con la versión anterior:
-  Antes : N foto-compressions + N upload-attempts + N SELECT individuales
-  Ahora : 1 SELECT batch + K foto-compressions + K INSERTs  (K = registros nuevos)
+MODO INCREMENTAL — cómo deshabilitar
+──────────────────────────────────────
+Si necesitas regenerar la BD desde cero o forzar re-sync completo:
+  · Cambia USE_INCREMENTAL_RF = False   (consulta TODOS los IDs existentes)
+  · O amplía SINCE_DAYS a un valor mayor que la vida del proyecto.
+Vuelve a True cuando termines para recuperar la velocidad normal.
 """
-#sync
+
+from datetime import datetime, timedelta
+
 from .utils import safe
 from .gpkg import download_gpkg, read_layer
 from .photos import upload_photo
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN INCREMENTAL
+# ═══════════════════════════════════════════════════════════════════════════════
+USE_INCREMENTAL_RF = True   # False → full sync (necesario al regenerar la BD)
+SINCE_DAYS         = 7      # Ventana de IDs recientes que se consultan en Supabase
+# ═══════════════════════════════════════════════════════════════════════════════
+
 
 def _fetch_existing_ids(supabase, tabla: str) -> set:
     """
-    Descarga todos los id_unico existentes en 'tabla' en una sola query.
-    Soporta tablas con más de 1 000 filas mediante paginación automática.
-    Devuelve un set vacío si falla (comportamiento conservador: intentará
-    insertar todos los registros del GPKG).
+    Descarga id_unico existentes en 'tabla'.
+    Incremental: solo los últimos SINCE_DAYS días (más rápido con datos históricos).
+    Full (USE_INCREMENTAL_RF=False): todos los registros sin filtro de fecha.
+    Devuelve set vacío si falla → intentará insertar todo el GPKG.
     """
     existentes = set()
     try:
         offset = 0
         chunk  = 1000
+        since  = None
+        if USE_INCREMENTAL_RF:
+            since = (datetime.utcnow() - timedelta(days=SINCE_DAYS)).isoformat()
         while True:
-            resp = (
-                supabase.table(tabla)
-                .select('id_unico')
-                .range(offset, offset + chunk - 1)
-                .execute()
-            )
+            q = supabase.table(tabla).select('id_unico')
+            if since:
+                q = q.gte('created_at', since)
+            resp  = q.range(offset, offset + chunk - 1).execute()
             batch = resp.data or []
             for row in batch:
                 uid = row.get('id_unico')
@@ -44,9 +58,17 @@ def _fetch_existing_ids(supabase, tabla: str) -> set:
             if len(batch) < chunk:
                 break
             offset += chunk
+        modo = f"incremental ({SINCE_DAYS}d)" if since else "full"
+        print(f"  · {len(existentes)} IDs existentes en {tabla} [{modo}]")
     except Exception as e:
         print(f"  ⚠ No se pudo obtener registros existentes de {tabla}: {e}")
     return existentes
+
+
+def _es_duplicado(exc: Exception) -> bool:
+    """Detecta violación de restricción UNIQUE (código PG 23505)."""
+    s = str(exc).lower()
+    return '23505' in s or 'duplicate' in s or 'unique' in s
 
 
 # ── rf_cantidades ──────────────────────────────────────────────────────────────
@@ -89,8 +111,11 @@ def sync_rf_cantidades(supabase, token, project_id):
             }).execute()
             insertados += 1
         except Exception as e:
-            errores += 1
-            print(f"  ✗ {id_unico}: {e}")
+            if _es_duplicado(e):
+                saltados += 1   # fuera de ventana incremental, ya existía
+            else:
+                errores += 1
+                print(f"  ✗ {id_unico}: {e}")
 
     print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")
 
@@ -131,8 +156,11 @@ def sync_rf_componentes(supabase, token, project_id):
             }).execute()
             insertados += 1
         except Exception as e:
-            errores += 1
-            print(f"  ✗ {id_unico}: {e}")
+            if _es_duplicado(e):
+                saltados += 1
+            else:
+                errores += 1
+                print(f"  ✗ {id_unico}: {e}")
 
     print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")
 
@@ -176,7 +204,10 @@ def sync_rf_reporte_diario(supabase, token, project_id):
             }).execute()
             insertados += 1
         except Exception as e:
-            errores += 1
-            print(f"  ✗ {id_unico}: {e}")
+            if _es_duplicado(e):
+                saltados += 1
+            else:
+                errores += 1
+                print(f"  ✗ {id_unico}: {e}")
 
     print(f"  → {insertados} insertados · {saltados} ya existían (saltados) · {errores} errores")

@@ -18,17 +18,15 @@ SEGURIDAD:
 
 import logging
 import re
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
 from config import APROBACION_CONFIG
-from database import (
-    load_cantidades, load_fotos_cantidades,
-    get_user_client, clear_cache,
-)
+from database import load_cantidades, load_fotos_cantidades
+from pages._componentes_base import panel_aprobacion
 from ui import badge, kpi, section_badge, safe_float
 
 _log = logging.getLogger(__name__)
@@ -52,153 +50,6 @@ def _pill(label: str, valor, color: str = "") -> str:
     cls = f"info-pill {color}" if color else "info-pill"
     return f'<span class="{cls}">{label}: {valor}</span>'
 
-
-def _historial_aprobacion_html(reg: pd.Series) -> str:
-    """Genera HTML con el historial de aprobación del registro."""
-    items = []
-
-    # Obra — nivel 1
-    if reg.get('aprobado_residente'):
-        est = str(reg.get('estado_residente', '')).capitalize()
-        fec = str(reg.get('fecha_residente', ''))[:10]
-        obs = reg.get('obs_residente', '')
-        items.append(f"""
-        <div class="approval-history-item">
-            <span class="approval-history-role">Obra (Niv. 1) · {est} · {fec}</span>
-            <span style="font-size:0.78rem;">{reg['aprobado_residente']}</span>
-            {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
-        </div>""")
-
-    # Interventoría — nivel 2
-    if reg.get('aprobado_interventor'):
-        est = str(reg.get('estado_interventor', '')).capitalize()
-        fec = str(reg.get('fecha_interventor', ''))[:10]
-        obs = reg.get('obs_interventor', '')
-        items.append(f"""
-        <div class="approval-history-item">
-            <span class="approval-history-role">Interventoría (Niv. 2) · {est} · {fec}</span>
-            <span style="font-size:0.78rem;">{reg['aprobado_interventor']}</span>
-            {f'<span style="color:var(--accent-orange);font-size:0.76rem;">↩ {obs}</span>' if obs else ''}
-        </div>""")
-
-    if not items:
-        return ""
-    return (
-        '<div class="approval-history">'
-        '<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.62rem;'
-        'text-transform:uppercase;letter-spacing:0.10em;color:var(--text-muted);'
-        'margin-bottom:0.4rem;">Trazabilidad</div>'
-        + "".join(items)
-        + '</div>'
-    )
-
-
-def _panel_aprobacion(reg: pd.Series, perfil: dict,
-                       campos: dict | None, estado_apr: str | None,
-                       estados_accion: list | None) -> None:
-    """Panel de aprobación/devolución con trazabilidad completa."""
-    est_actual = str(reg.get('estado', '')).upper()
-    reg_id     = str(reg.get('id', ''))
-
-    # Historial previo
-    hist_html = _historial_aprobacion_html(reg)
-    if hist_html:
-        st.markdown(hist_html, unsafe_allow_html=True)
-
-    if not campos or not estados_accion or est_actual not in estados_accion:
-        st.caption(f"Estado: {est_actual}")
-        return
-
-    st.markdown(
-        '<div class="approval-panel-title">Validación de Cantidad</div>',
-        unsafe_allow_html=True,
-    )
-
-    campo_cant = campos['campo_cant']
-    campo_obs  = campos['campo_obs']
-    cant_def   = (safe_float(reg.get(campo_cant)) or
-                  safe_float(reg.get('cantidad')) or 0.0)
-
-    cant_val = st.number_input(
-        "Cantidad validada",
-        value=float(cant_def),
-        min_value=0.0,
-        max_value=9_999_999.0,
-        step=0.01,
-        key=f"rc_cant_{reg_id}",
-    )
-    obs_val = st.text_area(
-        "Observación de revisión",
-        key=f"rc_obs_{reg_id}",
-        height=70,
-        max_chars=1000,
-        placeholder="Opcional para aprobar · Obligatoria para devolver",
-        value=str(reg.get(campo_obs, '') or ''),
-    )
-
-    b1, b2 = st.columns(2)
-    with b1:
-        if st.button("Aprobar", key=f"rc_apr_{reg_id}",
-                     width="stretch", type="primary"):
-            token = st.session_state.get('_access_token', '')
-            if not token:
-                st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
-            else:
-                try:
-                    sb  = get_user_client(token)
-                    upd = {
-                        'estado':               estado_apr,
-                        campo_cant:             cant_val,
-                        campos['campo_estado']: 'aprobado',
-                        campos['campo_apr']:    perfil.get('nombre', perfil['id']),
-                        campos['campo_fecha']:  datetime.now().isoformat(),
-                    }
-                    if obs_val.strip():
-                        upd[campo_obs] = obs_val.strip()
-                    resp = sb.table('registros_cantidades').update(upd).eq('id', reg_id).execute()
-                    if not resp.data:
-                        st.error(
-                            "La actualización no afectó ningún registro. "
-                            "Verifica que tengas permiso para aprobar este registro."
-                        )
-                    else:
-                        clear_cache()
-                        st.success("Registro aprobado")
-                        st.rerun()
-                except Exception as exc:
-                    _log.exception("Error al aprobar registro id=%s", reg_id)
-                    st.error(f"No fue posible aprobar: {exc}")
-
-    with b2:
-        if st.button("Devolver", key=f"rc_dev_{reg_id}",
-                     width="stretch"):
-            if not obs_val.strip():
-                st.error("Escribe una observación para devolver")
-            else:
-                token = st.session_state.get('_access_token', '')
-                if not token:
-                    st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
-                else:
-                    try:
-                        sb = get_user_client(token)
-                        resp = sb.table('registros_cantidades').update({
-                            'estado':               'DEVUELTO',
-                            campos['campo_estado']: 'devuelto',
-                            campo_obs:              obs_val.strip(),
-                            campos['campo_fecha']:  datetime.now().isoformat(),
-                        }).eq('id', reg_id).execute()
-                        if not resp.data:
-                            st.error(
-                                "La actualización no afectó ningún registro. "
-                                "Verifica que tengas permiso para devolver este registro."
-                            )
-                        else:
-                            clear_cache()
-                            st.warning("Registro devuelto")
-                            st.rerun()
-                    except Exception as exc:
-                        _log.exception("Error al devolver registro id=%s", reg_id)
-                        st.error(f"No fue posible devolver: {exc}")
 
 
 def page_reporte_cantidades(perfil: dict) -> None:
@@ -477,6 +328,12 @@ def page_reporte_cantidades(perfil: dict) -> None:
                         '<div class="approval-panel">',
                         unsafe_allow_html=True,
                     )
-                    _panel_aprobacion(reg, perfil, campos, estado_apr, estados_accion)
+                    panel_aprobacion(
+                        reg, perfil, campos, estado_apr,
+                        tabla='registros_cantidades',
+                        estados_accion=estados_accion,
+                        key_prefix='rc',
+                        titulo='Validación de Cantidad',
+                    )
                     st.markdown('</div>', unsafe_allow_html=True)
 

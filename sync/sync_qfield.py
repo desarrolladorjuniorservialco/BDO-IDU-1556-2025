@@ -61,6 +61,7 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     __package__ = 'sync'
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from .connections import qfield_login, get_supabase, get_project_id
@@ -87,6 +88,30 @@ from .sync_bd import sync_bd_personal, sync_bd_climatica, sync_bd_maquinaria, sy
 from .sync_rf import sync_rf_cantidades, sync_rf_componentes, sync_rf_reporte_diario
 
 
+def _run(nombre, fn, *args):
+    try:
+        fn(*args)
+    except Exception as exc:
+        print(f"\n  ✗ [{nombre}] error no controlado: {exc}")
+
+
+def _run_group(tasks: list[tuple]) -> None:
+    """
+    Ejecuta una lista de tareas (nombre, fn, *args) en paralelo.
+    Espera a que todas terminen antes de retornar.
+    Con una sola tarea evita el overhead del executor.
+    """
+    if len(tasks) == 1:
+        nombre, fn, *args = tasks[0]
+        _run(nombre, fn, *args)
+        return
+    with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+        futures = {pool.submit(_run, nombre, fn, *args): nombre
+                   for nombre, fn, *args in tasks}
+        for f in as_completed(futures):
+            f.result()  # propaga excepciones no capturadas (no debería haber)
+
+
 def main():
     print(f"\n{'='*60}")
     print(f"SYNC BDO IDU-1556-2025 · {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -96,46 +121,46 @@ def main():
     supabase   = get_supabase()
     project_id = get_project_id(token)
 
-    def _run(nombre, fn, *args):
-        try:
-            fn(*args)
-        except Exception as exc:
-            print(f"\n  ✗ [{nombre}] error no controlado: {exc}")
+    A = (supabase, token, project_id)   # args comunes
 
-    # 0. Contrato (debe ir primero: otras tablas referencian contratos.id)
-    _run('sync_contrato_excel',             sync_contrato_excel,             supabase, token, project_id)
+    # 0. Contrato — secuencial primero (otras tablas referencian contratos.id)
+    _run('sync_contrato_excel', sync_contrato_excel, *A)
 
-    # 1. Tablas lookup (catálogos sin dependencias de formularios)
-    _run('sync_tramos_aux_infra',           sync_tramos_aux_infra,           supabase, token, project_id)
-    _run('sync_tramos_aux_tramos',          sync_tramos_aux_tramos,          supabase, token, project_id)
-    _run('sync_presupuesto_aux_actividad',  sync_presupuesto_aux_actividad,  supabase, token, project_id)
-    _run('sync_presupuesto_aux_capitulos',  sync_presupuesto_aux_capitulos,  supabase, token, project_id)
+    # 1. Lookup — 4 catálogos independientes en paralelo
+    _run_group([
+        ('sync_tramos_aux_infra',          sync_tramos_aux_infra,          *A),
+        ('sync_tramos_aux_tramos',         sync_tramos_aux_tramos,         *A),
+        ('sync_presupuesto_aux_actividad', sync_presupuesto_aux_actividad, *A),
+        ('sync_presupuesto_aux_capitulos', sync_presupuesto_aux_capitulos, *A),
+    ])
 
-    # 2. Referencia geográfica
-    _run('sync_localidades',                sync_localidades,                supabase, token, project_id)
-    _run('sync_tramos_bd',                  sync_tramos_bd,                  supabase, token, project_id)
+    # 2. Geo + Presupuesto — ambos dependen de lookup, son independientes entre sí
+    _run_group([
+        ('sync_localidades',                sync_localidades,                *A),
+        ('sync_tramos_bd',                  sync_tramos_bd,                  *A),
+        ('sync_presupuesto_bd',             sync_presupuesto_bd,             *A),
+        ('sync_presupuesto_componentes_bd', sync_presupuesto_componentes_bd, *A),
+        ('sync_presupuesto_componentes_aux',sync_presupuesto_componentes_aux,*A),
+    ])
 
-    # 3. Presupuesto
-    _run('sync_presupuesto_bd',             sync_presupuesto_bd,             supabase, token, project_id)
-    _run('sync_presupuesto_componentes_bd', sync_presupuesto_componentes_bd, supabase, token, project_id)
-    _run('sync_presupuesto_componentes_aux',sync_presupuesto_componentes_aux,supabase, token, project_id)
+    # 3. Formularios principales — 4 entidades independientes en paralelo
+    _run_group([
+        ('sync_registros_cantidades',     sync_registros_cantidades,     *A),
+        ('sync_registros_componentes',    sync_registros_componentes,    *A),
+        ('sync_registros_reporte_diario', sync_registros_reporte_diario, *A),
+        ('sync_formulario_pmt',           sync_formulario_pmt,           *A),
+    ])
 
-    # 4. Formularios principales
-    _run('sync_registros_cantidades',       sync_registros_cantidades,       supabase, token, project_id)
-    _run('sync_registros_componentes',      sync_registros_componentes,      supabase, token, project_id)
-    _run('sync_registros_reporte_diario',   sync_registros_reporte_diario,   supabase, token, project_id)
-    _run('sync_formulario_pmt',             sync_formulario_pmt,             supabase, token, project_id)
-
-    # 5. Tablas secundarias del reporte diario
-    _run('sync_bd_personal',               sync_bd_personal,                supabase, token, project_id)
-    _run('sync_bd_climatica',              sync_bd_climatica,               supabase, token, project_id)
-    _run('sync_bd_maquinaria',             sync_bd_maquinaria,              supabase, token, project_id)
-    _run('sync_bd_sst',                    sync_bd_sst,                     supabase, token, project_id)
-
-    # 6. Registros fotográficos (dependen de los formularios principales)
-    _run('sync_rf_cantidades',             sync_rf_cantidades,              supabase, token, project_id)
-    _run('sync_rf_componentes',            sync_rf_componentes,             supabase, token, project_id)
-    _run('sync_rf_reporte_diario',         sync_rf_reporte_diario,          supabase, token, project_id)
+    # 4. Tablas secundarias + fotos — todos dependen de formularios, independientes entre sí
+    _run_group([
+        ('sync_bd_personal',        sync_bd_personal,        *A),
+        ('sync_bd_climatica',       sync_bd_climatica,       *A),
+        ('sync_bd_maquinaria',      sync_bd_maquinaria,      *A),
+        ('sync_bd_sst',             sync_bd_sst,             *A),
+        ('sync_rf_cantidades',      sync_rf_cantidades,      *A),
+        ('sync_rf_componentes',     sync_rf_componentes,     *A),
+        ('sync_rf_reporte_diario',  sync_rf_reporte_diario,  *A),
+    ])
 
     print(f"\n{'='*60}")
     print(f"✓ Sincronización completa")

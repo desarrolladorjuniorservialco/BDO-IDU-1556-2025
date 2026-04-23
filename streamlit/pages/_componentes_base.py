@@ -73,10 +73,25 @@ def _historial_aprobacion_html(reg: pd.Series) -> str:
     )
 
 
-def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
-                            campos: dict | None, estado_apr: str | None,
-                            tabla: str, estados_accion: list | None) -> None:
-    """Panel de aprobación/devolución con cantidad validada."""
+def panel_aprobacion(
+    reg: pd.Series,
+    perfil: dict,
+    campos: dict | None,
+    estado_apr: str | None,
+    tabla: str,
+    estados_accion: list | None,
+    key_prefix: str = "comp",
+    titulo: str = "Validación",
+) -> None:
+    """
+    Panel de aprobación/devolución reutilizable.
+
+    Parámetros
+    ----------
+    tabla        : nombre de la tabla Supabase donde persisten las aprobaciones.
+    key_prefix   : prefijo único para los widgets Streamlit (evita colisiones entre páginas).
+    titulo       : título que aparece sobre los controles de validación.
+    """
     est_actual = str(reg.get('estado', '')).upper()
     reg_id     = str(reg.get('id', ''))
 
@@ -89,7 +104,7 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
         return
 
     st.markdown(
-        '<div class="approval-panel-title">Validación</div>',
+        f'<div class="approval-panel-title">{titulo}</div>',
         unsafe_allow_html=True,
     )
 
@@ -104,11 +119,11 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
         min_value=0.0,
         max_value=9_999_999.0,
         step=0.01,
-        key=f"comp_cant_{reg_id}",
+        key=f"{key_prefix}_cant_{reg_id}",
     )
     obs_val = st.text_area(
         "Observación",
-        key=f"comp_obs_{reg_id}",
+        key=f"{key_prefix}_obs_{reg_id}",
         height=70,
         max_chars=1000,
         placeholder="Opcional para aprobar · Obligatoria para devolver",
@@ -117,47 +132,71 @@ def _panel_aprobacion_comp(reg: pd.Series, perfil: dict,
 
     b1, b2 = st.columns(2)
     with b1:
-        if st.button("Aprobar", key=f"comp_apr_{reg_id}",
+        if st.button("Aprobar", key=f"{key_prefix}_apr_{reg_id}",
                      width="stretch", type="primary"):
-            try:
-                sb  = get_user_client(st.session_state.get('_access_token', ''))
-                upd = {
-                    'estado':               estado_apr,
-                    campo_cant:             cant_val,
-                    campos['campo_estado']: 'aprobado',
-                    campos['campo_apr']:    perfil.get('nombre', perfil['id']),
-                    campos['campo_fecha']:  datetime.now().isoformat(),
-                }
-                if obs_val.strip():
-                    upd[campo_obs] = obs_val.strip()
-                sb.table(tabla).update(upd).eq('id', reg_id).execute()
-                clear_cache()
-                st.success("Registro aprobado")
-                st.rerun()
-            except Exception:
-                _log.exception("Error al aprobar id=%s tabla=%s", reg_id, tabla)
-                st.error("No fue posible aprobar. Intenta de nuevo.")
+            token = st.session_state.get('_access_token', '')
+            if not token:
+                st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
+            else:
+                try:
+                    sb  = get_user_client(token)
+                    upd = {
+                        'estado':               estado_apr,
+                        campo_cant:             cant_val,
+                        campos['campo_estado']: 'aprobado',
+                        campos['campo_apr']:    perfil.get('nombre', perfil['id']),
+                        campos['campo_fecha']:  datetime.now().isoformat(),
+                    }
+                    if obs_val.strip():
+                        upd[campo_obs] = obs_val.strip()
+                    resp = sb.table(tabla).update(upd).eq('id', reg_id).execute()
+                    if not resp.data:
+                        st.error(
+                            "La actualización no afectó ningún registro. "
+                            "Verifica que tengas permiso para aprobar este registro."
+                        )
+                    else:
+                        clear_cache()
+                        st.success("Registro aprobado")
+                        st.rerun()
+                except Exception as exc:
+                    _log.exception("Error al aprobar id=%s tabla=%s", reg_id, tabla)
+                    st.error(f"No fue posible aprobar: {exc}")
 
     with b2:
-        if st.button("Devolver", key=f"comp_dev_{reg_id}",
+        if st.button("Devolver", key=f"{key_prefix}_dev_{reg_id}",
                      width="stretch"):
             if not obs_val.strip():
                 st.error("Escribe una observación para devolver")
             else:
-                try:
-                    sb = get_user_client(st.session_state.get('_access_token', ''))
-                    sb.table(tabla).update({
-                        'estado':               'DEVUELTO',
-                        campos['campo_estado']: 'devuelto',
-                        campo_obs:              obs_val.strip(),
-                        campos['campo_fecha']:  datetime.now().isoformat(),
-                    }).eq('id', reg_id).execute()
-                    clear_cache()
-                    st.warning("Registro devuelto")
-                    st.rerun()
-                except Exception:
-                    _log.exception("Error al devolver id=%s tabla=%s", reg_id, tabla)
-                    st.error("No fue posible devolver. Intenta de nuevo.")
+                token = st.session_state.get('_access_token', '')
+                if not token:
+                    st.error("Sesión expirada. Recarga la página e inicia sesión de nuevo.")
+                else:
+                    try:
+                        sb   = get_user_client(token)
+                        resp = sb.table(tabla).update({
+                            'estado':               'DEVUELTO',
+                            campos['campo_estado']: 'devuelto',
+                            campo_obs:              obs_val.strip(),
+                            campos['campo_fecha']:  datetime.now().isoformat(),
+                        }).eq('id', reg_id).execute()
+                        if not resp.data:
+                            st.error(
+                                "La actualización no afectó ningún registro. "
+                                "Verifica que tengas permiso para devolver este registro."
+                            )
+                        else:
+                            clear_cache()
+                            st.warning("Registro devuelto")
+                            st.rerun()
+                    except Exception as exc:
+                        _log.exception("Error al devolver id=%s tabla=%s", reg_id, tabla)
+                        st.error(f"No fue posible devolver: {exc}")
+
+
+# Alias interno para compatibilidad con llamadas existentes en este módulo
+_panel_aprobacion_comp = panel_aprobacion
 
 
 # Mapeo filtro_tipo → valor exacto del campo componente en registros_componentes
@@ -389,4 +428,4 @@ def panel_componentes(
                         st.caption("Sin fotos registradas")
 
             with col_apr:
-                _panel_aprobacion_comp(reg, perfil, campos, estado_apr, tabla, estados_accion)
+                panel_aprobacion(reg, perfil, campos, estado_apr, tabla, estados_accion)
