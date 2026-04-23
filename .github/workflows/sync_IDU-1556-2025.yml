@@ -33,9 +33,10 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:         ${{ secrets.SUPABASE_KEY }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          # Secrets compartidos de cuenta QFieldCloud
+          QFIELD_USER:          ${{ secrets.QFIELD_USER }}
+          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD }}
           # Secrets específicos de este contrato
-          QFIELD_USER:          ${{ secrets.QFIELD_USER_1556 }}
-          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD_1556 }}
           QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME_1556 }}
           CONTRATO_ID:          ${{ secrets.CONTRATO_ID_1556 }}
         run: python sync/sync_qfield.py
