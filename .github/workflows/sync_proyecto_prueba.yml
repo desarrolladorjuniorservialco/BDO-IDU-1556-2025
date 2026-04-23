@@ -1,4 +1,4 @@
-name: Sync IDU-1556-2025 → Supabase
+name: Sync proyecto_prueba → Supabase
 
 on:
   schedule:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   sync:
-    name: Sincronizar IDU-1556-2025
+    name: Sincronizar proyecto_prueba
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,6 +37,6 @@ jobs:
           QFIELD_USER:          ${{ secrets.QFIELD_USER }}
           QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD }}
           # Secrets específicos de este contrato
-          QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME_1556 }}
-          CONTRATO_ID:          ${{ secrets.CONTRATO_ID_1556 }}
+          QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME_PRUEBA }}
+          CONTRATO_ID:          ${{ secrets.CONTRATO_ID_PRUEBA }}
         run: python sync/sync_qfield.py
