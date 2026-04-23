@@ -49,13 +49,13 @@ def _pct_bar(pct: float) -> str:
     )
 
 
-def _calcular_ejecutado(df_pres: pd.DataFrame) -> pd.DataFrame:
+def _calcular_ejecutado(df_pres: pd.DataFrame, contrato_id: str) -> pd.DataFrame:
     """
     Calcula valor_ejecutado y pct_ejecutado para cada ítem del presupuesto
     a partir de las cantidades APROBADAS.
     """
     # Carga solo los registros aprobados
-    df_apr = load_cantidades(estados=['APROBADO'])
+    df_apr = load_cantidades(contrato_id, estados=['APROBADO'])
 
     if df_apr.empty or 'item_pago' not in df_apr.columns:
         df_pres['cantidad_ejecutada'] = 0.0
@@ -115,7 +115,8 @@ def page_presupuesto(perfil: dict) -> None:
     section_badge("Seguimiento Presupuestal", "orange")
     st.markdown("### Presupuesto del Contrato IDU-1556-2025")
 
-    df_raw = load_presupuesto()
+    cid    = perfil['contrato_id']
+    df_raw = load_presupuesto(cid)
 
     if df_raw.empty:
         st.info("Sin datos de presupuesto. Verifica la tabla 'presupuesto_bd' en Supabase.")
@@ -141,7 +142,7 @@ def page_presupuesto(perfil: dict) -> None:
 
     # Calcular ejecutado a partir de cantidades aprobadas
     with st.spinner("Calculando ejecución presupuestal…"):
-        df = _calcular_ejecutado(df_raw.copy())
+        df = _calcular_ejecutado(df_raw.copy(), cid)
 
     # ── Formulario de filtros ──────────────────────────────
     import re as _re
@@ -327,7 +328,7 @@ def page_presupuesto(perfil: dict) -> None:
 
     st.divider()
 
-    df_tramos = load_tramos_bd()
+    df_tramos = load_tramos_bd(cid)
 
     if df_tramos.empty:
         st.info("Sin datos de meta física. Verifica la tabla 'tramos_bd' en Supabase.")

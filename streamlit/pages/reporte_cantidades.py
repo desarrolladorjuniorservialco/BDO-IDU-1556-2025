@@ -105,7 +105,7 @@ def page_reporte_cantidades(perfil: dict) -> None:
     if estados_vis and estado_f == "Todos":
         estados_q = estados_vis
 
-    df = load_cantidades(estados=estados_q)
+    df = load_cantidades(perfil['contrato_id'], estados=estados_q)
 
     if not df.empty and 'fecha' in df.columns:
         fechas = pd.to_datetime(df['fecha'], errors='coerce')

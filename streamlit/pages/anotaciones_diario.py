@@ -124,7 +124,7 @@ def page_anotaciones_diario(perfil: dict) -> None:
     if estados_vis and estado_f == "Todos":
         estados_q = estados_vis
 
-    df = load_reporte_diario(estados=estados_q)
+    df = load_reporte_diario(perfil['contrato_id'], estados=estados_q)
 
     # Filtro de fecha en Python sobre fecha_reporte (maneja NULLs sin excluirlos si no hay filtro)
     if not df.empty and 'fecha_reporte' in df.columns:

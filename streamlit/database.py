@@ -166,12 +166,13 @@ def _chunked_in_query(table: str, column: str, values: list,
 
 @st.cache_data(ttl=60)
 def load_cantidades(
+    contrato_id: str,
     estados: list[str] | None = None,
 ) -> pd.DataFrame:
     """Registros de medición de cantidades de obra."""
     def _q():
         sb    = get_supabase()
-        query = sb.table('registros_cantidades').select('*')
+        query = sb.table('registros_cantidades').select('*').eq('contrato_id', contrato_id)
         if estados:
             query = query.in_('estado', estados)
         return _paginate(query.order('fecha_creacion', desc=True))
@@ -181,13 +182,14 @@ def load_cantidades(
 
 @st.cache_data(ttl=60)
 def load_componentes(
+    contrato_id: str,
     estados: list[str] | None = None,
     componente: str | None = None,
 ) -> pd.DataFrame:
     """Registros de componentes transversales."""
     def _q():
         sb    = get_supabase()
-        query = sb.table('registros_componentes').select('*')
+        query = sb.table('registros_componentes').select('*').eq('contrato_id', contrato_id)
         if estados:
             query = query.in_('estado', estados)
         if componente is not None:
@@ -199,12 +201,13 @@ def load_componentes(
 
 @st.cache_data(ttl=60)
 def load_reporte_diario(
+    contrato_id: str,
     estados: list[str] | None = None,
 ) -> pd.DataFrame:
     """Registros del reporte diario de obra."""
     def _q():
         sb    = get_supabase()
-        query = sb.table('registros_reporte_diario').select('*')
+        query = sb.table('registros_reporte_diario').select('*').eq('contrato_id', contrato_id)
         if estados:
             query = query.in_('estado', estados)
         return _paginate(query.order('fecha_creacion', desc=True))
@@ -217,46 +220,46 @@ def load_reporte_diario(
 # ══════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=300)
-def load_contrato() -> dict:
-    """Datos del contrato IDU-1556-2025."""
+def load_contrato(contrato_id: str) -> dict:
+    """Datos del contrato especificado."""
     def _q():
         sb = get_supabase()
-        return sb.table('contratos').select('*').eq('id', 'IDU-1556-2025').execute()
+        return sb.table('contratos').select('*').eq('id', contrato_id).execute()
 
     df = _safe_query(_q, context='load_contrato')
     return df.iloc[0].to_dict() if not df.empty else {}
 
 
 @st.cache_data(ttl=120)
-def load_presupuesto() -> pd.DataFrame:
+def load_presupuesto(contrato_id: str) -> pd.DataFrame:
     """Ítems de presupuesto (presupuesto_bd)."""
     def _q():
         sb = get_supabase()
-        return _paginate(sb.table('presupuesto_bd').select('*'))
+        return _paginate(sb.table('presupuesto_bd').select('*').eq('contrato_id', contrato_id))
 
     return _safe_query(_q, context='load_presupuesto')
 
 
 @st.cache_data(ttl=300)
-def load_prorrogas() -> pd.DataFrame:
-    """Prórrogas del contrato IDU-1556-2025."""
+def load_prorrogas(contrato_id: str) -> pd.DataFrame:
+    """Prórrogas del contrato."""
     def _q():
         sb = get_supabase()
         return _paginate(sb.table('contratos_prorrogas')
                   .select('*')
-                  .eq('contrato_id', 'IDU-1556-2025')
+                  .eq('contrato_id', contrato_id)
                   .order('numero'))
     return _safe_query(_q, context='load_prorrogas')
 
 
 @st.cache_data(ttl=300)
-def load_adiciones() -> pd.DataFrame:
-    """Adiciones presupuestales del contrato IDU-1556-2025."""
+def load_adiciones(contrato_id: str) -> pd.DataFrame:
+    """Adiciones presupuestales del contrato."""
     def _q():
         sb = get_supabase()
         return _paginate(sb.table('contratos_adiciones')
                   .select('*')
-                  .eq('contrato_id', 'IDU-1556-2025')
+                  .eq('contrato_id', contrato_id)
                   .order('numero'))
     return _safe_query(_q, context='load_adiciones')
 
@@ -304,7 +307,7 @@ def load_fotos_reporte(folios: tuple) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=30)
-def load_anotaciones_generales(limit: int = 300) -> pd.DataFrame:
+def load_anotaciones_generales(contrato_id: str, limit: int = 300) -> pd.DataFrame:
     """
     Anotaciones generales de bitácora.
     Retorna las `limit` más recientes ordenadas ASC (más antigua arriba,
@@ -322,6 +325,7 @@ def load_anotaciones_generales(limit: int = 300) -> pd.DataFrame:
             get_supabase()
             .table('anotaciones_generales')
             .select(_cols)
+            .eq('contrato_id', contrato_id)
             .order('created_at', desc=True)
             .limit(limit)
             .execute()
@@ -335,13 +339,13 @@ def load_anotaciones_generales(limit: int = 300) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
-def load_formulario_pmt() -> pd.DataFrame:
+def load_formulario_pmt(contrato_id: str) -> pd.DataFrame:
     """Formularios PMT registrados en campo."""
     def _q():
         sb = get_supabase()
         return _paginate(sb.table('formulario_pmt')
                   .select('*')
-                  .eq('contrato_id', 'IDU-1556-2025'))
+                  .eq('contrato_id', contrato_id))
     return _safe_query(_q, context='load_formulario_pmt')
 
 
@@ -354,10 +358,10 @@ def load_presupuesto_componentes() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
-def load_tramos_bd() -> pd.DataFrame:
+def load_tramos_bd(contrato_id: str) -> pd.DataFrame:
     """Tramos de obra con meta física y avance ejecutado."""
     def _q():
-        return _paginate(get_supabase().table('tramos_bd').select('*'))
+        return _paginate(get_supabase().table('tramos_bd').select('*').eq('contrato_id', contrato_id))
     return _safe_query(_q, context='load_tramos_bd')
 
 
@@ -405,9 +409,9 @@ def update_tramo_ejecutado(
 
 
 @st.cache_data(ttl=120)
-def load_pmts() -> pd.DataFrame:
+def load_pmts(contrato_id: str) -> pd.DataFrame:
     """Alias de load_formulario_pmt() — compatibilidad."""
-    return load_formulario_pmt()
+    return load_formulario_pmt(contrato_id)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -415,14 +419,14 @@ def load_pmts() -> pd.DataFrame:
 # ══════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=60)
-def load_correspondencia() -> pd.DataFrame:
-    """Registros de correspondencia del contrato IDU-1556-2025."""
+def load_correspondencia(contrato_id: str) -> pd.DataFrame:
+    """Registros de correspondencia del contrato."""
     def _q():
         return _paginate(
             get_supabase()
             .table('correspondencia')
             .select('*')
-            .eq('contrato_id', 'IDU-1556-2025')
+            .eq('contrato_id', contrato_id)
             .order('fecha', desc=True)
         )
     return _safe_query(_q, context='load_correspondencia')

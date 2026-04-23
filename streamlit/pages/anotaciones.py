@@ -115,7 +115,7 @@ def page_anotaciones(perfil: dict) -> None:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Carga y filtrado ───────────────────────────────────────
-    df = load_anotaciones_generales()
+    df = load_anotaciones_generales(perfil['contrato_id'])
 
     df_filt = df.copy() if not df.empty else df
 
