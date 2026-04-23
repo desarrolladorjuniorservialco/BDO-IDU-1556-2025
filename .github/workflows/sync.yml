@@ -30,9 +30,11 @@ jobs:
 
       - name: Ejecutar sync
         env:
-          SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:      ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:         ${{ secrets.SUPABASE_KEY }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          QFIELD_USER:       ${{ secrets.QFIELD_USER }}
-          QFIELD_PASSWORD:   ${{ secrets.QFIELD_PASSWORD }}
+          QFIELD_USER:          ${{ secrets.QFIELD_USER }}
+          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD }}
+          QFIELD_PROJECT_NAME:  ${{ secrets.QFIELD_PROJECT_NAME }}
+          CONTRATO_ID:          ${{ secrets.CONTRATO_ID }}
         run: python sync/sync_qfield.py
