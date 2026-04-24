@@ -21,7 +21,7 @@ def sync_registros_cantidades(supabase, token, project_id):
     print("\n── registros_cantidades ──")
     if not download_gpkg(token, project_id, 'Formulario_Cantidades.gpkg', '/tmp/cantidades.gpkg'):
         return
-    gdf = read_layer('/tmp/cantidades.gpkg', 'Formulario_Cantidades_V2')
+    gdf = read_layer('/tmp/cantidades.gpkg', 'Formulario_Cantidades')
     if gdf is None or gdf.empty:
         return
 

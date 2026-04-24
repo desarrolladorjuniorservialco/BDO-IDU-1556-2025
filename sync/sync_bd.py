@@ -119,13 +119,13 @@ def sync_bd_maquinaria(supabase, token, project_id):
 
 def sync_bd_sst(supabase, token, project_id):
     """
-    [D-07] Layer 'BBD_SST-Ambiental' (doble B — nombre real del GPKG).
+    [D-07] Layer correcto: 'BD_SST-Ambiental' (antes 'BBD_SST-Ambiental' por typo).
     Estructura constante para evitar PGRST102.
     """
     print("\n── bd_sst_ambiental ──")
     if not download_gpkg(token, project_id, 'BD_SST-Ambiental.gpkg', '/tmp/sst.gpkg'):
         return
-    gdf = read_layer('/tmp/sst.gpkg', 'BBD_SST-Ambiental')
+    gdf = read_layer('/tmp/sst.gpkg', 'BD_SST-Ambiental')
     if gdf is None or gdf.empty:
         return
 
