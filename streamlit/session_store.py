@@ -41,7 +41,7 @@ def _store() -> dict:
       {
         session_id (str): {
           'user':         objeto de usuario Supabase,
-          'perfil':       dict (id, nombre, rol, empresa),
+          'perfil':       dict (id, nombre, rol, empresa, contrato_id),
           'access_token': str,
           'current_page': str | None,
           'expires_at':   datetime,

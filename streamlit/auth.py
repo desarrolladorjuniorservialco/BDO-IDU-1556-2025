@@ -211,7 +211,7 @@ def login() -> None:
             # ── Cargar perfil ──────────────────────────────
             perfil_r = (
                 sb.table('perfiles')
-                .select('id, nombre, rol, empresa')
+                .select('id, nombre, rol, empresa, contrato_id')
                 .eq('id', resp.user.id)
                 .execute()
             )
