@@ -47,7 +47,7 @@ def sidebar(perfil: dict) -> str:
         )
 
         # ── Chips de estado rápido ─────────────────────────
-        df_q = load_cantidades()
+        df_q = load_cantidades(perfil['contrato_id'])
         if not df_q.empty:
             total = len(df_q)
             apr   = len(df_q[df_q['estado'] == 'APROBADO'])
