@@ -1,6 +1,6 @@
 {
   "include": [
     { "project_name": "BDO_IDU-1556-2025", "contrato_id": "IDU-1556-2025" },
-    {"project_name":"proyecto_prueba","contrato_id": "IDU-PRUEBA-2026"}
+    {"project_name":"proyecto_prueba","contrato_id": "proyecto_prueba"}
   ]
 }
