@@ -24,7 +24,7 @@ def _infra_a_codigo(valor):
 def sync_tramos_aux_infra(supabase, token, project_id):
     print("\n── tramos_aux_infra ──")
     tmp = '/tmp/tramos_bd.gpkg'
-    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'BD_Tramos.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:
@@ -56,7 +56,7 @@ def sync_tramos_aux_tramos(supabase, token, project_id):
     """Sincroniza el catálogo de tramos desde TramosIDU15562025AUXTRAMOS.gpkg."""
     print("\n── tramos_aux_tramos ──")
     tmp = '/tmp/tramos_aux_tramos.gpkg'
-    if not download_gpkg(token, project_id, 'TramosIDU15562025AUXTRAMOS.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'AUX_Tramos.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:
@@ -83,7 +83,7 @@ def sync_tramos_aux_tramos(supabase, token, project_id):
 def sync_presupuesto_aux_actividad(supabase, token, project_id):
     print("\n── presupuesto_aux_actividad ──")
     tmp = '/tmp/presupuesto_bd.gpkg'
-    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'BD_Presupuesto.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:
@@ -107,7 +107,7 @@ def sync_presupuesto_aux_capitulos(supabase, token, project_id):
     """Sincroniza el catálogo de capítulos desde PresupuestoIDU15562025AUXCAPITULOS.gpkg."""
     print("\n── presupuesto_aux_capitulos ──")
     tmp = '/tmp/presupuesto_aux_cap.gpkg'
-    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025AUXCAPITULOS.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'AUX_Capitulos.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:

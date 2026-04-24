@@ -5,7 +5,7 @@ from .gpkg import download_gpkg, read_layer
 
 def sync_presupuesto_bd(supabase, token, project_id):
     print("\n── presupuesto_bd ──")
-    if not download_gpkg(token, project_id, 'PresupuestoIDU15562025BDPRESUPUESTO.gpkg', '/tmp/presupuesto_bd.gpkg'):
+    if not download_gpkg(token, project_id, 'BD_Presupuesto.gpkg', '/tmp/presupuesto_bd.gpkg'):
         return
     gdf = read_layer('/tmp/presupuesto_bd.gpkg')
     if gdf is None or gdf.empty:
@@ -76,7 +76,7 @@ def sync_presupuesto_componentes_aux(supabase, token, project_id):
     """
     print("\n── presupuesto_componentes_aux ──")
     tmp = '/tmp/ppto_comp_aux.gpkg'
-    if not download_gpkg(token, project_id, 'ppto_componentes__aux_pptcomponentes.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'AUX_Componentes.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:

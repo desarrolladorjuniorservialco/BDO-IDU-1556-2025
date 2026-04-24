@@ -35,7 +35,7 @@ def sync_tramos_bd(supabase, token, project_id):
     """
     print("\n── tramos_bd ──")
     tmp = '/tmp/tramos_bd.gpkg'
-    if not download_gpkg(token, project_id, 'TramosIDU15562025BDTRAMOS.gpkg', tmp):
+    if not download_gpkg(token, project_id, 'BD_Tramos.gpkg', tmp):
         return
     gdf = read_layer(tmp)
     if gdf is None or gdf.empty:

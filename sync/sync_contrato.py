@@ -17,7 +17,7 @@ from .config import CONTRATO_ID
 from .gpkg import download_file
 from .utils import safe
 
-EXCEL_CONTRATO = 'Contrato_IDU_1556_2025.xlsx'
+EXCEL_CONTRATO = 'Contrato.xlsx'
 TMP_PATH       = '/tmp/contrato.xlsx'
 
 
