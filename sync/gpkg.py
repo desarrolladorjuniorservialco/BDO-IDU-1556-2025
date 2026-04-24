@@ -55,6 +55,8 @@ def _find_file_url(token, project_id, filename) -> str | None:
 
 def download_file(token, project_id, filename, tmp_path):
     """Descarga cualquier archivo del proyecto QFieldCloud (GPKG, XLSX, etc.)."""
+    pkg_url = f'{BASE_URL}/packages/{project_id}/latest/files/{filename}/'
+
     url = _find_file_url(token, project_id, filename)
     r = requests.get(url, headers=qfield_headers(token), timeout=120)
     if r.status_code == 200:
@@ -62,6 +64,18 @@ def download_file(token, project_id, filename, tmp_path):
             f.write(r.content)
         print(f"  ✓ Descargado {filename} ({len(r.content)/1024:.1f} KB)")
         return True
+
+    # Fallback: packages endpoint (archivos sincronizados desde la app QField).
+    # Necesario cuando el rol QFIELD_USER no tiene acceso a project-files pero
+    # sí al paquete generado por la última sincronización desde la app.
+    if r.status_code in (401, 403) and url != pkg_url:
+        r2 = requests.get(pkg_url, headers=qfield_headers(token), timeout=120)
+        if r2.status_code == 200:
+            with open(tmp_path, 'wb') as f:
+                f.write(r2.content)
+            print(f"  ✓ Descargado {filename} vía packages ({len(r2.content)/1024:.1f} KB)")
+            return True
+        print(f"  ⚠ packages también falló: {r2.status_code}")
 
     print(f"  ⚠ {r.status_code} en {url}")
     print(f"  ✗ No se pudo descargar {filename} — omitido")
