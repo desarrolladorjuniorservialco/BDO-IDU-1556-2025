@@ -1,3 +1,4 @@
+from .config import CONTRATO_ID
 from .utils import safe, safe_num
 from .gpkg import download_gpkg, read_layer
 from .sync_lookup import _infra_a_codigo
@@ -13,14 +14,17 @@ def sync_localidades(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
-            'loc_codigo': safe(row.get('loccodigo')  or row.get('loc_codigo')),
-            'loc_nombre': safe(row.get('locnombre')  or row.get('loc_nombre')),
-            'loc_admin':  safe(row.get('locaadmini') or row.get('loc_admin')),
-            'loc_area':   safe_num(row.get('locarea') or row.get('loc_area')),
+            'contrato_id': CONTRATO_ID,
+            'loc_codigo':  safe(row.get('loccodigo')  or row.get('loc_codigo')),
+            'loc_nombre':  safe(row.get('locnombre')  or row.get('loc_nombre')),
+            'loc_admin':   safe(row.get('locaadmini') or row.get('loc_admin')),
+            'loc_area':    safe_num(row.get('locarea') or row.get('loc_area')),
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('loc_codigo') and data.get('loc_nombre'):
-            supabase.table('localidades').upsert(data, on_conflict='loc_codigo').execute()
+            supabase.table('localidades').upsert(
+                data, on_conflict='contrato_id,loc_codigo'
+            ).execute()
             count += 1
     print(f"  → {count} upserted")
 
@@ -39,6 +43,7 @@ def sync_tramos_bd(supabase, token, project_id):
     count = 0
     for _, row in gdf.iterrows():
         data = {
+            'contrato_id':       CONTRATO_ID,
             'id_tramo':          safe(row.get('id_tramo')),
             'tramo_descripcion': safe(row.get('tramo_descripcion')),
             'via_principal':     safe(row.get('via_principal')),
@@ -53,6 +58,8 @@ def sync_tramos_bd(supabase, token, project_id):
         }
         data = {k: v for k, v in data.items() if v is not None}
         if data.get('id_tramo'):
-            supabase.table('tramos_bd').upsert(data, on_conflict='id_tramo').execute()
+            supabase.table('tramos_bd').upsert(
+                data, on_conflict='contrato_id,id_tramo'
+            ).execute()
             count += 1
     print(f"  → {count} upserted")

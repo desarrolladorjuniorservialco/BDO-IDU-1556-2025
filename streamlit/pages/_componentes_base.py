@@ -268,6 +268,7 @@ def panel_componentes(
         estados_q = estados_vis
 
     df = load_componentes(
+        perfil['contrato_id'],
         estados=estados_q,
         componente=_COMPONENTE_VALOR.get(filtro_tipo) if filtro_tipo else None,
     )

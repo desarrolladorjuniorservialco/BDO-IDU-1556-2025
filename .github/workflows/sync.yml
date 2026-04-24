@@ -1,20 +1,30 @@
-name: Sync QFieldCloud → Supabase
+name: Sync → Supabase
 
 on:
   schedule:
     - cron: '0 14 * * 1-6'  # 9:00 AM COT (UTC-5)
     - cron: '0 18 * * 1-6'  # 1:00 PM COT (UTC-5)
     - cron: '0 22 * * 1-6'  # 5:00 PM COT (UTC-5)
-
-  # Permite correr manualmente desde GitHub
   workflow_dispatch:
 
 jobs:
+  load-contracts:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: echo "matrix=$(cat contracts.json)" >> $GITHUB_OUTPUT
+
   sync:
-    name: Sincronizar registros y fotos
+    needs: load-contracts
     runs-on: ubuntu-latest
     timeout-minutes: 25
-
+    strategy:
+      matrix: ${{ fromJson(needs.load-contracts.outputs.matrix) }}
+      fail-fast: false
+    name: Sync ${{ matrix.contrato_id }}
     steps:
       - name: Checkout repositorio
         uses: actions/checkout@v4
@@ -30,9 +40,11 @@ jobs:
 
       - name: Ejecutar sync
         env:
-          SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:      ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:         ${{ secrets.SUPABASE_KEY }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          QFIELD_USER:       ${{ secrets.QFIELD_USER }}
-          QFIELD_PASSWORD:   ${{ secrets.QFIELD_PASSWORD }}
-        run: python sync/sync_qfield.py
+          QFIELD_USER:          ${{ secrets.QFIELD_USER }}
+          QFIELD_PASSWORD:      ${{ secrets.QFIELD_PASSWORD }}
+          QFIELD_PROJECT_NAME:  ${{ matrix.project_name }}
+          CONTRATO_ID:          ${{ matrix.contrato_id }}
+        run: python -m sync.sync_qfield

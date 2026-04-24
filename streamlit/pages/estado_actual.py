@@ -88,12 +88,13 @@ def _timeline_html(pct: float, dias_trans: int, dias_rest: int,
     """
 
 
-def page_estado_actual() -> None:
+def page_estado_actual(perfil: dict) -> None:
     section_badge("Estado Actual del Contrato", "blue")
+    cid = perfil['contrato_id']
 
-    contrato = load_contrato()
-    df_pro   = load_prorrogas()
-    df_adi   = load_adiciones()
+    contrato = load_contrato(cid)
+    df_pro   = load_prorrogas(cid)
+    df_adi   = load_adiciones(cid)
 
     if not contrato:
         st.info("Sin datos de contrato en la tabla 'contratos'. "

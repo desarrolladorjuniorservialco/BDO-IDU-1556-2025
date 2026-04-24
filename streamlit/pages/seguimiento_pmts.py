@@ -16,7 +16,7 @@ def page_seguimiento_pmts(perfil: dict) -> None:
     section_badge("Seguimiento de Planes de Manejo de Tránsito", "red")
     st.markdown("### Estado y Vigencia de los PMTs")
 
-    df_pmt = load_pmts()
+    df_pmt = load_pmts(perfil['contrato_id'])
 
     if df_pmt.empty:
         st.info("Sin registros de PMTs. Configura la tabla 'pmts' en Supabase.")

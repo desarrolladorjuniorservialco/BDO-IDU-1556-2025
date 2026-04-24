@@ -189,7 +189,7 @@ def page_correspondencia(perfil: dict) -> None:
     section_badge("Correspondencia", "teal")
     st.markdown("### Seguimiento de Correspondencia")
 
-    df_raw = load_correspondencia()
+    df_raw = load_correspondencia(perfil['contrato_id'])
 
     # ── Sección de filtros ────────────────────────────────────
     st.markdown(

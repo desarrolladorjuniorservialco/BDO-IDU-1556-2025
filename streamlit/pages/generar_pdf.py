@@ -121,22 +121,22 @@ def page_generar_pdf(perfil: dict) -> None:
     for tipo_label in tipos_sel:
         tipo_key = _TIPOS[tipo_label]
         if tipo_key == "cantidades":
-            df_t = load_cantidades(estados=estados_q)
+            df_t = load_cantidades(perfil['contrato_id'], estados=estados_q)
             if not df_t.empty and 'fecha' in df_t.columns:
                 fechas = pd.to_datetime(df_t['fecha'], errors='coerce')
                 df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "componentes":
-            df_t = load_componentes(estados=estados_q)
+            df_t = load_componentes(perfil['contrato_id'], estados=estados_q)
             if not df_t.empty and 'fecha' in df_t.columns:
                 fechas = pd.to_datetime(df_t['fecha'], errors='coerce')
                 df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "diario":
-            df_t = load_reporte_diario(estados=estados_q)
+            df_t = load_reporte_diario(perfil['contrato_id'], estados=estados_q)
             if not df_t.empty and 'fecha_reporte' in df_t.columns:
                 fechas = pd.to_datetime(df_t['fecha_reporte'], errors='coerce')
                 df_t = df_t[(fechas >= pd.Timestamp(fi)) & (fechas <= pd.Timestamp(ff)) | fechas.isna()]
         elif tipo_key == "anotaciones":
-            df_t = load_anotaciones_generales()
+            df_t = load_anotaciones_generales(perfil['contrato_id'])
             if not df_t.empty and 'fecha' in df_t.columns:
                 fechas_norm = pd.to_datetime(df_t['fecha'], errors='coerce').dt.date
                 df_t = df_t[(fechas_norm >= fi) & (fechas_norm <= ff)]
@@ -163,7 +163,7 @@ def page_generar_pdf(perfil: dict) -> None:
 
         frames[tipo_label] = df_t
 
-    contrato        = load_contrato()
+    contrato        = load_contrato(perfil['contrato_id'])
     total_registros = sum(len(df) for df in frames.values())
 
     # ── KPIs de vista previa ───────────────────────────────

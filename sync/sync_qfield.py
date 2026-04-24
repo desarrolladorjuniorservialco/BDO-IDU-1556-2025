@@ -64,6 +64,7 @@ if __name__ == '__main__' and __package__ is None:
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from .config import CONTRATO_ID
 from .connections import qfield_login, get_supabase, get_project_id
 from .sync_contrato import sync_contrato_excel
 from .sync_lookup import (
@@ -114,7 +115,7 @@ def _run_group(tasks: list[tuple]) -> None:
 
 def main():
     print(f"\n{'='*60}")
-    print(f"SYNC BDO IDU-1556-2025 · {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"SYNC {CONTRATO_ID} · {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'='*60}")
 
     token      = qfield_login()

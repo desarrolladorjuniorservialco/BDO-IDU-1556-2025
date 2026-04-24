@@ -19,6 +19,7 @@ Vuelve a True cuando termines para recuperar la velocidad normal.
 
 from datetime import datetime, timedelta
 
+from .config import CONTRATO_ID
 from .utils import safe
 from .gpkg import download_gpkg, read_layer
 from .photos import upload_photo
@@ -46,7 +47,7 @@ def _fetch_existing_ids(supabase, tabla: str) -> set:
         if USE_INCREMENTAL_RF:
             since = (datetime.utcnow() - timedelta(days=SINCE_DAYS)).isoformat()
         while True:
-            q = supabase.table(tabla).select('id_unico')
+            q = supabase.table(tabla).select('id_unico').eq('contrato_id', CONTRATO_ID)
             if since:
                 q = q.gte('created_at', since)
             resp  = q.range(offset, offset + chunk - 1).execute()
@@ -102,6 +103,7 @@ def sync_rf_cantidades(supabase, token, project_id):
 
         try:
             supabase.table('rf_cantidades').insert({
+                'contrato_id':       CONTRATO_ID,
                 'folio':             folio,
                 'id_unico':          id_unico,
                 'observacion':       safe(row.get('observacion')),
@@ -148,6 +150,7 @@ def sync_rf_componentes(supabase, token, project_id):
 
         try:
             supabase.table('rf_componentes').insert({
+                'contrato_id':   CONTRATO_ID,
                 'folio':         folio,
                 'id_unico':      id_unico,
                 'observaciones': safe(row.get('observaciones')),
@@ -196,6 +199,7 @@ def sync_rf_reporte_diario(supabase, token, project_id):
 
         try:
             supabase.table('rf_reporte_diario').insert({
+                'contrato_id':   CONTRATO_ID,
                 'folio':         folio,
                 'id_unico':      id_unico,
                 'observaciones': safe(row.get('observaciones')),
