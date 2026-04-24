@@ -27,9 +27,12 @@ def list_project_files(token, project_id) -> list[dict]:
 def _find_file_url(token, project_id, filename) -> str | None:
     """
     Busca la URL de descarga de un archivo por nombre exacto o parcial.
-    Primero prueba rutas directas; si fallan, lista los archivos del proyecto.
+    Prueba primero project-files; si fallan, intenta packages (archivos
+    generados por QField al sincronizar desde la app).
     """
-    # Rutas directas (sin listado)
+    name_lower = filename.lower()
+
+    # 1. Project files — endpoint estándar
     candidates = [
         f'{BASE_URL}/files/{project_id}/{filename}/',
         f'{BASE_URL}/projects/{project_id}/files/{filename}/',
@@ -39,14 +42,22 @@ def _find_file_url(token, project_id, filename) -> str | None:
         if r.status_code == 200:
             return url
 
-    # Búsqueda en el listado del proyecto
+    # 2. Búsqueda en el listado del proyecto (project files con subdirectorios)
     files = list_project_files(token, project_id)
-    name_lower = filename.lower()
     for f in files:
         path = f.get('name') or f.get('path') or f.get('filename') or ''
         if path.lower().endswith(name_lower) or name_lower in path.lower():
-            # Construir URL a partir del path encontrado
-            return f'{BASE_URL}/files/{project_id}/{path}/'
+            url = f'{BASE_URL}/files/{project_id}/{path}/'
+            r = requests.head(url, headers=qfield_headers(token), timeout=30)
+            if r.status_code == 200:
+                return url
+
+    # 3. Package files — archivos generados por QField al sincronizar
+    pkg_url = f'{BASE_URL}/packages/{project_id}/latest/files/{filename}/'
+    r = requests.head(pkg_url, headers=qfield_headers(token), timeout=30)
+    if r.status_code == 200:
+        return pkg_url
+
     return None
 
 
@@ -54,10 +65,11 @@ def download_file(token, project_id, filename, tmp_path):
     """Descarga cualquier archivo del proyecto QFieldCloud (GPKG, XLSX, etc.)."""
     url = _find_file_url(token, project_id, filename)
     if url is None:
-        # Último intento: rutas directas con GET completo para ver el código de error real
+        # Último intento: GET completo en todos los endpoints para ver el error real
         for u in [
             f'{BASE_URL}/files/{project_id}/{filename}/',
             f'{BASE_URL}/projects/{project_id}/files/{filename}/',
+            f'{BASE_URL}/packages/{project_id}/latest/files/{filename}/',
         ]:
             r = requests.get(u, headers=qfield_headers(token), timeout=120)
             if r.status_code == 200:
