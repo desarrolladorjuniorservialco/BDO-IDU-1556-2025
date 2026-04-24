@@ -67,7 +67,7 @@ from datetime import datetime
 from .config import CONTRATO_ID
 from .connections import qfield_login, get_supabase, get_project_id
 from .gpkg import list_project_files
-from .sync_contrato import sync_contrato_excel
+from .sync_contrato import ensure_contrato, sync_contrato_excel
 from .sync_lookup import (
     sync_tramos_aux_infra,
     sync_tramos_aux_tramos,
@@ -135,7 +135,11 @@ def main():
     else:
         print("\n⚠ No se pudieron listar los archivos del proyecto")
 
-    # 0b. Contrato — secuencial primero (otras tablas referencian contratos.id)
+    # 0b. Garantizar fila base en contratos (FK padre de todas las tablas)
+    print("\n── ensure_contrato ──")
+    ensure_contrato(supabase)
+
+    # 0c. Contrato Excel — enriquece la fila con datos reales del archivo
     _run('sync_contrato_excel', sync_contrato_excel, *A)
 
     # 1. Lookup — 4 catálogos independientes en paralelo

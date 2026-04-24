@@ -14,7 +14,7 @@ import openpyxl
 from datetime import datetime, date
 
 from .config import CONTRATO_ID
-from .gpkg import download_file
+from .gpkg import download_file, list_project_files
 from .utils import safe
 
 EXCEL_CONTRATO = 'Contrato.xlsx'
@@ -22,6 +22,27 @@ TMP_PATH       = '/tmp/contrato.xlsx'
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
+
+def ensure_contrato(supabase):
+    """
+    Garantiza que exista la fila base en contratos antes de cualquier sync.
+    Sin esta fila todas las tablas con FK a contratos(id) fallan con 23503.
+    Si el Excel no está disponible crea un registro mínimo; sync_contrato_excel
+    lo completará con los datos reales cuando el archivo esté accesible.
+    """
+    try:
+        res = supabase.table('contratos').select('id').eq('id', CONTRATO_ID).execute()
+        if not res.data:
+            supabase.table('contratos').upsert(
+                {'id': CONTRATO_ID, 'nombre': CONTRATO_ID,
+                 'contratista': '', 'intrventoria': '', 'activo': True},
+                on_conflict='id'
+            ).execute()
+            print(f"  · Fila base creada en contratos ({CONTRATO_ID})")
+        else:
+            print(f"  · Contrato {CONTRATO_ID} ya existe")
+    except Exception as e:
+        print(f"  ⚠ No se pudo garantizar fila en contratos: {e}")
 
 def _to_date(val):
     """Convierte datetime/date de openpyxl a 'YYYY-MM-DD', o devuelve None."""
@@ -57,9 +78,27 @@ def _sheet_rows(ws):
 
 
 def _load_wb(token, project_id):
-    """Descarga el Excel y retorna el workbook, o None si falla."""
+    """
+    Descarga el Excel y retorna el workbook.
+    Intenta primero con el nombre estándar; si no lo encuentra busca en el
+    listado del proyecto cualquier archivo que contenga 'contrato' y sea .xlsx
+    (cubre nombres históricos como Contrato_IDU_1556_2025.xlsx).
+    """
     if not download_file(token, project_id, EXCEL_CONTRATO, TMP_PATH):
-        return None
+        files = list_project_files(token, project_id)
+        fallback = next(
+            (
+                (f.get('name') or f.get('path') or f.get('filename') or '').split('/')[-1]
+                for f in files
+                if 'contrato' in (f.get('name') or f.get('path') or f.get('filename') or '').lower()
+                and (f.get('name') or f.get('path') or f.get('filename') or '').lower().endswith('.xlsx')
+            ),
+            None,
+        )
+        if not fallback or not download_file(token, project_id, fallback, TMP_PATH):
+            print(f"  ✗ No se encontró ningún Excel de contrato en el proyecto")
+            return None
+        print(f"  · Usando Excel alternativo: {fallback}")
     try:
         return openpyxl.load_workbook(TMP_PATH, data_only=True)
     except Exception as e:
