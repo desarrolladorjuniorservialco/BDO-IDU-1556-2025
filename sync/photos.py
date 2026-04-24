@@ -12,7 +12,7 @@ import io
 import requests
 from PIL import Image
 
-from .config import BASE_URL, SUPABASE_URL, STORAGE_BUCKET
+from .config import BASE_URL, SUPABASE_URL, STORAGE_BUCKET, CONTRATO_ID
 from .connections import qfield_headers
 
 # ── configuración de compresión ────────────────────────────────────────────
@@ -110,7 +110,7 @@ def upload_photo(supabase, token, project_id, file_path, folio):
     # Forzar extensión .jpg después de comprimir a JPEG
     base         = filename.rsplit('.', 1)[0] if '.' in filename else filename
     storage_name = f"{base}.jpg"
-    storage_path = f"{folio}/{storage_name}"
+    storage_path = f"{CONTRATO_ID}/{folio}/{storage_name}"
 
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
     try:
