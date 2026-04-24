@@ -148,8 +148,12 @@ def main() -> None:
                 st.session_state['perfil']        = data['perfil']
                 st.session_state['_access_token'] = data['access_token']
                 st.session_state['_session_id']   = sid
-                if data.get('current_page'):
-                    st.session_state['current_page'] = data['current_page']
+                # URL tiene prioridad sobre session_store para la página activa
+                page_from_url   = st.query_params.get('page', '')
+                page_from_store = data.get('current_page', '')
+                target_page     = page_from_url or page_from_store
+                if target_page:
+                    st.session_state['current_page'] = target_page
                 restored = True
 
         if not restored and sid:
@@ -173,6 +177,8 @@ def main() -> None:
 
     # ── 4. Renderizar sidebar y obtener página activa ──────
     page = sidebar(perfil)
+    if st.query_params.get('page') != page:
+        st.query_params['page'] = page
 
     with st.sidebar:
         st.divider()

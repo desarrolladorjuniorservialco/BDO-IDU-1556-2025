@@ -112,6 +112,7 @@ def sidebar(perfil: dict) -> str:
                     if st.button(page, key=f"nav_{page}", width="stretch"):
                         st.session_state['current_page'] = page
                         update_page(st.session_state.get('_session_id', ''), page)
+                        st.query_params['page'] = page
                         st.rerun()
 
         # ── Cerrar sesión ──────────────────────────────────
