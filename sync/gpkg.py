@@ -78,9 +78,9 @@ def download_file(token, project_id, filename, tmp_path):
         if r2.status_code == 400:
             print(f"  ⚠ packages: proyecto sin paquete (nunca sincronizado desde QField)")
         else:
-            print(f"  ⚠ packages también falló: {r2.status_code}")
+            print(f"  ⚠ packages también falló: {r2.status_code} — {r2.text[:200]}")
 
-    print(f"  ⚠ {r.status_code} en {url}")
+    print(f"  ⚠ {r.status_code} en {url} — {r.text[:200]}")
     print(f"  ✗ No se pudo descargar {filename} — omitido")
     return False
 
