@@ -17,8 +17,6 @@ Si necesitas regenerar la BD desde cero o forzar re-sync completo:
 Vuelve a True cuando termines para recuperar la velocidad normal.
 """
 
-from datetime import datetime, timedelta
-
 from .config import CONTRATO_ID
 from .utils import safe
 from .gpkg import download_gpkg, read_layer
@@ -43,14 +41,9 @@ def _fetch_existing_ids(supabase, tabla: str) -> set:
     try:
         offset = 0
         chunk  = 1000
-        since  = None
-        if USE_INCREMENTAL_RF:
-            since = (datetime.utcnow() - timedelta(days=SINCE_DAYS)).isoformat()
         while True:
-            q = supabase.table(tabla).select('id_unico').eq('contrato_id', CONTRATO_ID)
-            if since:
-                q = q.gte('created_at', since)
-            resp  = q.range(offset, offset + chunk - 1).execute()
+            q    = supabase.table(tabla).select('id_unico').eq('contrato_id', CONTRATO_ID)
+            resp = q.range(offset, offset + chunk - 1).execute()
             batch = resp.data or []
             for row in batch:
                 uid = row.get('id_unico')
@@ -59,7 +52,7 @@ def _fetch_existing_ids(supabase, tabla: str) -> set:
             if len(batch) < chunk:
                 break
             offset += chunk
-        modo = f"incremental ({SINCE_DAYS}d)" if since else "full"
+        modo = f"incremental ({SINCE_DAYS}d)" if USE_INCREMENTAL_RF else "full"
         print(f"  · {len(existentes)} IDs existentes en {tabla} [{modo}]")
     except Exception as e:
         print(f"  ⚠ No se pudo obtener registros existentes de {tabla}: {e}")

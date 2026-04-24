@@ -28,7 +28,7 @@ def sync_bd_personal(supabase, token, project_id):
             'latitud':            lat,
         }
         if data.get('folio'):
-            rows.append({k: v for k, v in data.items() if v is not None})
+            rows.append(data)
 
     try:
         supabase.table('bd_personal_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
@@ -63,7 +63,7 @@ def sync_bd_climatica(supabase, token, project_id):
             'latitud':       lat,
         }
         if data.get('folio'):
-            rows.append({k: v for k, v in data.items() if v is not None})
+            rows.append(data)
 
     try:
         supabase.table('bd_condicion_climatica').delete().eq('contrato_id', CONTRATO_ID).execute()
@@ -106,7 +106,7 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'latitud':               lat,
         }
         if data.get('folio'):
-            rows.append({k: v for k, v in data.items() if v is not None})
+            rows.append(data)
 
     try:
         supabase.table('bd_maquinaria_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
@@ -145,7 +145,7 @@ def sync_bd_sst(supabase, token, project_id):
             'extintor':          safe_num(row.get('extintor')),
         }
         if data.get('folio'):
-            rows.append({k: v for k, v in data.items() if v is not None})
+            rows.append(data)
 
     try:
         supabase.table('bd_sst_ambiental').delete().eq('contrato_id', CONTRATO_ID).execute()
