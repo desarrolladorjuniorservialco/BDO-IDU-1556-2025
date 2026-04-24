@@ -16,7 +16,11 @@ def qfield_login():
         timeout=30,
     )
     r.raise_for_status()
-    token = r.json().get('token')
+    body = r.json()
+    # QFieldCloud puede devolver el token bajo 'token' o 'key' según la versión
+    token = body.get('token') or body.get('key')
+    if not token:
+        raise Exception(f"Login exitoso pero sin token en la respuesta: {list(body.keys())}")
     print("✓ QFieldCloud autenticado")
     return token
 
