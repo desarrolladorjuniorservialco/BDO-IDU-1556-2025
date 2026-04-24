@@ -66,6 +66,7 @@ from datetime import datetime
 
 from .config import CONTRATO_ID
 from .connections import qfield_login, get_supabase, get_project_id
+from .gpkg import list_project_files
 from .sync_contrato import sync_contrato_excel
 from .sync_lookup import (
     sync_tramos_aux_infra,
@@ -124,7 +125,17 @@ def main():
 
     A = (supabase, token, project_id)   # args comunes
 
-    # 0. Contrato — secuencial primero (otras tablas referencian contratos.id)
+    # 0a. Listar archivos disponibles (diagnóstico)
+    files = list_project_files(token, project_id)
+    if files:
+        print(f"\nArchivos en el proyecto ({len(files)}):")
+        for f in files:
+            path = f.get('name') or f.get('path') or f.get('filename') or str(f)
+            print(f"  · {path}")
+    else:
+        print("\n⚠ No se pudieron listar los archivos del proyecto")
+
+    # 0b. Contrato — secuencial primero (otras tablas referencian contratos.id)
     _run('sync_contrato_excel', sync_contrato_excel, *A)
 
     # 1. Lookup — 4 catálogos independientes en paralelo
