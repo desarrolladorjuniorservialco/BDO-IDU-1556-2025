@@ -24,6 +24,7 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.load-contracts.outputs.matrix) }}
       fail-fast: false
+      max-parallel: 1
     name: Sync ${{ matrix.contrato_id }}
     steps:
       - name: Checkout repositorio
