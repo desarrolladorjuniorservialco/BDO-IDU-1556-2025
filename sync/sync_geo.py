@@ -30,9 +30,6 @@ def sync_localidades(supabase, token, project_id):
 
 
 def sync_tramos_bd(supabase, token, project_id):
-    """
-    [D-08] GPKG tiene 'ciclorruta_km' (con doble r), NO 'cicloruta_km'.
-    """
     print("\n── tramos_bd ──")
     tmp = '/tmp/tramos_bd.gpkg'
     if not download_gpkg(token, project_id, 'BD_Tramos.gpkg', tmp):
@@ -52,7 +49,6 @@ def sync_tramos_bd(supabase, token, project_id):
             'localidad':         safe(row.get('localidad')),
             'infraestructura':   _infra_a_codigo(row.get('infraestructura')),
             'observaciones':     safe(row.get('observaciones')),
-            # [D-08] columna real en GPKG: 'ciclorruta_km' (doble r)
             'cicloruta_km':      safe_num(row.get('ciclorruta_km') or row.get('cicloruta_km')),
             'esp_publico_m2':    safe_num(row.get('esp_publico_m2')),
         }

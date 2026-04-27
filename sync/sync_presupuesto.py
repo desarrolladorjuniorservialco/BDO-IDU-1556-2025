@@ -33,10 +33,6 @@ def sync_presupuesto_bd(supabase, token, project_id):
 
 
 def sync_presupuesto_componentes_bd(supabase, token, project_id):
-    """
-    [D-09] GPKG tiene TYPO 'compenente' en lugar de 'componente'.
-    Se lee con OR para cubrir cuando corrijan el GPKG.
-    """
     print("\n── presupuesto_componentes_bd ──")
     if not download_gpkg(token, project_id, 'Presupuesto_Componentes.gpkg', '/tmp/ppto_comp.gpkg'):
         return
@@ -49,7 +45,6 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
             'contrato_id':     CONTRATO_ID,
             'capitulo_num':    safe(row.get('capitulo_num')),
             'capitulo':        safe(row.get('capitulo')),
-            # [D-09] typo real en GPKG: 'compenente'; OR para versión corregida futura
             'componente':      safe(row.get('compenente') or row.get('componente')),
             'tipo_actividad':  safe(row.get('tipo_actividad')),
             'codigo_idu':      safe(row.get('codigo_idu')),
@@ -69,11 +64,6 @@ def sync_presupuesto_componentes_bd(supabase, token, project_id):
 
 
 def sync_presupuesto_componentes_aux(supabase, token, project_id):
-    """
-    Sincroniza presupuesto_componentes_aux desde
-    ppto_componentes__aux_pptcomponentes.gpkg.
-    Sin clave única: se hace delete+insert para mantener consistencia.
-    """
     print("\n── presupuesto_componentes_aux ──")
     tmp = '/tmp/ppto_comp_aux.gpkg'
     if not download_gpkg(token, project_id, 'AUX_Componentes.gpkg', tmp):
@@ -82,7 +72,6 @@ def sync_presupuesto_componentes_aux(supabase, token, project_id):
     if gdf is None or gdf.empty:
         return
 
-    # delete + insert scoped to this contract (no UNIQUE en la tabla)
     supabase.table('presupuesto_componentes_aux').delete().eq('contrato_id', CONTRATO_ID).execute()
 
     rows = []
@@ -90,7 +79,6 @@ def sync_presupuesto_componentes_aux(supabase, token, project_id):
         data = {
             'contrato_id':    CONTRATO_ID,
             'codigo_idu':     safe(row.get('codigo_idu')),
-            # [D-09] mismo typo posible: 'compenente'
             'componente':     safe(row.get('compenente') or row.get('componente')),
             'tipo_actividad': safe(row.get('tipo_actividad')),
             'capitulo':       safe(row.get('capitulo')),

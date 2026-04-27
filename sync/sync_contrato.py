@@ -1,14 +1,13 @@
 """
-sync_contrato.py — Seguimiento contractual · BDO IDU-1556-2025
+sync_contrato.py — Seguimiento contractual
 
-Lee Contrato_IDU_1556_2025.xlsx una sola vez y sincroniza:
-  · contratos          ← hoja BD_CTO_INI
+Lee Contrato.xlsx y sincroniza:
+  · contratos           ← hoja BD_CTO_INI
   · contratos_prorrogas ← hoja BD_CTO_PRO
   · contratos_adiciones ← hoja BD_CTO_ADI
 
-Los contadores prorrogas/adiciones y los valores plazo_actual/valor_actual
-de la tabla contratos son mantenidos automáticamente por triggers de BD;
-esta función sólo upserta los datos base y el detalle de cada hoja.
+Los contadores prorrogas/adiciones y plazo_actual/valor_actual
+se mantienen por triggers de BD; este módulo solo upserta los datos.
 """
 import openpyxl
 from datetime import datetime, date

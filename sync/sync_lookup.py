@@ -53,7 +53,6 @@ def sync_tramos_aux_infra(supabase, token, project_id):
 
 
 def sync_tramos_aux_tramos(supabase, token, project_id):
-    """Sincroniza el catálogo de tramos desde TramosIDU15562025AUXTRAMOS.gpkg."""
     print("\n── tramos_aux_tramos ──")
     tmp = '/tmp/tramos_aux_tramos.gpkg'
     if not download_gpkg(token, project_id, 'AUX_Tramos.gpkg', tmp):
@@ -104,7 +103,6 @@ def sync_presupuesto_aux_actividad(supabase, token, project_id):
 
 
 def sync_presupuesto_aux_capitulos(supabase, token, project_id):
-    """Sincroniza el catálogo de capítulos desde PresupuestoIDU15562025AUXCAPITULOS.gpkg."""
     print("\n── presupuesto_aux_capitulos ──")
     tmp = '/tmp/presupuesto_aux_cap.gpkg'
     if not download_gpkg(token, project_id, 'AUX_Capitulos.gpkg', tmp):
