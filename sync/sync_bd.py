@@ -3,21 +3,34 @@ from .utils import safe, safe_num, coords_from_geom
 from .gpkg import download_gpkg, read_layer
 
 
-def sync_bd_personal(supabase, token, project_id):
-    """
-    [D-04] Columnas corregidas. Estructura constante para evitar PGRST102.
-    """
-    print("\n── bd_personal_obra ──")
-    if not download_gpkg(token, project_id, 'BD_PersonalObra.gpkg', '/tmp/personal.gpkg'):
+def _sync_bd_table(supabase, token, project_id, table, gpkg_file, tmp_path, layer, build_row):
+    """Descarga un GPKG, reemplaza todos los registros del contrato y los re-inserta."""
+    print(f"\n── {table} ──")
+    if not download_gpkg(token, project_id, gpkg_file, tmp_path):
         return
-    gdf = read_layer('/tmp/personal.gpkg')
+    gdf = read_layer(tmp_path, layer)
     if gdf is None or gdf.empty:
         return
 
     rows = []
     for _, row in gdf.iterrows():
         lat, lon = coords_from_geom(row)
-        data = {
+        data = build_row(row, lat, lon)
+        if data.get('folio'):
+            rows.append(data)
+
+    try:
+        supabase.table(table).delete().eq('contrato_id', CONTRATO_ID).execute()
+        if rows:
+            supabase.table(table).insert(rows).execute()
+        print(f"  → {len(rows)} insertados")
+    except Exception as e:
+        print(f"  ✗ Error en {table}: {e}")
+
+
+def sync_bd_personal(supabase, token, project_id):
+    def _row(row, lat, lon):
+        return {
             'contrato_id':        CONTRATO_ID,
             'folio':              safe(row.get('folio')),
             'inspectores':        safe_num(row.get('inspectores')),
@@ -27,33 +40,13 @@ def sync_bd_personal(supabase, token, project_id):
             'longitud':           lon,
             'latitud':            lat,
         }
-        if data.get('folio'):
-            rows.append(data)
-
-    try:
-        supabase.table('bd_personal_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
-        if rows:
-            supabase.table('bd_personal_obra').insert(rows).execute()
-        print(f"  → {len(rows)} insertados")
-    except Exception as e:
-        print(f"  ✗ Error en bd_personal_obra: {e}")
+    _sync_bd_table(supabase, token, project_id,
+                   'bd_personal_obra', 'BD_PersonalObra.gpkg', '/tmp/personal.gpkg', None, _row)
 
 
 def sync_bd_climatica(supabase, token, project_id):
-    """
-    [D-05] Columna 'estado_clima' corregida. Estructura constante para evitar PGRST102.
-    """
-    print("\n── bd_condicion_climatica ──")
-    if not download_gpkg(token, project_id, 'BD_CondicionClimatica.gpkg', '/tmp/climatica.gpkg'):
-        return
-    gdf = read_layer('/tmp/climatica.gpkg')
-    if gdf is None or gdf.empty:
-        return
-
-    rows = []
-    for _, row in gdf.iterrows():
-        lat, lon = coords_from_geom(row)
-        data = {
+    def _row(row, lat, lon):
+        return {
             'contrato_id':   CONTRATO_ID,
             'folio':         safe(row.get('folio')),
             'estado_clima':  safe(row.get('estado_clima') or row.get('estadoclima')),
@@ -62,33 +55,13 @@ def sync_bd_climatica(supabase, token, project_id):
             'longitud':      lon,
             'latitud':       lat,
         }
-        if data.get('folio'):
-            rows.append(data)
-
-    try:
-        supabase.table('bd_condicion_climatica').delete().eq('contrato_id', CONTRATO_ID).execute()
-        if rows:
-            supabase.table('bd_condicion_climatica').insert(rows).execute()
-        print(f"  → {len(rows)} insertados")
-    except Exception as e:
-        print(f"  ✗ Error en bd_condicion_climatica: {e}")
+    _sync_bd_table(supabase, token, project_id,
+                   'bd_condicion_climatica', 'BD_CondicionClimatica.gpkg', '/tmp/climatica.gpkg', None, _row)
 
 
 def sync_bd_maquinaria(supabase, token, project_id):
-    """
-    [D-06] Nombres con paréntesis corregidos. Estructura constante para evitar PGRST102.
-    """
-    print("\n── bd_maquinaria_obra ──")
-    if not download_gpkg(token, project_id, 'BD_MaquinariaObra.gpkg', '/tmp/maquinaria.gpkg'):
-        return
-    gdf = read_layer('/tmp/maquinaria.gpkg')
-    if gdf is None or gdf.empty:
-        return
-
-    rows = []
-    for _, row in gdf.iterrows():
-        lat, lon = coords_from_geom(row)
-        data = {
+    def _row(row, lat, lon):
+        return {
             'contrato_id':           CONTRATO_ID,
             'folio':                 safe(row.get('folio')),
             'operarios':             safe_num(row.get('operarios')),
@@ -105,34 +78,13 @@ def sync_bd_maquinaria(supabase, token, project_id):
             'longitud':              lon,
             'latitud':               lat,
         }
-        if data.get('folio'):
-            rows.append(data)
-
-    try:
-        supabase.table('bd_maquinaria_obra').delete().eq('contrato_id', CONTRATO_ID).execute()
-        if rows:
-            supabase.table('bd_maquinaria_obra').insert(rows).execute()
-        print(f"  → {len(rows)} insertados")
-    except Exception as e:
-        print(f"  ✗ Error en bd_maquinaria_obra: {e}")
+    _sync_bd_table(supabase, token, project_id,
+                   'bd_maquinaria_obra', 'BD_MaquinariaObra.gpkg', '/tmp/maquinaria.gpkg', None, _row)
 
 
 def sync_bd_sst(supabase, token, project_id):
-    """
-    [D-07] Layer correcto: 'BD_SST-Ambiental' (antes 'BBD_SST-Ambiental' por typo).
-    Estructura constante para evitar PGRST102.
-    """
-    print("\n── bd_sst_ambiental ──")
-    if not download_gpkg(token, project_id, 'BD_SST-Ambiental.gpkg', '/tmp/sst.gpkg'):
-        return
-    gdf = read_layer('/tmp/sst.gpkg', 'BD_SST-Ambiental')
-    if gdf is None or gdf.empty:
-        return
-
-    rows = []
-    for _, row in gdf.iterrows():
-        lat, lon = coords_from_geom(row)
-        data = {
+    def _row(row, lat, lon):
+        return {
             'contrato_id':       CONTRATO_ID,
             'folio':             safe(row.get('folio')),
             'observaciones':     safe(row.get('observaciones')),
@@ -144,13 +96,5 @@ def sync_bd_sst(supabase, token, project_id):
             'punto_ecologico':   safe_num(row.get('punto_ecologico')),
             'extintor':          safe_num(row.get('extintor')),
         }
-        if data.get('folio'):
-            rows.append(data)
-
-    try:
-        supabase.table('bd_sst_ambiental').delete().eq('contrato_id', CONTRATO_ID).execute()
-        if rows:
-            supabase.table('bd_sst_ambiental').insert(rows).execute()
-        print(f"  → {len(rows)} insertados")
-    except Exception as e:
-        print(f"  ✗ Error en bd_sst_ambiental: {e}")
+    _sync_bd_table(supabase, token, project_id,
+                   'bd_sst_ambiental', 'BD_SST-Ambiental.gpkg', '/tmp/sst.gpkg', 'BD_SST-Ambiental', _row)
